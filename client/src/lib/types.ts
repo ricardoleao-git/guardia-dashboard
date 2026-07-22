@@ -5,6 +5,7 @@ export interface CameraEvent {
   operator: string;
   payload: Record<string, any>;
   media_urls: Record<string, string> | null;
+  annotations: any[] | null;
   connector_id: string | null;
   org_id: string | null;
   timestamp: string;

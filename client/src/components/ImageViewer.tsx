@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Camera, User, Car, Clock, Hash, ArrowLeftRight, ZoomIn, ZoomOut, Download, RotateCcw, Maximize2, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { X, Camera, User, Car, Clock, Hash, ArrowLeftRight, ZoomIn, ZoomOut, Download, RotateCcw, Maximize2, ChevronLeft, ChevronRight, Pencil, Save, Loader2, Check } from "lucide-react";
 import { CameraEvent } from "@/lib/types";
 import { operatorLabels, operatorColors } from "@/lib/mock-data";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { isSupabaseConfigured, saveAnnotations, loadAnnotations } from "@/lib/supabase";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -36,21 +38,83 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [annotationsLoaded, setAnnotationsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [imageRenderSize, setImageRenderSize] = useState({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Reset estado quando o modal fecha ou muda de evento
+  // Auto-save ao fechar o modal se houver alterações não salvas
   useEffect(() => {
+    if (!open && hasUnsavedChanges && event && isSupabaseConfigured && annotations.length > 0) {
+      saveAnnotations(event.event_id, annotations).catch((err) => {
+        console.error("Erro ao auto-salvar anotações ao fechar:", err);
+      });
+    }
     if (!open) {
       setZoom(1);
       setPan({ x: 0, y: 0 });
       setActiveImageIdx(0);
       setDrawMode(false);
       setAnnotations([]);
+      setAnnotationsLoaded(false);
+      setHasUnsavedChanges(false);
     }
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Carregar anotações do Supabase quando o modal abre com um evento
+  useEffect(() => {
+    if (!open || !event) return;
+
+    // Primeiro tenta carregar do próprio evento (se já veio do banco)
+    if (event.annotations && Array.isArray(event.annotations) && event.annotations.length > 0) {
+      setAnnotations(event.annotations as Annotation[]);
+      setAnnotationsLoaded(true);
+      return;
+    }
+
+    // Se o Supabase estiver configurado, busca do banco
+    if (isSupabaseConfigured) {
+      loadAnnotations(event.event_id)
+        .then((data) => {
+          if (data && Array.isArray(data)) {
+            setAnnotations(data as Annotation[]);
+          }
+          setAnnotationsLoaded(true);
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar anotações:", err);
+          setAnnotationsLoaded(true);
+        });
+    } else {
+      setAnnotationsLoaded(true);
+    }
+  }, [open, event]);
+
+  // Marca alterações não salvas quando as anotações mudam
+  useEffect(() => {
+    if (annotationsLoaded && annotations.length > 0) {
+      setHasUnsavedChanges(true);
+    }
+  }, [annotations, annotationsLoaded]);
+
+  // Salvar anotações no Supabase
+  const handleSaveAnnotations = useCallback(async () => {
+    if (!event || !isSupabaseConfigured) return;
+    setIsSaving(true);
+    try {
+      await saveAnnotations(event.event_id, annotations);
+      setHasUnsavedChanges(false);
+      toast.success("Anotações salvas com sucesso!");
+    } catch (err) {
+      console.error("Erro ao salvar anotações:", err);
+      toast.error("Erro ao salvar anotações. Verifique a conexão com o Supabase.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [event, annotations]);
 
   // Atualiza dimenões renderizadas da imagem para o overlay
   useEffect(() => {
@@ -254,6 +318,24 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
                 >
                   <Pencil className="h-4 w-4" />
                 </ToolbarButton>
+                {isSupabaseConfigured && (
+                  <>
+                    <div className="w-px h-5 bg-white/20 mx-0.5" />
+                    <ToolbarButton
+                      onClick={handleSaveAnnotations}
+                      disabled={isSaving || !hasUnsavedChanges}
+                      title={hasUnsavedChanges ? "Salvar anotações" : "Anotações salvas"}
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : hasUnsavedChanges ? (
+                        <Save className="h-4 w-4" />
+                      ) : (
+                        <Check className="h-4 w-4 text-green-400" />
+                      )}
+                    </ToolbarButton>
+                  </>
+                )}
                 <div className="w-px h-5 bg-white/20 mx-0.5" />
                 <ToolbarButton onClick={onClose} title="Fechar">
                   <X className="h-4 w-4" />
@@ -403,13 +485,38 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Anotações ({annotations.length})
+                      {isSupabaseConfigured && hasUnsavedChanges && (
+                        <span className="ml-1.5 inline-flex items-center gap-1 text-amber-600 normal-case font-normal">
+                          • não salvas
+                        </span>
+                      )}
+                      {isSupabaseConfigured && !hasUnsavedChanges && annotationsLoaded && (
+                        <span className="ml-1.5 inline-flex items-center gap-1 text-green-600 normal-case font-normal">
+                          • salvas
+                        </span>
+                      )}
                     </h4>
-                    <button
-                      onClick={() => setAnnotations([])}
-                      className="text-xs text-destructive hover:underline"
-                    >
-                      Limpar
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {isSupabaseConfigured && hasUnsavedChanges && (
+                        <button
+                          onClick={handleSaveAnnotations}
+                          disabled={isSaving}
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          {isSaving ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" /> Salvando...</>
+                          ) : (
+                            <><Save className="h-3 w-3" /> Salvar</>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setAnnotations([])}
+                        className="text-xs text-destructive hover:underline"
+                      >
+                        Limpar
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     {annotations.map((ann, i) => (

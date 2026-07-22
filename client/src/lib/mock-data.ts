@@ -50,6 +50,7 @@ export function generateMockEvents(count: number = 50): CameraEvent[] {
       } : {
         CaptureImage: `https://picsum.photos/seed/${i}capture/400/300`,
       },
+      annotations: null,
       connector_id: "connector-01",
       org_id: "org-001",
       timestamp,

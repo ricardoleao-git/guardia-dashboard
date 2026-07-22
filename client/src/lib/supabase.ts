@@ -69,6 +69,32 @@ export async function fetchConnectorStatus() {
   return data;
 }
 
+// Salvar anotações de um evento no Supabase
+export async function saveAnnotations(eventId: string, annotations: any[]): Promise<void> {
+  if (!supabase) throw new Error("Supabase não configurado");
+
+  const { error } = await supabase
+    .from("camera_events")
+    .update({ annotations })
+    .eq("event_id", eventId);
+
+  if (error) throw error;
+}
+
+// Carregar anotações de um evento do Supabase
+export async function loadAnnotations(eventId: string): Promise<any[] | null> {
+  if (!supabase) throw new Error("Supabase não configurado");
+
+  const { data, error } = await supabase
+    .from("camera_events")
+    .select("annotations")
+    .eq("event_id", eventId)
+    .single();
+
+  if (error) throw error;
+  return data?.annotations || null;
+}
+
 // Setup realtime subscription para novos eventos
 export function subscribeToNewEvents(callback: (event: any) => void) {
   if (!supabase) return () => {};
