@@ -8,6 +8,32 @@ const serials = ["I320F6958", "I320F6959", "I320F6960", "I320F6961"];
 const names = ["João Silva", "Maria Santos", "Pedro Costa", "Ana Oliveira", "Carlos Souza", "Beatriz Lima", "Rafael Ferreira", "Juliana Alves"];
 const locations = ["Portão Principal", "Entrada Bloco A", "Sala de Professores", "Estacionamento", "Refeitório", "Biblioteca"];
 
+// Imagens de captura por contexto (CCTV realista)
+const captureImages = {
+  FaceReco: [
+    "/manus-storage/cam-facereco-school_915af75d.jpg",
+    "/manus-storage/cam-facereco-student_01a30f6c.jpg",
+  ],
+  VehicleReco: [
+    "/manus-storage/cam-vehicle-gate_4e64e4ad.jpg",
+    "/manus-storage/cam-vehicle-night_cdaabcc9.jpg",
+  ],
+  AccessControl: [
+    "/manus-storage/cam-access-door_c36513ed.jpg",
+    "/manus-storage/cam-access-reception_c10934f4.jpg",
+  ],
+  MotionDetection: [
+    "/manus-storage/cam-motion-hallway_b9f5c52a.jpg",
+    "/manus-storage/cam-motion-parking_a592b70f.jpg",
+  ],
+};
+
+// Fotos cadastradas (database de reconhecimento facial)
+const recognizeImages = [
+  "/manus-storage/cam-facereco-reco1_e2b66a4d.jpg",
+  "/manus-storage/cam-facereco-reco2_f80bd372.jpg",
+];
+
 function randomFrom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -45,10 +71,14 @@ export function generateMockEvents(count: number = 50): CameraEvent[] {
         },
       },
       media_urls: operator === "FaceReco" ? {
-        CaptureImage: `https://picsum.photos/seed/${i}capture/400/300`,
-        recognizeImage: `https://picsum.photos/seed/${i}reco/200/200`,
+        CaptureImage: captureImages.FaceReco[i % captureImages.FaceReco.length],
+        recognizeImage: recognizeImages[i % recognizeImages.length],
+      } : operator === "VehicleReco" ? {
+        CaptureImage: captureImages.VehicleReco[i % captureImages.VehicleReco.length],
+      } : operator === "AccessControl" ? {
+        CaptureImage: captureImages.AccessControl[i % captureImages.AccessControl.length],
       } : {
-        CaptureImage: `https://picsum.photos/seed/${i}capture/400/300`,
+        CaptureImage: captureImages.MotionDetection[i % captureImages.MotionDetection.length],
       },
       annotations: null,
       connector_id: "connector-01",
