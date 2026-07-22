@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
+import MobileHeader from "@/components/MobileHeader";
 import Header from "@/components/Header";
 import StatsBar from "@/components/StatsBar";
 import EventCard from "@/components/EventCard";
 import ImageViewer from "@/components/ImageViewer";
 import CameraGrid from "@/components/CameraGrid";
 import { useEvents, useConnectorStatus } from "@/hooks/useEvents";
+import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
 import { Camera, Activity, Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
@@ -23,6 +25,7 @@ export default function Dashboard() {
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [selectedEvent, setSelectedEvent] = useState<CameraEvent | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const { events, loading, refetch } = useEvents(filters);
   const connectorStatus = useConnectorStatus();
@@ -33,6 +36,9 @@ export default function Dashboard() {
     setSelectedEvent(event);
     setViewerOpen(true);
   };
+
+  // Monitora novos eventos e dispara toasts para eventos críticos
+  useEventAlerts(events, handleEventClick);
 
   const handleCameraClick = (serial: string) => {
     setFilters({ ...emptyFilters, cameraSerial: serial });
@@ -51,10 +57,16 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar activeView={activeView} onNavigate={setActiveView} />
+      <Sidebar
+        activeView={activeView}
+        onNavigate={setActiveView}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
 
       {/* Main content */}
-      <div className="ml-60">
+      <div className="lg:ml-64">
+        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
         <Header
           title={currentView.title}
           subtitle={currentView.subtitle}
