@@ -6,6 +6,7 @@ import StatsBar from "@/components/StatsBar";
 import EventCard from "@/components/EventCard";
 import ImageViewer from "@/components/ImageViewer";
 import CameraGrid from "@/components/CameraGrid";
+import CategoryTabs, { CategoryKey } from "@/components/CategoryTabs";
 import { useEvents, useConnectorStatus } from "@/hooks/useEvents";
 import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
@@ -20,9 +21,23 @@ const emptyFilters: FilterState = {
   search: null,
 };
 
+const categoryLabels: Record<string, string> = {
+  all: "Todos",
+  FaceReco: "Reconhecimento Facial",
+  VehicleReco: "Reconhecimento de Veículos",
+  AccessControl: "Controle de Acesso",
+  MotionDetection: "Detecção de Movimento",
+  Alarm: "Alarmes",
+};
+
+function getCategoryLabel(key: string): string {
+  return categoryLabels[key] || key;
+}
+
 export default function Dashboard() {
   const [activeView, setActiveView] = useState("dashboard");
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>("all");
   const [selectedEvent, setSelectedEvent] = useState<CameraEvent | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -30,7 +45,31 @@ export default function Dashboard() {
   const { events, loading, refetch } = useEvents(filters);
   const connectorStatus = useConnectorStatus();
 
-  const recentEvents = useMemo(() => events.slice(0, 24), [events]);
+  // Conta eventos por categoria para os badges nas tabs
+  const categoryCounts = useMemo(() => {
+    const counts: Record<CategoryKey, number> = {
+      all: events.length,
+      FaceReco: 0,
+      VehicleReco: 0,
+      AccessControl: 0,
+      MotionDetection: 0,
+      Alarm: 0,
+    };
+    events.forEach((e) => {
+      if (counts[e.operator as CategoryKey] !== undefined) {
+        counts[e.operator as CategoryKey]++;
+      }
+    });
+    return counts;
+  }, [events]);
+
+  // Filtra eventos pela categoria ativa
+  const categoryFilteredEvents = useMemo(() => {
+    if (activeCategory === "all") return events;
+    return events.filter((e) => e.operator === activeCategory);
+  }, [events, activeCategory]);
+
+  const recentEvents = useMemo(() => categoryFilteredEvents.slice(0, 24), [categoryFilteredEvents]);
 
   const handleEventClick = (event: CameraEvent) => {
     setSelectedEvent(event);
@@ -42,7 +81,18 @@ export default function Dashboard() {
 
   const handleCameraClick = (serial: string) => {
     setFilters({ ...emptyFilters, cameraSerial: serial });
+    setActiveCategory("all");
     setActiveView("events");
+  };
+
+  const handleCategoryChange = (category: CategoryKey) => {
+    setActiveCategory(category);
+    // Também atualiza o filtro de operador no Header para manter sincronizado
+    if (category === "all") {
+      setFilters((prev) => ({ ...prev, operator: null }));
+    } else {
+      setFilters((prev) => ({ ...prev, operator: category }));
+    }
   };
 
   const viewConfig = {
@@ -82,10 +132,19 @@ export default function Dashboard() {
               {/* Stats */}
               <StatsBar events={events} />
 
+              {/* Category tabs */}
+              <CategoryTabs
+                active={activeCategory}
+                onChange={handleCategoryChange}
+                counts={categoryCounts}
+              />
+
               {/* Recent events */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-lg font-semibold">Eventos Recentes</h3>
+                  <h3 className="font-display text-lg font-semibold">
+                    {activeCategory === "all" ? "Eventos Recentes" : `${getCategoryLabel(activeCategory)} — Eventos`}
+                  </h3>
                   <button
                     onClick={() => setActiveView("events")}
                     className="text-sm text-primary hover:underline font-medium"
@@ -120,7 +179,14 @@ export default function Dashboard() {
           )}
 
           {activeView === "events" && (
-            <div>
+            <div className="space-y-4">
+              {/* Category tabs */}
+              <CategoryTabs
+                active={activeCategory}
+                onChange={handleCategoryChange}
+                counts={categoryCounts}
+              />
+
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {Array.from({ length: 12 }).map((_, i) => (
@@ -133,11 +199,11 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-              ) : events.length === 0 ? (
+              ) : categoryFilteredEvents.length === 0 ? (
                 <EmptyState />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {events.map((event) => (
+                  {categoryFilteredEvents.map((event) => (
                     <EventCard key={event.id} event={event} onClick={handleEventClick} />
                   ))}
                 </div>
