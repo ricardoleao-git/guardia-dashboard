@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
   Calendar, ChevronLeft, ChevronRight, Play, Pause, Square,
-  SkipBack, SkipForward, Camera, ZoomIn, Scissors, Clock,
-  Circle, Triangle, Square as SquareIcon, Download,
+  SkipBack, SkipForward, Camera, ZoomIn, ZoomOut, Scissors, Clock,
+  Circle, Triangle, Square as SquareIcon, Download, Maximize,
+  Crop, Check, X, RotateCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -177,13 +178,21 @@ function ChannelTimeline({ channelId, date, selectedTime, onTimeSelect }: {
 }
 
 // Playback controls
-function PlaybackControls({ isPlaying, onPlayPause, onSkip, speed, onSpeedChange, currentTime }: {
+function PlaybackControls({ isPlaying, onPlayPause, onSkip, speed, onSpeedChange, currentTime, zoom, onZoomIn, onZoomOut, onZoomReset, onCapture, onCropToggle, cropMode, onDownload }: {
   isPlaying: boolean;
   onPlayPause: () => void;
   onSkip: (dir: "back" | "forward") => void;
   speed: number;
   onSpeedChange: (s: number) => void;
   currentTime: number;
+  zoom: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onZoomReset: () => void;
+  onCapture: () => void;
+  onCropToggle: () => void;
+  cropMode: boolean;
+  onDownload: () => void;
 }) {
   const formatTime = (h: number) => {
     const hours = Math.floor(h);
@@ -225,16 +234,27 @@ function PlaybackControls({ isPlaying, onPlayPause, onSkip, speed, onSpeedChange
         ))}
       </div>
       <div className="h-4 w-px bg-border" />
-      <button className="rounded p-1.5 hover:bg-accent transition-colors" title="Captura de tela">
+      {/* Zoom controls */}
+      <div className="flex items-center gap-1">
+        <button onClick={onZoomOut} className="rounded p-1.5 hover:bg-accent transition-colors" title="Zoom out">
+          <ZoomOut className="h-4 w-4" />
+        </button>
+        <span className="font-mono text-xs text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
+        <button onClick={onZoomIn} className="rounded p-1.5 hover:bg-accent transition-colors" title="Zoom in">
+          <ZoomIn className="h-4 w-4" />
+        </button>
+        <button onClick={onZoomReset} className="rounded p-1.5 hover:bg-accent transition-colors" title="Reset zoom">
+          <Maximize className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="h-4 w-px bg-border" />
+      <button onClick={onCapture} className="rounded p-1.5 hover:bg-accent transition-colors" title="Captura de tela">
         <Camera className="h-4 w-4" />
       </button>
-      <button className="rounded p-1.5 hover:bg-accent transition-colors" title="Zoom">
-        <ZoomIn className="h-4 w-4" />
+      <button onClick={onCropToggle} className={cn("rounded p-1.5 transition-colors", cropMode ? "bg-primary text-primary-foreground" : "hover:bg-accent")} title="Modo recorte">
+        {cropMode ? <Check className="h-4 w-4" /> : <Crop className="h-4 w-4" />}
       </button>
-      <button className="rounded p-1.5 hover:bg-accent transition-colors" title="Recorte">
-        <Scissors className="h-4 w-4" />
-      </button>
-      <button className="rounded p-1.5 hover:bg-accent transition-colors" title="Download">
+      <button onClick={onDownload} className="rounded p-1.5 hover:bg-accent transition-colors" title="Download">
         <Download className="h-4 w-4" />
       </button>
     </div>
@@ -248,6 +268,58 @@ export default function Playback() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [activeRecFilters, setActiveRecFilters] = useState<Set<string>>(new Set(["intelligence", "common", "alarm", "motion"]));
+  const [zoom, setZoom] = useState(1);
+  const [cropMode, setCropMode] = useState(false);
+  const [cropRect, setCropRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null);
+  const [capturedFrames, setCapturedFrames] = useState<string[]>([]);
+  const videoAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleZoomIn = () => setZoom((z) => Math.min(5, z + 0.25));
+  const handleZoomOut = () => setZoom((z) => Math.max(1, z - 0.25));
+  const handleZoomReset = () => setZoom(1);
+
+  const handleCapture = () => {
+    const timestamp = `${channel?.id || "CH"}_${formatDate(selectedDate).replace(/\//g, "-")}_${Math.floor(selectedTime).toString().padStart(2, "0")}${Math.floor((selectedTime % 1) * 60).toString().padStart(2, "0")}`;
+    setCapturedFrames((prev) => [...prev, timestamp]);
+  };
+
+  const handleDownload = () => {
+    if (capturedFrames.length > 0) {
+      const filename = capturedFrames[capturedFrames.length - 1];
+      const blob = new Blob([`GuardIA Playback Capture\nChannel: ${channel?.id}\nDate: ${formatDate(selectedDate)}\nTime: ${Math.floor(selectedTime).toString().padStart(2, "0")}:${Math.floor((selectedTime % 1) * 60).toString().padStart(2, "0")}:00\nZoom: ${Math.round(zoom * 100)}%\n`], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `guardia_${filename}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleCropMouseDown = (e: React.MouseEvent) => {
+    if (!cropMode || !videoAreaRef.current) return;
+    const rect = videoAreaRef.current.getBoundingClientRect();
+    setCropStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setCropRect(null);
+  };
+
+  const handleCropMouseMove = (e: React.MouseEvent) => {
+    if (!cropMode || !cropStart || !videoAreaRef.current) return;
+    const rect = videoAreaRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setCropRect({
+      x: Math.min(cropStart.x, x),
+      y: Math.min(cropStart.y, y),
+      w: Math.abs(x - cropStart.x),
+      h: Math.abs(y - cropStart.y),
+    });
+  };
+
+  const handleCropMouseUp = () => {
+    setCropStart(null);
+  };
 
   const toggleRecFilter = (type: string) => {
     setActiveRecFilters((prev) => {
@@ -331,7 +403,15 @@ export default function Playback() {
         </div>
 
         {/* Video player area */}
-        <div className="relative flex-1 min-h-[300px] rounded-lg border border-border bg-black overflow-hidden">
+        <div
+          ref={videoAreaRef}
+          onMouseDown={handleCropMouseDown}
+          onMouseMove={handleCropMouseMove}
+          onMouseUp={handleCropMouseUp}
+          onMouseLeave={handleCropMouseUp}
+          className={cn("relative flex-1 min-h-[300px] rounded-lg border border-border bg-black overflow-hidden", cropMode && "cursor-crosshair")}
+          style={zoom > 1 ? { transform: `scale(${zoom})`, transformOrigin: "center" } : undefined}
+        >
           {channel?.status === "online" ? (
             <div className="absolute inset-0 flex items-center justify-center">
               {/* Placeholder video frame */}
@@ -364,6 +444,30 @@ export default function Playback() {
               </div>
             </div>
           )}
+          {/* Crop overlay */}
+          {cropMode && cropRect && (
+            <div
+              className="absolute border-2 border-primary bg-primary/20 pointer-events-none"
+              style={{ left: cropRect.x, top: cropRect.y, width: cropRect.w, height: cropRect.h }}
+            />
+          )}
+          {/* Crop mode banner */}
+          {cropMode && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-lg bg-primary/90 px-3 py-1.5 text-xs text-primary-foreground flex items-center gap-2">
+              <Crop className="h-3.5 w-3.5" />
+              Arraste para selecionar a área de recorte
+              <button onClick={() => { setCropMode(false); setCropRect(null); }} className="ml-2 hover:bg-primary-foreground/20 rounded p-0.5">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          {/* Captured frames indicator */}
+          {capturedFrames.length > 0 && (
+            <div className="absolute bottom-3 right-3 rounded-lg bg-black/70 px-2.5 py-1.5 text-xs text-green-400 flex items-center gap-1.5">
+              <Camera className="h-3.5 w-3.5" />
+              {capturedFrames.length} captura{capturedFrames.length > 1 ? "s" : ""}
+            </div>
+          )}
         </div>
 
         {/* Playback controls */}
@@ -377,6 +481,14 @@ export default function Playback() {
           speed={speed}
           onSpeedChange={setSpeed}
           currentTime={selectedTime}
+          zoom={zoom}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onZoomReset={handleZoomReset}
+          onCapture={handleCapture}
+          onCropToggle={() => { setCropMode(!cropMode); setCropRect(null); }}
+          cropMode={cropMode}
+          onDownload={handleDownload}
         />
 
         {/* Per-channel timelines */}

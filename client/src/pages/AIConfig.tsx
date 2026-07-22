@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
-import { Cpu, ScanFace, Car, DoorOpen, PersonStanding, Bell, ChevronDown, ChevronRight } from "lucide-react";
+import { Cpu, ScanFace, Car, DoorOpen, PersonStanding, Bell, ChevronDown, ChevronRight, Fence, MoveRight, Users2, TimerOff, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CameraAIConfig {
@@ -12,21 +12,32 @@ interface CameraAIConfig {
   accessControl: boolean;
   motionDetection: boolean;
   alarmOut: boolean;
+  electronicFence: boolean;
+  lineCrossing: boolean;
+  peopleCounting: boolean;
+  offServiceDetection: boolean;
+  llmAnalysis: boolean;
+  sensitivity: number;
 }
 
 const mockCameras: CameraAIConfig[] = [
-  { channel: "D2", name: "Corredor", faceReco: true, vehicleReco: false, accessControl: false, motionDetection: true, alarmOut: true },
-  { channel: "D3", name: "Recepção", faceReco: true, vehicleReco: false, accessControl: true, motionDetection: true, alarmOut: false },
-  { channel: "D4", name: "Portão", faceReco: false, vehicleReco: true, accessControl: true, motionDetection: true, alarmOut: true },
-  { channel: "D5", name: "COPA", faceReco: true, vehicleReco: false, accessControl: false, motionDetection: true, alarmOut: false },
+  { channel: "D2", name: "Corredor", faceReco: true, vehicleReco: false, accessControl: false, motionDetection: true, alarmOut: true, electronicFence: true, lineCrossing: false, peopleCounting: true, offServiceDetection: true, llmAnalysis: false, sensitivity: 70 },
+  { channel: "D3", name: "Recepção", faceReco: true, vehicleReco: false, accessControl: true, motionDetection: true, alarmOut: false, electronicFence: false, lineCrossing: true, peopleCounting: true, offServiceDetection: false, llmAnalysis: false, sensitivity: 60 },
+  { channel: "D4", name: "Portão", faceReco: false, vehicleReco: true, accessControl: true, motionDetection: true, alarmOut: true, electronicFence: true, lineCrossing: true, peopleCounting: false, offServiceDetection: true, llmAnalysis: false, sensitivity: 80 },
+  { channel: "D5", name: "COPA", faceReco: true, vehicleReco: false, accessControl: false, motionDetection: true, alarmOut: false, electronicFence: false, lineCrossing: false, peopleCounting: false, offServiceDetection: false, llmAnalysis: false, sensitivity: 50 },
 ];
 
 const aiFunctions = [
-  { key: "faceReco", label: "Reconhecimento Facial", icon: ScanFace, color: "text-blue-400", bg: "bg-blue-500/10" },
-  { key: "vehicleReco", label: "Reconhecimento de Veículos", icon: Car, color: "text-purple-400", bg: "bg-purple-500/10" },
-  { key: "accessControl", label: "Controle de Acesso", icon: DoorOpen, color: "text-green-400", bg: "bg-green-500/10" },
-  { key: "motionDetection", label: "Detecção de Movimento", icon: PersonStanding, color: "text-amber-400", bg: "bg-amber-500/10" },
-  { key: "alarmOut", label: "Saída de Alarme", icon: Bell, color: "text-red-400", bg: "bg-red-500/10" },
+  { key: "faceReco", label: "Reconhecimento Facial", icon: ScanFace, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Identifica rostos cadastrados na biblioteca" },
+  { key: "vehicleReco", label: "Reconhecimento de Veículos", icon: Car, color: "text-purple-400", bg: "bg-purple-500/10", desc: "Lê placas e identifica modelos" },
+  { key: "accessControl", label: "Controle de Acesso", icon: DoorOpen, color: "text-green-400", bg: "bg-green-500/10", desc: "Libera ou bloqueia acesso por credencial" },
+  { key: "motionDetection", label: "Detecção de Movimento", icon: PersonStanding, color: "text-amber-400", bg: "bg-amber-500/10", desc: "Detecta movimento na área monitorada" },
+  { key: "alarmOut", label: "Saída de Alarme", icon: Bell, color: "text-red-400", bg: "bg-red-500/10", desc: "Dispara alarme físico ao detectar evento" },
+  { key: "electronicFence", label: "Cerca Eletrônica Virtual", icon: Fence, color: "text-cyan-400", bg: "bg-cyan-500/10", desc: "Define área proibida e alerta invasão" },
+  { key: "lineCrossing", label: "Travessia de Linha", icon: MoveRight, color: "text-indigo-400", bg: "bg-indigo-500/10", desc: "Detecta travessia de linha direcional" },
+  { key: "peopleCounting", label: "Contagem de Pessoas", icon: Users2, color: "text-teal-400", bg: "bg-teal-500/10", desc: "Conta fluxo de pessoas entrada/saída" },
+  { key: "offServiceDetection", label: "Detecção Fora do Serviço", icon: TimerOff, color: "text-orange-400", bg: "bg-orange-500/10", desc: "Alerta movimento fora de horário comercial" },
+  { key: "llmAnalysis", label: "Análise de Modelo Grande (LLM)", icon: Brain, color: "text-pink-400", bg: "bg-pink-500/10", desc: "Análise avançada de cena com IA generativa" },
 ] as const;
 
 export default function AIConfig() {
@@ -107,7 +118,7 @@ export default function AIConfig() {
                             <div>
                               <p className="text-sm font-medium">{func.label}</p>
                               <p className="text-[10px] text-muted-foreground">
-                                {isEnabled ? "Ativo — processando eventos" : "Desativado"}
+                                {func.desc}
                               </p>
                             </div>
                           </div>
@@ -126,6 +137,30 @@ export default function AIConfig() {
                         </div>
                       );
                     })}
+
+                    {/* Sensitivity slider */}
+                    <div className="rounded-lg bg-muted/30 px-3 py-3 mt-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-muted-foreground">Sensibilidade Geral</span>
+                        <span className="font-mono-tech text-xs font-bold text-primary">{camera.sensitivity}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={camera.sensitivity}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setCameras(prev => prev.map(c => c.channel === camera.channel ? { ...c, sensitivity: val } : c));
+                        }}
+                        className="w-full h-1.5 rounded-full bg-muted appearance-none cursor-pointer accent-primary"
+                      />
+                      <div className="flex justify-between mt-1 text-[9px] text-muted-foreground">
+                        <span>Baixa</span>
+                        <span>Média</span>
+                        <span>Alta</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

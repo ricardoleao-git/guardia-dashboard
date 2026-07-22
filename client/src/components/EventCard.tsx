@@ -27,6 +27,9 @@ export default function EventCard({ event, onClick }: EventCardProps) {
   const matchScore = event.payload?.data?.matchScore;
   const plate = event.payload?.data?.plate;
   const direction = event.payload?.data?.direction === "entry" ? "Entrada" : "Saída";
+  const attributes = event.payload?.data?.attributes as string[] | undefined;
+  const vehicleModel = event.payload?.data?.model;
+  const vehicleColor = event.payload?.data?.color;
 
   return (
     <button
@@ -78,6 +81,29 @@ export default function EventCard({ event, onClick }: EventCardProps) {
         {plate && (
           <div className="flex items-center justify-between">
             <span className="font-mono-tech text-sm font-semibold tracking-wider">{plate}</span>
+          </div>
+        )}
+
+        {/* Detected attributes */}
+        {attributes && attributes.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {attributes.slice(0, 4).map((attr, i) => (
+              <span key={i} className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {attr}
+              </span>
+            ))}
+            {attributes.length > 4 && (
+              <span className="text-[10px] text-muted-foreground">+{attributes.length - 4}</span>
+            )}
+          </div>
+        )}
+
+        {/* Vehicle details */}
+        {plate && (vehicleModel || vehicleColor) && (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            {vehicleModel && <span>{vehicleModel}</span>}
+            {vehicleModel && vehicleColor && <span className="text-muted-foreground/40">•</span>}
+            {vehicleColor && <span>{vehicleColor}</span>}
           </div>
         )}
 

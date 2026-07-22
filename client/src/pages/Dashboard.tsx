@@ -17,6 +17,7 @@ import { mockCameras } from "@/lib/mock-data";
 import { Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
 import Playback from "@/pages/Playback";
 import VehicleManagement from "@/pages/VehicleManagement";
+import SystemConfig from "@/pages/SystemConfig";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -144,7 +145,8 @@ export default function Dashboard() {
     alerts: { title: "Alertas", subtitle: "Alertas de segurança e anomalias detectadas" },
     playback: { title: "Playback", subtitle: "Reprodução de gravações por canal e data" },
     vehicles: { title: "Biblioteca de Veículos", subtitle: "Veículos cadastrados para reconhecimento de placas" },
-    settings: { title: "Configurações", subtitle: "Configuração do Connector e integrações" },
+    settings: { title: "Config. GuardIA", subtitle: "Configuração do Connector e integrações" },
+    "system-config": { title: "Config. Sistema", subtitle: "Rede, sistema e armazenamento do NVR" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -301,6 +303,10 @@ export default function Dashboard() {
 
           {activeView === "settings" && (
             <SettingsView connectorStatus={connectorStatus} />
+          )}
+
+          {activeView === "system-config" && (
+            <SystemConfig />
           )}
         </main>
       </div>

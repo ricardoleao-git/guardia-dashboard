@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
-import { Users, Plus, Search, Upload, Edit2, Trash2, ScanFace, X, Check } from "lucide-react";
+import { Users, Plus, Search, Upload, Edit2, Trash2, ScanFace, X, Check, User, Phone, IdCard, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FaceRecord {
@@ -9,6 +9,11 @@ interface FaceRecord {
   name: string;
   category: string;
   employeeId: string;
+  gender: string;
+  phone: string;
+  certType: string;
+  certNumber: string;
+  library: string;
   registeredAt: string;
   lastSeen: string;
   imageUrl: string;
@@ -16,10 +21,10 @@ interface FaceRecord {
 }
 
 const mockFaces: FaceRecord[] = [
-  { id: "F001", name: "João Silva", category: "Funcionário", employeeId: "EMP-001", registeredAt: "2024-01-15", lastSeen: "há 2 min", imageUrl: "/manus-storage/cam-facereco-reco1.jpg", status: "active" },
-  { id: "F002", name: "Maria Santos", category: "Funcionário", employeeId: "EMP-002", registeredAt: "2024-01-15", lastSeen: "há 15 min", imageUrl: "/manus-storage/cam-facereco-reco2.jpg", status: "active" },
-  { id: "F003", name: "Carlos Oliveira", category: "Visitante", employeeId: "VIS-003", registeredAt: "2024-02-20", lastSeen: "há 3h", imageUrl: "/manus-storage/cam-facereco-reco1.jpg", status: "active" },
-  { id: "F004", name: "Ana Costa", category: "Funcionário", employeeId: "EMP-004", registeredAt: "2024-03-10", lastSeen: "há 1 dia", imageUrl: "/manus-storage/cam-facereco-reco2.jpg", status: "disabled" },
+  { id: "F001", name: "João Silva", category: "Funcionário", employeeId: "EMP-001", gender: "Masculino", phone: "(11) 98765-4321", certType: "RG", certNumber: "12.345.678-9", library: "Biblioteca Padrão", registeredAt: "2024-01-15", lastSeen: "há 2 min", imageUrl: "/manus-storage/cam-facereco-reco1.jpg", status: "active" },
+  { id: "F002", name: "Maria Santos", category: "Funcionário", employeeId: "EMP-002", gender: "Feminino", phone: "(11) 91234-5678", certType: "RG", certNumber: "98.765.432-1", library: "Biblioteca Padrão", registeredAt: "2024-01-15", lastSeen: "há 15 min", imageUrl: "/manus-storage/cam-facereco-reco2.jpg", status: "active" },
+  { id: "F003", name: "Carlos Oliveira", category: "Visitante", employeeId: "VIS-003", gender: "Masculino", phone: "(11) 95555-1234", certType: "CNH", certNumber: "01234567890", library: "Visitantes", registeredAt: "2024-02-20", lastSeen: "há 3h", imageUrl: "/manus-storage/cam-facereco-reco1.jpg", status: "active" },
+  { id: "F004", name: "Ana Costa", category: "Aluno", employeeId: "ALU-004", gender: "Feminino", phone: "(11) 94444-9999", certType: "Certidão", certNumber: "2024-00123", library: "Alunos", registeredAt: "2024-03-10", lastSeen: "há 1 dia", imageUrl: "/manus-storage/cam-facereco-reco2.jpg", status: "disabled" },
 ];
 
 const categories = ["Todos", "Funcionário", "Visitante", "Fornecedor", "Aluno"];
@@ -160,47 +165,121 @@ export default function FaceLibrary() {
         </main>
       </div>
 
-      {/* Add face modal */}
+      {/* Add face modal — detailed registration */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowAddModal(false)}>
-          <div className="rounded-xl border border-border bg-card p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-display text-base font-semibold">Cadastrar Novo Rosto</h3>
+          <div className="rounded-xl border border-border bg-card max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {/* Modal header */}
+            <div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-5 py-3.5 z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+                  <ScanFace className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-display text-sm font-semibold">Cadastrar Novo Rosto</h3>
+                  <p className="text-[10px] text-muted-foreground">Preencha todos os campos para cadastrar na biblioteca facial</p>
+                </div>
+              </div>
               <button onClick={() => setShowAddModal(false)} className="rounded-md p-1 hover:bg-accent text-muted-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            {/* Upload area */}
-            <div className="rounded-lg border-2 border-dashed border-border p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-              <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Clique ou arraste uma foto aqui</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">JPG, PNG — máximo 5MB</p>
-            </div>
-            {/* Form fields */}
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome completo</label>
-                <input type="text" placeholder="Ex: João Silva" className="mt-1 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Categoria</label>
-                  <select className="mt-1 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                    <option>Funcionário</option>
-                    <option>Visitante</option>
-                    <option>Fornecedor</option>
-                    <option>Aluno</option>
-                  </select>
+
+            {/* Modal body */}
+            <div className="px-5 py-4 space-y-4">
+              {/* Upload area */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-1">
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Foto do Rosto</label>
+                  <div className="rounded-lg border-2 border-dashed border-border aspect-square flex flex-col items-center justify-center text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/20">
+                    <Upload className="h-6 w-6 text-muted-foreground mb-1.5" />
+                    <p className="text-[10px] text-muted-foreground px-2">Clique ou arraste</p>
+                    <p className="text-[9px] text-muted-foreground/60 mt-0.5">JPG, PNG — máx 5MB</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">ID / Matrícula</label>
-                  <input type="text" placeholder="Ex: EMP-005" className="mt-1 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                <div className="col-span-2 space-y-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block flex items-center gap-1"><User className="h-3 w-3" /> Nome completo</label>
+                    <input type="text" placeholder="Ex: João Silva" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Gênero</label>
+                      <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option>Masculino</option>
+                        <option>Feminino</option>
+                        <option>Outro</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Categoria</label>
+                      <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option>Funcionário</option>
+                        <option>Visitante</option>
+                        <option>Fornecedor</option>
+                        <option>Aluno</option>
+                        <option>Terceiro</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block flex items-center gap-1"><Phone className="h-3 w-3" /> Telefone / Contato</label>
+                    <input type="text" placeholder="(11) 98765-4321" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono-tech placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-border pt-3">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5"><IdCard className="h-3 w-3" /> Documentação</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Tipo de Certificado</label>
+                    <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option>RG</option>
+                      <option>CNH</option>
+                      <option>Passaporte</option>
+                      <option>Certidão de Nascimento</option>
+                      <option>Crachá Corporativo</option>
+                      <option>Outro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Número do Certificado</label>
+                    <input type="text" placeholder="Ex: 12.345.678-9" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono-tech placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Library selection */}
+              <div className="border-t border-border pt-3">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5"><Users className="h-3 w-3" /> Biblioteca Facial</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Biblioteca de Destino</label>
+                    <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option>Biblioteca Padrão</option>
+                      <option>Visitantes</option>
+                      <option>Alunos</option>
+                      <option>Funcionários</option>
+                      <option>Fornecedores</option>
+                      <option>Nova biblioteca...</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block flex items-center gap-1"><Calendar className="h-3 w-3" /> Validade (opcional)</label>
+                    <input type="date" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 pt-2">
-              <button onClick={() => setShowAddModal(false)} className="flex-1 rounded-lg bg-muted px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={() => setShowAddModal(false)} className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">Cadastrar</button>
+
+            {/* Modal footer */}
+            <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-border bg-card px-5 py-3">
+              <button onClick={() => setShowAddModal(false)} className="rounded-lg bg-muted px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">Cancelar</button>
+              <button onClick={() => setShowAddModal(false)} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5" /> Cadastrar Rosto
+              </button>
             </div>
           </div>
         </div>
