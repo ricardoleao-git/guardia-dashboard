@@ -7,6 +7,7 @@ import { FilterState } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, User as UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   title: string;
@@ -193,7 +194,7 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
 }
 
 function UserMenu() {
-  const { user, signOut, isDemoMode } = useAuth();
+  const { user, profile, signOut, isDemoMode, isAdmin } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
 
   if (isDemoMode) {
@@ -202,13 +203,15 @@ function UserMenu() {
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
           D
         </div>
-        <span className="text-xs text-primary font-medium hidden sm:inline">Demo</span>
+        <span className="text-xs text-primary font-medium hidden sm:inline">Demo Admin</span>
       </div>
     );
   }
 
-  const initials = user?.email?.charAt(0).toUpperCase() ?? "U";
-  const displayName = user?.email?.split("@")[0] ?? "Operador";
+  const initials = profile?.full_name?.charAt(0).toUpperCase() ?? user?.email?.charAt(0).toUpperCase() ?? "U";
+  const displayName = profile?.full_name || (user?.email?.split("@")[0] ?? "Operador");
+  const roleLabel = profile?.role === "admin" ? "Administrador" : profile?.role === "operator" ? "Operador" : "Visualizador";
+  const roleColor = profile?.role === "admin" ? "text-amber-400" : profile?.role === "operator" ? "text-blue-400" : "text-gray-400";
 
   return (
     <div className="relative">
@@ -229,6 +232,7 @@ function UserMenu() {
             <div className="border-b border-border px-4 py-3">
               <p className="text-sm font-medium truncate">{displayName}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <span className={cn("text-[10px] font-medium", roleColor)}>{roleLabel}</span>
             </div>
             <button
               onClick={() => {

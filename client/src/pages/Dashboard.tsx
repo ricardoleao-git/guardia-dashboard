@@ -19,6 +19,8 @@ import { Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
 import Playback from "@/pages/Playback";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
+import UserAdmin from "@/pages/UserAdmin";
+import AuditLog from "@/pages/AuditLog";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -148,6 +150,8 @@ export default function Dashboard() {
     vehicles: { title: "Biblioteca de Veículos", subtitle: "Veículos cadastrados para reconhecimento de placas" },
     settings: { title: "Config. GuardIA", subtitle: "Configuração do Connector e integrações" },
     "system-config": { title: "Config. Sistema", subtitle: "Rede, sistema e armazenamento do NVR" },
+    "user-admin": { title: "Operadores", subtitle: "Administração de usuários e níveis de acesso" },
+    "audit-log": { title: "Auditoria", subtitle: "Rastreabilidade de ações dos operadores" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -319,6 +323,14 @@ export default function Dashboard() {
 
           {activeView === "system-config" && (
             <SystemConfig />
+          )}
+
+          {activeView === "user-admin" && (
+            <UserAdmin />
+          )}
+
+          {activeView === "audit-log" && (
+            <AuditLog />
           )}
         </main>
       </div>
