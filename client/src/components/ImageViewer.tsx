@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Camera, User, Car, Clock, Hash, ArrowLeftRight, ZoomIn, ZoomOut, Download, RotateCcw, Maximize2, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Camera, User, Car, Clock, Hash, ArrowLeftRight, ZoomIn, ZoomOut, Download, RotateCcw, Maximize2, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { CameraEvent } from "@/lib/types";
 import { operatorLabels, operatorColors } from "@/lib/mock-data";
 import { formatDateTime } from "@/lib/format";
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import AnnotationOverlay, { Annotation } from "@/components/AnnotationOverlay";
 
 interface ImageViewerProps {
   event: CameraEvent | null;
@@ -33,8 +34,12 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [drawMode, setDrawMode] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [imageRenderSize, setImageRenderSize] = useState({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // Reset estado quando o modal fecha ou muda de evento
   useEffect(() => {
@@ -42,8 +47,30 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
       setZoom(1);
       setPan({ x: 0, y: 0 });
       setActiveImageIdx(0);
+      setDrawMode(false);
+      setAnnotations([]);
     }
   }, [open]);
+
+  // Atualiza dimenões renderizadas da imagem para o overlay
+  useEffect(() => {
+    const updateSize = () => {
+      const img = imgRef.current;
+      const container = imageContainerRef.current;
+      if (!img || !container) return;
+      const imgRect = img.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      setImageRenderSize({
+        width: imgRect.width / zoom,
+        height: imgRect.height / zoom,
+        offsetX: imgRect.left - containerRect.left,
+        offsetY: imgRect.top - containerRect.top,
+      });
+    };
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [zoom, pan, activeImageIdx, open]);
 
   // Reset zoom quando troca de imagem
   useEffect(() => {
@@ -118,9 +145,9 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
     }
   }, []);
 
-  // Pan handlers (arrastar a imagem com zoom)
+  // Pan handlers (arrastar a imagem com zoom) — desativado em drawMode
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (zoom <= 1) return;
+    if (drawMode || zoom <= 1) return;
     setIsPanning(true);
     panStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
   }, [zoom, pan]);
@@ -136,9 +163,9 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
     setIsPanning(false);
   }, []);
 
-  // Touch handlers para mobile
+  // Touch handlers para mobile — desativado em drawMode
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (zoom <= 1) return;
+    if (drawMode || zoom <= 1) return;
     const touch = e.touches[0];
     panStart.current = { x: touch.clientX, y: touch.clientY, panX: pan.x, panY: pan.y };
     setIsPanning(true);
@@ -220,6 +247,14 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
                   <Download className="h-4 w-4" />
                 </ToolbarButton>
                 <div className="w-px h-5 bg-white/20 mx-0.5" />
+                <ToolbarButton
+                  onClick={() => setDrawMode(!drawMode)}
+                  active={drawMode}
+                  title={drawMode ? "Sair do modo anotação" : "Anotar imagem"}
+                >
+                  <Pencil className="h-4 w-4" />
+                </ToolbarButton>
+                <div className="w-px h-5 bg-white/20 mx-0.5" />
                 <ToolbarButton onClick={onClose} title="Fechar">
                   <X className="h-4 w-4" />
                 </ToolbarButton>
@@ -242,15 +277,33 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
               style={{ cursor: zoom > 1 ? (isPanning ? "grabbing" : "grab") : "default" }}
             >
               {activeImage ? (
-                <img
-                  src={activeImage.url}
-                  alt={activeImage.label}
-                  draggable={false}
-                  className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out"
-                  style={{
-                    transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-                  }}
-                />
+                <div className="relative" style={{ display: "inline-block" }}>
+                  <img
+                    ref={imgRef}
+                    src={activeImage.url}
+                    alt={activeImage.label}
+                    draggable={false}
+                    className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out"
+                    style={{
+                      transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                      transformOrigin: "center center",
+                    }}
+                  />
+                  {drawMode && imageRenderSize.width > 0 && (
+                    <AnnotationOverlay
+                      imageWidth={imageRenderSize.width}
+                      imageHeight={imageRenderSize.height}
+                      imageOffsetX={imageRenderSize.offsetX}
+                      imageOffsetY={imageRenderSize.offsetY}
+                      zoom={zoom}
+                      panX={pan.x}
+                      panY={pan.y}
+                      annotations={annotations}
+                      onAnnotationsChange={setAnnotations}
+                      drawMode={drawMode}
+                    />
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center text-white/30">
                   <Camera className="h-12 w-12 mb-2" />
@@ -344,6 +397,40 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
                 <DetailRow icon={ArrowLeftRight} label="Direção" value={direction} />
               </div>
 
+              {/* Annotations summary */}
+              {annotations.length > 0 && (
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Anotações ({annotations.length})
+                    </h4>
+                    <button
+                      onClick={() => setAnnotations([])}
+                      className="text-xs text-destructive hover:underline"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {annotations.map((ann, i) => (
+                      <div key={ann.id} className="flex items-center gap-2 text-xs">
+                        <div
+                          className="h-3 w-3 rounded-sm shrink-0"
+                          style={{
+                            backgroundColor:
+                              ann.color === "red" ? "#ef4444" :
+                              ann.color === "green" ? "#22c55e" :
+                              ann.color === "blue" ? "#3b82f6" :
+                              ann.color === "yellow" ? "#eab308" : "#a855f7",
+                          }}
+                        />
+                        <span className="text-muted-foreground">{ann.label || `Anotação ${i + 1}`}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Raw payload */}
               <details className="border-t border-border pt-3">
                 <summary className="cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -361,7 +448,7 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
   );
 }
 
-function ToolbarButton({ children, onClick, disabled, title }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; title: string }) {
+function ToolbarButton({ children, onClick, disabled, active, title }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; active?: boolean; title: string }) {
   return (
     <button
       onClick={onClick}
@@ -371,7 +458,9 @@ function ToolbarButton({ children, onClick, disabled, title }: { children: React
         "flex h-7 w-7 items-center justify-center rounded-md text-white transition-all",
         disabled
           ? "opacity-40 cursor-not-allowed"
-          : "hover:bg-white/20 active:scale-90"
+          : active
+            ? "bg-white/25 active:scale-90"
+            : "hover:bg-white/20 active:scale-90"
       )}
     >
       {children}
