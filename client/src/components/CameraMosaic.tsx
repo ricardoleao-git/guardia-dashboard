@@ -1,6 +1,7 @@
 import { Camera, Maximize2, Wifi, WifiOff, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import CameraSnapshot from "@/components/CameraSnapshot";
 
 interface CameraFeed {
   id: string;
@@ -11,6 +12,7 @@ interface CameraFeed {
   location: string;
   hasAI: boolean;
   imageUrl?: string;
+  snapshotUrl?: string;
 }
 
 const mockFeeds: CameraFeed[] = [
@@ -91,13 +93,30 @@ function CameraTile({ feed, onClick }: { feed: CameraFeed; onClick: () => void }
         "ring-1 ring-border hover:ring-primary/50 transition-all duration-150"
       )}
     >
-      {/* Camera feed or placeholder */}
-      {feed.status === "online" && feed.imageUrl ? (
-        <img
-          src={feed.imageUrl}
-          alt={feed.name}
-          className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-90 transition-opacity"
-        />
+      {/* Camera feed via HTTP snapshot or placeholder */}
+      {feed.status === "online" ? (
+        <>
+          {feed.snapshotUrl ? (
+            <CameraSnapshot
+              cameraSerial={feed.serial}
+              cameraName={feed.name}
+              location={feed.location}
+              snapshotUrl={feed.snapshotUrl}
+              refreshInterval={10}
+              className="absolute inset-0 h-full w-full rounded-none border-0"
+            />
+          ) : feed.imageUrl ? (
+            <img
+              src={feed.imageUrl}
+              alt={feed.name}
+              className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-90 transition-opacity"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-card to-black">
+              <Camera className="h-6 w-6 text-white/20" />
+            </div>
+          )}
+        </>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-card to-black">
           <div className="text-center">

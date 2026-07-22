@@ -1,26 +1,73 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Dashboard from "@/pages/Dashboard";
 import DeviceManagement from "@/pages/DeviceManagement";
 import AIConfig from "@/pages/AIConfig";
 import FaceLibrary from "@/pages/FaceLibrary";
 import Playback from "@/pages/Playback";
 import VehicleManagement from "@/pages/VehicleManagement";
+import SystemConfig from "@/pages/SystemConfig";
+import Login from "@/pages/Login";
+import { Loader2 } from "lucide-react";
+
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, loading, isDemoMode } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // In demo mode, skip auth and show the dashboard directly
+  if (isDemoMode || user) {
+    return <Component />;
+  }
+
+  return <Redirect to="/login" />;
+}
 
 function Router() {
+  const { isDemoMode, user } = useAuth();
+
   return (
     <Switch>
-      <Route path={"/"} component={Dashboard} />
-      <Route path={"/devices"} component={DeviceManagement} />
-      <Route path={"/ai-config"} component={AIConfig} />
-      <Route path={"/face-library"} component={FaceLibrary} />
-      <Route path={"/playback"} component={Playback} />
-      <Route path={"/vehicles"} component={VehicleManagement} />
-      <Route path={"/404"} component={NotFound} />
+      {/* Login route — redirect to / if already authenticated */}
+      <Route path="/login">
+        {isDemoMode || user ? <Redirect to="/" /> : <Login />}
+      </Route>
+
+      {/* Protected routes */}
+      <Route path="/" >
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/devices">
+        <ProtectedRoute component={DeviceManagement} />
+      </Route>
+      <Route path="/ai-config">
+        <ProtectedRoute component={AIConfig} />
+      </Route>
+      <Route path="/face-library">
+        <ProtectedRoute component={FaceLibrary} />
+      </Route>
+      <Route path="/playback">
+        <ProtectedRoute component={Playback} />
+      </Route>
+      <Route path="/vehicles">
+        <ProtectedRoute component={VehicleManagement} />
+      </Route>
+      <Route path="/system-config">
+        <ProtectedRoute component={SystemConfig} />
+      </Route>
+
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -30,10 +77,12 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster theme="dark" />
-          <Router />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster theme="dark" />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

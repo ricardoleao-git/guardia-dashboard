@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FilterState } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogOut, User as UserIcon } from "lucide-react";
 
 interface HeaderProps {
   title: string;
@@ -127,6 +129,9 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Exportar</span>
             </Button>
+
+            {/* User info + logout */}
+            <UserMenu />
           </div>
         </div>
 
@@ -184,5 +189,60 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
         </div>
       </div>
     </header>
+  );
+}
+
+function UserMenu() {
+  const { user, signOut, isDemoMode } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+
+  if (isDemoMode) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+          D
+        </div>
+        <span className="text-xs text-primary font-medium hidden sm:inline">Demo</span>
+      </div>
+    );
+  }
+
+  const initials = user?.email?.charAt(0).toUpperCase() ?? "U";
+  const displayName = user?.email?.split("@")[0] ?? "Operador";
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowMenu(!showMenu)}
+        className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 hover:bg-accent transition-colors"
+      >
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+          {initials}
+        </div>
+        <span className="text-xs font-medium hidden sm:inline max-w-[100px] truncate">{displayName}</span>
+      </button>
+
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-border bg-popover shadow-xl z-50">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-medium truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowMenu(false);
+                signOut();
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

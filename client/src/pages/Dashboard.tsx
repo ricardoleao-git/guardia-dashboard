@@ -10,6 +10,7 @@ import CameraMosaic from "@/components/CameraMosaic";
 import Timeline24h from "@/components/Timeline24h";
 import CategoryTabs, { CategoryKey } from "@/components/CategoryTabs";
 import SmartSearch, { SmartSearchFilters, defaultSmartFilters } from "@/components/SmartSearch";
+import ExportReports from "@/components/ExportReports";
 import { useEvents, useConnectorStatus } from "@/hooks/useEvents";
 import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
@@ -244,11 +245,22 @@ export default function Dashboard() {
                 }}
                 events={events}
               />
-              <CategoryTabs
-                active={activeCategory}
-                onChange={handleCategoryChange}
-                counts={categoryCounts}
-              />
+              <div className="flex items-center justify-between gap-3">
+                <CategoryTabs
+                  active={activeCategory}
+                  onChange={handleCategoryChange}
+                  counts={categoryCounts}
+                />
+                <ExportReports
+                  events={categoryFilteredEvents}
+                  filters={{
+                    category: activeCategory !== "all" ? activeCategory : undefined,
+                    search: smartFilters.query || undefined,
+                    operator: smartFilters.operator || undefined,
+                    cameraSerial: smartFilters.cameraSerial || undefined,
+                  }}
+                />
+              </div>
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {Array.from({ length: 12 }).map((_, i) => (
