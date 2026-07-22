@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bookmark, BookmarkPlus, Trash2, Check, X, Star } from "lucide-react";
+import { Bookmark, BookmarkPlus, Trash2, Check, X, Star, Cloud, HardDrive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearchPresets, SearchPreset } from "@/hooks/useSearchPresets";
 
@@ -9,14 +9,14 @@ interface SearchPresetsProps {
 }
 
 export default function SearchPresets({ currentFilters, onLoadPreset }: SearchPresetsProps) {
-  const { presets, savePreset, deletePreset } = useSearchPresets();
+  const { presets, savePreset, deletePreset, source } = useSearchPresets();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!presetName.trim()) return;
-    const preset = savePreset(presetName.trim(), currentFilters);
+    const preset = await savePreset(presetName.trim(), currentFilters);
     setActivePresetId(preset.id);
     setPresetName("");
     setShowSaveDialog(false);
@@ -49,6 +49,11 @@ export default function SearchPresets({ currentFilters, onLoadPreset }: SearchPr
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {/* Source indicator */}
+      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mr-1" title={source === "cloud" ? "Presets sincronizados na nuvem (compartilhados com a equipe)" : "Presets salvos localmente neste navegador"}>
+        {source === "cloud" ? <Cloud className="h-3 w-3 text-primary" /> : <HardDrive className="h-3 w-3" />}
+        {source === "cloud" ? "Nuvem" : "Local"}
+      </div>
       {/* Saved presets chips */}
       {presets.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
