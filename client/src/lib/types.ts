@@ -1,0 +1,44 @@
+export interface CameraEvent {
+  id: string;
+  event_id: string;
+  camera_serial: string;
+  operator: string;
+  payload: Record<string, any>;
+  media_urls: Record<string, string> | null;
+  connector_id: string | null;
+  org_id: string | null;
+  timestamp: string;
+  created_at: string;
+}
+
+export interface ConnectorStatus {
+  online: boolean;
+  lastSync: string | null;
+  pendingEvents: number;
+  totalEvents: number;
+}
+
+export type OperatorType =
+  | "FaceReco"
+  | "AccessControl"
+  | "VehicleReco"
+  | "MotionDetection"
+  | "Alarm"
+  | "Heartbeat"
+  | string;
+
+export interface FilterState {
+  cameraSerial: string | null;
+  operator: string | null;
+  dateFrom: string | null;
+  dateTo: string | null;
+  search: string | null;
+}
+
+export interface CameraInfo {
+  serial: string;
+  model: string;
+  location: string;
+  online: boolean;
+  lastEvent: string | null;
+}

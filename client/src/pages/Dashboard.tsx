@@ -1,0 +1,250 @@
+import { useState, useMemo } from "react";
+import Sidebar from "@/components/Sidebar";
+import Header from "@/components/Header";
+import StatsBar from "@/components/StatsBar";
+import EventCard from "@/components/EventCard";
+import ImageViewer from "@/components/ImageViewer";
+import CameraGrid from "@/components/CameraGrid";
+import { useEvents, useConnectorStatus } from "@/hooks/useEvents";
+import { FilterState, CameraEvent } from "@/lib/types";
+import { mockCameras } from "@/lib/mock-data";
+import { Camera, Activity, Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
+
+const emptyFilters: FilterState = {
+  cameraSerial: null,
+  operator: null,
+  dateFrom: null,
+  dateTo: null,
+  search: null,
+};
+
+export default function Dashboard() {
+  const [activeView, setActiveView] = useState("dashboard");
+  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [selectedEvent, setSelectedEvent] = useState<CameraEvent | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  const { events, loading, refetch } = useEvents(filters);
+  const connectorStatus = useConnectorStatus();
+
+  const recentEvents = useMemo(() => events.slice(0, 24), [events]);
+
+  const handleEventClick = (event: CameraEvent) => {
+    setSelectedEvent(event);
+    setViewerOpen(true);
+  };
+
+  const handleCameraClick = (serial: string) => {
+    setFilters({ ...emptyFilters, cameraSerial: serial });
+    setActiveView("events");
+  };
+
+  const viewConfig = {
+    dashboard: { title: "Dashboard", subtitle: "Visão geral do monitoramento em tempo real" },
+    events: { title: "Eventos", subtitle: "Todos os eventos registrados pelo Connector" },
+    cameras: { title: "Câmeras", subtitle: "Dispositivos conectados ao Connector on-prem" },
+    alerts: { title: "Alertas", subtitle: "Alertas de segurança e anomalias detectadas" },
+    settings: { title: "Configurações", subtitle: "Configuração do Connector e integrações" },
+  };
+
+  const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Sidebar activeView={activeView} onNavigate={setActiveView} />
+
+      {/* Main content */}
+      <div className="ml-60">
+        <Header
+          title={currentView.title}
+          subtitle={currentView.subtitle}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onRefresh={refetch}
+          totalEvents={events.length}
+        />
+
+        <main className="p-6">
+          {activeView === "dashboard" && (
+            <div className="space-y-6">
+              {/* Stats */}
+              <StatsBar events={events} />
+
+              {/* Recent events */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display text-lg font-semibold">Eventos Recentes</h3>
+                  <button
+                    onClick={() => setActiveView("events")}
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    Ver todos →
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+                        <div className="aspect-[4/3] bg-muted" />
+                        <div className="p-3 space-y-2">
+                          <div className="h-4 bg-muted rounded w-2/3" />
+                          <div className="h-3 bg-muted rounded w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : recentEvents.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {recentEvents.map((event) => (
+                      <EventCard key={event.id} event={event} onClick={handleEventClick} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeView === "events" && (
+            <div>
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+                      <div className="aspect-[4/3] bg-muted" />
+                      <div className="p-3 space-y-2">
+                        <div className="h-4 bg-muted rounded w-2/3" />
+                        <div className="h-3 bg-muted rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : events.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {events.map((event) => (
+                    <EventCard key={event.id} event={event} onClick={handleEventClick} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeView === "cameras" && (
+            <CameraGrid cameras={mockCameras} onCameraClick={handleCameraClick} />
+          )}
+
+          {activeView === "alerts" && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 mb-4">
+                <Bell className="h-8 w-8 text-amber-500" />
+              </div>
+              <h3 className="font-display text-lg font-semibold mb-1">Nenhum alerta ativo</h3>
+              <p className="text-sm text-muted-foreground">Alertas de segurança aparecerão aqui quando detectados.</p>
+            </div>
+          )}
+
+          {activeView === "settings" && (
+            <SettingsView connectorStatus={connectorStatus} />
+          )}
+        </main>
+      </div>
+
+      <ImageViewer
+        event={selectedEvent}
+        open={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+      />
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+        <Inbox className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <h3 className="font-display text-lg font-semibold mb-1">Nenhum evento encontrado</h3>
+      <p className="text-sm text-muted-foreground">Ajuste os filtros ou aguarde novos eventos do Connector.</p>
+    </div>
+  );
+}
+
+function SettingsView({ connectorStatus }: { connectorStatus: any }) {
+  return (
+    <div className="max-w-2xl space-y-6">
+      {/* Connector status card */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
+            <ShieldCheck className="h-5 w-5 text-green-600" />
+          </div>
+          <div>
+            <h3 className="font-display text-base font-semibold">Connector On-Prem</h3>
+            <p className="text-sm text-muted-foreground">Status do serviço local</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Status</p>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse-dot" />
+              <span className="font-medium text-green-600">Online</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Última Sincronização</p>
+            <span className="font-mono-tech text-xs">há 2 min</span>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Eventos Pendentes</p>
+            <span className="font-mono-tech text-xs">{connectorStatus.pendingEvents}</span>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Total de Eventos</p>
+            <span className="font-mono-tech text-xs">{connectorStatus.totalEvents}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Supabase config card */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h3 className="font-display text-base font-semibold mb-1">Integração Supabase</h3>
+        <p className="text-sm text-muted-foreground mb-4">Configuração do banco de dados na nuvem</p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Supabase URL</label>
+            <div className="mt-1 rounded-lg border border-border bg-muted/50 px-3 py-2 font-mono-tech text-xs text-muted-foreground">
+              https://xxxxx.supabase.co
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Service Role Key</label>
+            <div className="mt-1 rounded-lg border border-border bg-muted/50 px-3 py-2 font-mono-tech text-xs text-muted-foreground">
+              ••••••••••••••••••••••••
+            </div>
+          </div>
+          <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3">
+            <p className="text-xs text-blue-700">
+              Para conectar o dashboard ao Supabase, configure as variáveis <code className="font-mono-tech">VITE_SUPABASE_URL</code> e <code className="font-mono-tech">VITE_SUPABASE_ANON_KEY</code> no arquivo de ambiente.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* About card */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h3 className="font-display text-base font-semibold mb-1">Sobre o GuardIA</h3>
+        <p className="text-sm text-muted-foreground">
+          GuardIA é uma plataforma de monitoramento de segurança inteligente que integra câmeras P6S com reconhecimento facial, controle de acesso e detecção de veículos. O Connector on-prem garante resiliência offline com sincronização automática para a nuvem.
+        </p>
+      </div>
+    </div>
+  );
+}
