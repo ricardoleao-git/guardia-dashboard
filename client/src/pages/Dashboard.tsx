@@ -6,12 +6,14 @@ import StatsBar from "@/components/StatsBar";
 import EventCard from "@/components/EventCard";
 import ImageViewer from "@/components/ImageViewer";
 import CameraGrid from "@/components/CameraGrid";
+import CameraMosaic from "@/components/CameraMosaic";
+import Timeline24h from "@/components/Timeline24h";
 import CategoryTabs, { CategoryKey } from "@/components/CategoryTabs";
 import { useEvents, useConnectorStatus } from "@/hooks/useEvents";
 import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
-import { Camera, Activity, Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
+import { Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -45,7 +47,6 @@ export default function Dashboard() {
   const { events, loading, refetch } = useEvents(filters);
   const connectorStatus = useConnectorStatus();
 
-  // Conta eventos por categoria para os badges nas tabs
   const categoryCounts = useMemo(() => {
     const counts: Record<CategoryKey, number> = {
       all: events.length,
@@ -63,7 +64,6 @@ export default function Dashboard() {
     return counts;
   }, [events]);
 
-  // Filtra eventos pela categoria ativa
   const categoryFilteredEvents = useMemo(() => {
     if (activeCategory === "all") return events;
     return events.filter((e) => e.operator === activeCategory);
@@ -76,7 +76,6 @@ export default function Dashboard() {
     setViewerOpen(true);
   };
 
-  // Monitora novos eventos e dispara toasts para eventos críticos
   useEventAlerts(events, handleEventClick);
 
   const handleCameraClick = (serial: string) => {
@@ -87,7 +86,6 @@ export default function Dashboard() {
 
   const handleCategoryChange = (category: CategoryKey) => {
     setActiveCategory(category);
-    // Também atualiza o filtro de operador no Header para manter sincronizado
     if (category === "all") {
       setFilters((prev) => ({ ...prev, operator: null }));
     } else {
@@ -98,7 +96,7 @@ export default function Dashboard() {
   const viewConfig = {
     dashboard: { title: "Dashboard", subtitle: "Visão geral do monitoramento em tempo real" },
     events: { title: "Eventos", subtitle: "Todos os eventos registrados pelo Connector" },
-    cameras: { title: "Câmeras", subtitle: "Dispositivos conectados ao Connector on-prem" },
+    cameras: { title: "Câmeras", subtitle: "Mosaico de câmeras ao vivo e dispositivos conectados" },
     alerts: { title: "Alertas", subtitle: "Alertas de segurança e anomalias detectadas" },
     settings: { title: "Configurações", subtitle: "Configuração do Connector e integrações" },
   };
@@ -114,8 +112,7 @@ export default function Dashboard() {
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main content */}
-      <div className="lg:ml-64">
+      <div className="lg:ml-60">
         <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
         <Header
           title={currentView.title}
@@ -128,9 +125,23 @@ export default function Dashboard() {
 
         <main className="p-6">
           {activeView === "dashboard" && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Stats */}
               <StatsBar events={events} />
+
+              {/* Camera mosaic + Timeline */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <div className="xl:col-span-2">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="font-display text-sm font-semibold">Mosaico de Câmeras</h3>
+                    <button onClick={() => setActiveView("cameras")} className="text-xs text-primary hover:underline font-medium">Ver todas →</button>
+                  </div>
+                  <CameraMosaic onCameraClick={handleCameraClick} />
+                </div>
+                <div>
+                  <Timeline24h events={events} />
+                </div>
+              </div>
 
               {/* Category tabs */}
               <CategoryTabs
@@ -141,14 +152,11 @@ export default function Dashboard() {
 
               {/* Recent events */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-lg font-semibold">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-display text-sm font-semibold">
                     {activeCategory === "all" ? "Eventos Recentes" : `${getCategoryLabel(activeCategory)} — Eventos`}
                   </h3>
-                  <button
-                    onClick={() => setActiveView("events")}
-                    className="text-sm text-primary hover:underline font-medium"
-                  >
+                  <button onClick={() => setActiveView("events")} className="text-xs text-primary hover:underline font-medium">
                     Ver todos →
                   </button>
                 </div>
@@ -156,7 +164,7 @@ export default function Dashboard() {
                 {loading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+                      <div key={i} className="rounded-lg border border-border bg-card overflow-hidden animate-pulse">
                         <div className="aspect-[4/3] bg-muted" />
                         <div className="p-3 space-y-2">
                           <div className="h-4 bg-muted rounded w-2/3" />
@@ -180,17 +188,15 @@ export default function Dashboard() {
 
           {activeView === "events" && (
             <div className="space-y-4">
-              {/* Category tabs */}
               <CategoryTabs
                 active={activeCategory}
                 onChange={handleCategoryChange}
                 counts={categoryCounts}
               />
-
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+                    <div key={i} className="rounded-lg border border-border bg-card overflow-hidden animate-pulse">
                       <div className="aspect-[4/3] bg-muted" />
                       <div className="p-3 space-y-2">
                         <div className="h-4 bg-muted rounded w-2/3" />
@@ -212,15 +218,21 @@ export default function Dashboard() {
           )}
 
           {activeView === "cameras" && (
-            <CameraGrid cameras={mockCameras} onCameraClick={handleCameraClick} />
+            <div className="space-y-4">
+              <CameraMosaic onCameraClick={handleCameraClick} />
+              <div className="pt-4">
+                <h3 className="font-display text-sm font-semibold mb-3">Lista de Dispositivos</h3>
+                <CameraGrid cameras={mockCameras} onCameraClick={handleCameraClick} />
+              </div>
+            </div>
           )}
 
           {activeView === "alerts" && (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 mb-4">
-                <Bell className="h-8 w-8 text-amber-500" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 mb-4">
+                <Bell className="h-8 w-8 text-amber-400" />
               </div>
-              <h3 className="font-display text-lg font-semibold mb-1">Nenhum alerta ativo</h3>
+              <h3 className="font-display text-base font-semibold mb-1">Nenhum alerta ativo</h3>
               <p className="text-sm text-muted-foreground">Alertas de segurança aparecerão aqui quando detectados.</p>
             </div>
           )}
@@ -246,7 +258,7 @@ function EmptyState() {
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
         <Inbox className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="font-display text-lg font-semibold mb-1">Nenhum evento encontrado</h3>
+      <h3 className="font-display text-base font-semibold mb-1">Nenhum evento encontrado</h3>
       <p className="text-sm text-muted-foreground">Ajuste os filtros ou aguarde novos eventos do Connector.</p>
     </div>
   );
@@ -255,24 +267,22 @@ function EmptyState() {
 function SettingsView({ connectorStatus }: { connectorStatus: any }) {
   return (
     <div className="max-w-2xl space-y-6">
-      {/* Connector status card */}
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-            <ShieldCheck className="h-5 w-5 text-green-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/15">
+            <ShieldCheck className="h-5 w-5 text-green-400" />
           </div>
           <div>
             <h3 className="font-display text-base font-semibold">Connector On-Prem</h3>
             <p className="text-sm text-muted-foreground">Status do serviço local</p>
           </div>
         </div>
-
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Status</p>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse-dot" />
-              <span className="font-medium text-green-600">Online</span>
+              <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse-dot" />
+              <span className="font-medium text-green-400">Online</span>
             </div>
           </div>
           <div>
@@ -290,11 +300,9 @@ function SettingsView({ connectorStatus }: { connectorStatus: any }) {
         </div>
       </div>
 
-      {/* Supabase config card */}
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <h3 className="font-display text-base font-semibold mb-1">Integração Supabase</h3>
         <p className="text-sm text-muted-foreground mb-4">Configuração do banco de dados na nuvem</p>
-
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground">Supabase URL</label>
@@ -308,16 +316,15 @@ function SettingsView({ connectorStatus }: { connectorStatus: any }) {
               ••••••••••••••••••••••••
             </div>
           </div>
-          <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3">
-            <p className="text-xs text-blue-700">
+          <div className="rounded-lg bg-primary/10 border border-primary/20 px-4 py-3">
+            <p className="text-xs text-primary">
               Para conectar o dashboard ao Supabase, configure as variáveis <code className="font-mono-tech">VITE_SUPABASE_URL</code> e <code className="font-mono-tech">VITE_SUPABASE_ANON_KEY</code> no arquivo de ambiente.
             </p>
           </div>
         </div>
       </div>
 
-      {/* About card */}
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <h3 className="font-display text-base font-semibold mb-1">Sobre o GuardIA</h3>
         <p className="text-sm text-muted-foreground">
           GuardIA é uma plataforma de monitoramento de segurança inteligente que integra câmeras P6S com reconhecimento facial, controle de acesso e detecção de veículos. O Connector on-prem garante resiliência offline com sincronização automática para a nuvem.
