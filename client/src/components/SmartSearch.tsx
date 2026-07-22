@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CameraEvent } from "@/lib/types";
+import SearchPresets from "@/components/SearchPresets";
 
 export interface SmartSearchFilters {
   query: string;
@@ -148,6 +149,18 @@ export default function SmartSearch({ filters, onFiltersChange, events, onResult
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
+      {/* Presets bar */}
+      <div className="flex items-center gap-2 px-3 pt-3 pb-0">
+        <SearchPresets
+          currentFilters={filters}
+          onLoadPreset={(loaded) => {
+            onFiltersChange(loaded as SmartSearchFilters);
+            setLocalQuery(loaded.query || "");
+            setShowResults(true);
+          }}
+        />
+      </div>
+
       {/* Main search bar */}
       <div className="flex items-center gap-2 p-3">
         <div className="relative flex-1">
