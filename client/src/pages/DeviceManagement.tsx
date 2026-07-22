@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
-import { HardDrive, Wifi, WifiOff, Edit2, Search, Settings2, Plus, RefreshCw, AlertTriangle, ChevronDown } from "lucide-react";
+import { HardDrive, Wifi, WifiOff, Edit2, Search, Settings2, Plus, RefreshCw, AlertTriangle, ChevronDown, X, Network } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Device {
@@ -27,8 +27,30 @@ const mockDevices: Device[] = [
 
 export default function DeviceManagement() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [devices] = useState(mockDevices);
+  const [devices, setDevices] = useState(mockDevices);
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formData, setFormData] = useState({
+    ip: "", protocol: "P6S", channel: "", httpPort: "80", cmdPort: "6060", videoPort: "6066", user: "admin", password: "",
+  });
+
+  const handleAddDevice = () => {
+    if (!formData.ip || !formData.channel) return;
+    const newDevice: Device = {
+      channel: formData.channel,
+      status: "offline",
+      ip: formData.ip,
+      name: `Canal ${formData.channel}`,
+      protocol: formData.protocol,
+      type: "Manual",
+      firmware: "—",
+      mac: "—",
+      bandwidth: "—",
+    };
+    setDevices([...devices, newDevice]);
+    setShowAddModal(false);
+    setFormData({ ip: "", protocol: "P6S", channel: "", httpPort: "80", cmdPort: "6060", videoPort: "6066", user: "admin", password: "" });
+  };
 
   const totalOnline = devices.filter(d => d.status === "online").length;
   const totalBandwidth = devices.filter(d => d.status === "online").reduce((acc, d) => {
@@ -60,8 +82,11 @@ export default function DeviceManagement() {
               <p className="text-xs text-muted-foreground">Câmeras IP conectadas ao NVR</p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                <Plus className="h-3.5 w-3.5" /> Adicionar
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" /> Adicionar Canal IP
               </button>
               <button className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
                 <RefreshCw className="h-3.5 w-3.5" /> Atualizar
@@ -183,6 +208,150 @@ export default function DeviceManagement() {
           )}
         </main>
       </div>
+
+      {/* Add Channel IP Modal */}
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-border bg-card shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+                  <Network className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">Adicionar Canal IP Personalizado</h3>
+                  <p className="text-[10px] text-muted-foreground">Configure uma nova câmera IP no NVR</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="rounded p-1 hover:bg-accent transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="space-y-3.5 px-5 py-4">
+              {/* IP + Protocol */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Endereço IP</label>
+                  <input
+                    type="text"
+                    value={formData.ip}
+                    onChange={(e) => setFormData({ ...formData, ip: e.target.value })}
+                    placeholder="192.168.254.xxx"
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Protocolo</label>
+                  <select
+                    value={formData.protocol}
+                    onChange={(e) => setFormData({ ...formData, protocol: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="P6S">P6S</option>
+                    <option value="ONVIF">ONVIF</option>
+                    <option value="RTSP">RTSP</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Channel */}
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Canal</label>
+                <input
+                  type="text"
+                  value={formData.channel}
+                  onChange={(e) => setFormData({ ...formData, channel: e.target.value.toUpperCase() })}
+                  placeholder="D7"
+                  className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Ports */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Porta HTTP</label>
+                  <input
+                    type="text"
+                    value={formData.httpPort}
+                    onChange={(e) => setFormData({ ...formData, httpPort: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Comando</label>
+                  <input
+                    type="text"
+                    value={formData.cmdPort}
+                    onChange={(e) => setFormData({ ...formData, cmdPort: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Vídeo</label>
+                  <input
+                    type="text"
+                    value={formData.videoPort}
+                    onChange={(e) => setFormData({ ...formData, videoPort: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* User + Password */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Usuário</label>
+                  <input
+                    type="text"
+                    value={formData.user}
+                    onChange={(e) => setFormData({ ...formData, user: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Senha</label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••"
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs font-mono-tech focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3.5">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="rounded-md bg-muted px-4 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddDevice}
+                disabled={!formData.ip || !formData.channel}
+                className="rounded-md bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Adicionar Canal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,8 @@ import Dashboard from "@/pages/Dashboard";
 import DeviceManagement from "@/pages/DeviceManagement";
 import AIConfig from "@/pages/AIConfig";
 import FaceLibrary from "@/pages/FaceLibrary";
+import Playback from "@/pages/Playback";
+import VehicleManagement from "@/pages/VehicleManagement";
 
 function Router() {
   return (
@@ -16,6 +18,8 @@ function Router() {
       <Route path={"/devices"} component={DeviceManagement} />
       <Route path={"/ai-config"} component={AIConfig} />
       <Route path={"/face-library"} component={FaceLibrary} />
+      <Route path={"/playback"} component={Playback} />
+      <Route path={"/vehicles"} component={VehicleManagement} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

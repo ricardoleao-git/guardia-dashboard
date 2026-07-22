@@ -1,4 +1,4 @@
-import { ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database, X, Cpu, Users, HardDrive } from "lucide-react";
+import { ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database, X, Cpu, Users, HardDrive, Play, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -15,6 +15,7 @@ const navSections = [
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
       { id: "events", label: "Eventos", icon: Activity },
+      { id: "playback", label: "Playback", icon: Play },
       { id: "cameras", label: "Câmeras", icon: Camera },
       { id: "alerts", label: "Alertas", icon: Bell },
     ],
@@ -25,6 +26,7 @@ const navSections = [
       { id: "devices", label: "Dispositivos", icon: HardDrive },
       { id: "ai-config", label: "Funções AI", icon: Cpu },
       { id: "face-library", label: "Bib. de Rostos", icon: Users },
+      { id: "vehicles", label: "Bib. de Veículos", icon: Car },
       { id: "settings", label: "Configurações", icon: Settings },
     ],
   },

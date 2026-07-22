@@ -15,6 +15,8 @@ import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
 import { Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
+import Playback from "@/pages/Playback";
+import VehicleManagement from "@/pages/VehicleManagement";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -140,6 +142,8 @@ export default function Dashboard() {
     events: { title: "Eventos", subtitle: "Todos os eventos registrados pelo Connector" },
     cameras: { title: "Câmeras", subtitle: "Mosaico de câmeras ao vivo e dispositivos conectados" },
     alerts: { title: "Alertas", subtitle: "Alertas de segurança e anomalias detectadas" },
+    playback: { title: "Playback", subtitle: "Reprodução de gravações por canal e data" },
+    vehicles: { title: "Biblioteca de Veículos", subtitle: "Veículos cadastrados para reconhecimento de placas" },
     settings: { title: "Configurações", subtitle: "Configuração do Connector e integrações" },
   };
 
@@ -275,6 +279,14 @@ export default function Dashboard() {
                 <CameraGrid cameras={mockCameras} onCameraClick={handleCameraClick} />
               </div>
             </div>
+          )}
+
+          {activeView === "playback" && (
+            <Playback />
+          )}
+
+          {activeView === "vehicles" && (
+            <VehicleManagement />
           )}
 
           {activeView === "alerts" && (
