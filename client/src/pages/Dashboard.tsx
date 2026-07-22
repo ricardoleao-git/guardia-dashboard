@@ -9,6 +9,7 @@ import CameraGrid from "@/components/CameraGrid";
 import CameraMosaic from "@/components/CameraMosaic";
 import Timeline24h from "@/components/Timeline24h";
 import CategoryTabs, { CategoryKey } from "@/components/CategoryTabs";
+import SmartSearch, { SmartSearchFilters, defaultSmartFilters } from "@/components/SmartSearch";
 import { useEvents, useConnectorStatus } from "@/hooks/useEvents";
 import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
@@ -43,6 +44,8 @@ export default function Dashboard() {
   const [selectedEvent, setSelectedEvent] = useState<CameraEvent | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [smartFilters, setSmartFilters] = useState<SmartSearchFilters>(defaultSmartFilters);
+  const [smartSearchActive, setSmartSearchActive] = useState(false);
 
   const { events, loading, refetch } = useEvents(filters);
   const connectorStatus = useConnectorStatus();
@@ -64,10 +67,49 @@ export default function Dashboard() {
     return counts;
   }, [events]);
 
+  const smartFilteredEvents = useMemo(() => {
+    if (!smartSearchActive) return events;
+    return events.filter((e) => {
+      // Text query
+      if (smartFilters.query) {
+        const q = smartFilters.query.toLowerCase();
+        const name = e.payload?.data?.name?.toLowerCase() || "";
+        const plate = e.payload?.data?.plate?.toLowerCase() || "";
+        const eventId = e.event_id.toLowerCase();
+        const serial = e.camera_serial.toLowerCase();
+        if (!name.includes(q) && !plate.includes(q) && !eventId.includes(q) && !serial.includes(q)) return false;
+      }
+      if (smartFilters.personName) {
+        const name = e.payload?.data?.name?.toLowerCase() || "";
+        if (!name.includes(smartFilters.personName.toLowerCase())) return false;
+      }
+      if (smartFilters.plate) {
+        const plate = e.payload?.data?.plate?.toLowerCase() || "";
+        if (!plate.includes(smartFilters.plate.toLowerCase())) return false;
+      }
+      if (smartFilters.operator && e.operator !== smartFilters.operator) return false;
+      if (smartFilters.direction !== "all") {
+        const dir = e.payload?.data?.direction || "";
+        if (dir !== smartFilters.direction) return false;
+      }
+      const score = e.payload?.data?.matchScore ?? 0;
+      if (score < smartFilters.scoreMin || score > smartFilters.scoreMax) return false;
+      if (smartFilters.timeRange !== "all") {
+        const eventTime = new Date(e.timestamp).getTime();
+        const now = Date.now();
+        const ranges: Record<string, number> = { "1h": 3600000, "6h": 21600000, "24h": 86400000, "7d": 604800000 };
+        if (now - eventTime > ranges[smartFilters.timeRange]) return false;
+      }
+      if (smartFilters.cameraSerial && e.camera_serial !== smartFilters.cameraSerial) return false;
+      return true;
+    });
+  }, [events, smartFilters, smartSearchActive]);
+
   const categoryFilteredEvents = useMemo(() => {
-    if (activeCategory === "all") return events;
-    return events.filter((e) => e.operator === activeCategory);
-  }, [events, activeCategory]);
+    const base = smartSearchActive ? smartFilteredEvents : events;
+    if (activeCategory === "all") return base;
+    return base.filter((e) => e.operator === activeCategory);
+  }, [events, smartFilteredEvents, activeCategory, smartSearchActive]);
 
   const recentEvents = useMemo(() => categoryFilteredEvents.slice(0, 24), [categoryFilteredEvents]);
 
@@ -188,6 +230,14 @@ export default function Dashboard() {
 
           {activeView === "events" && (
             <div className="space-y-4">
+              <SmartSearch
+                filters={smartFilters}
+                onFiltersChange={(f) => {
+                  setSmartFilters(f);
+                  setSmartSearchActive(true);
+                }}
+                events={events}
+              />
               <CategoryTabs
                 active={activeCategory}
                 onChange={handleCategoryChange}
