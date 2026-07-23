@@ -52,7 +52,32 @@ export async function fetchEventsFromSupabase(filters: {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data;
+  // Map DB columns to CameraEvent shape expected by the UI
+  return (data || []).map((row: any) => ({
+    id: row.event_id,
+    event_id: row.event_id,
+    camera_serial: row.camera_serial,
+    operator: row.event_type || "FaceReco",
+    payload: {
+      data: {
+        name: row.person_name,
+        score: row.face_score,
+        faceList: row.face_list,
+        cameraName: row.camera_name,
+        recognizeImage: row.recognize_image,
+        captureImage: row.capture_image,
+      },
+      attributes: row.attributes || {},
+    },
+    media_urls: row.recognize_image
+      ? { recognize: row.recognize_image, capture: row.capture_image }
+      : null,
+    annotations: row.annotations || null,
+    connector_id: "connector-bancada-01",
+    org_id: "zenite-tech",
+    timestamp: row.event_time || row.created_at,
+    created_at: row.created_at,
+  }));
 }
 
 // Função para buscar status do connector
@@ -104,7 +129,31 @@ export function subscribeToNewEvents(callback: (event: any) => void) {
     "postgres_changes" as any,
     { event: "INSERT", table: "camera_events" } as any,
     (payload: any) => {
-      callback(payload.new);
+      const row = payload.new;
+      const mapped = {
+        id: row.event_id,
+        event_id: row.event_id,
+        camera_serial: row.camera_serial,
+        operator: row.event_type || "FaceReco",
+        payload: {
+          data: {
+            name: row.person_name,
+            score: row.face_score,
+            faceList: row.face_list,
+            cameraName: row.camera_name,
+          },
+          attributes: row.attributes || {},
+        },
+        media_urls: row.recognize_image
+          ? { recognize: row.recognize_image, capture: row.capture_image }
+          : null,
+        annotations: row.annotations || null,
+        connector_id: "connector-bancada-01",
+        org_id: "zenite-tech",
+        timestamp: row.event_time || row.created_at,
+        created_at: row.created_at,
+      };
+      callback(mapped);
     }
   );
   channel.subscribe();
