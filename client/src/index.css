@@ -306,3 +306,87 @@
     );
   }
 }
+
+/* ===== Flow Builder Connectors & Snap-to-Grid ===== */
+.flow-connector {
+  position: relative;
+  width: 28px;
+  height: 2px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  animation: flow-pulse 2s ease-in-out infinite;
+}
+
+.flow-connector::before,
+.flow-connector::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.flow-connector::before {
+  left: 0;
+  background: var(--border);
+}
+
+.flow-connector::after {
+  right: 0;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+  animation: flow-dot-move 2s ease-in-out infinite;
+}
+
+@keyframes flow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes flow-dot-move {
+  0% { right: 0; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { right: calc(100% - 5px); opacity: 0; }
+}
+
+.flow-snap-grid {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.flow-block-snap {
+  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.15s ease-out;
+}
+
+.flow-block-snap.dragging {
+  transform: scale(1.05) rotate(-1deg);
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.flow-block-snap.snap-over {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px var(--primary), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.palette-draggable {
+  cursor: grab;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.palette-draggable:active {
+  cursor: grabbing;
+}
+
+.palette-draggable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.palette-draggable.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}

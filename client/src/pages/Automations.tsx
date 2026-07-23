@@ -284,6 +284,11 @@ export default function Automations() {
   const [dragOverTrash, setDragOverTrash] = useState(false);
   const dragCounter = useRef(0);
 
+  // Palette drag state (drag from palette to canvas)
+  const [paletteDragType, setPaletteDragType] = useState<string | null>(null); // "trigger" | "condition" | "action"
+  const [paletteDragId, setPaletteDragId] = useState<string | null>(null);
+  const [canvasDragOver, setCanvasDragOver] = useState(false);
+
   const toggleAutomation = (id: string) => {
     setAutomations(automations.map(a => a.id === id ? { ...a, ativa: !a.ativa } : a));
   };
@@ -453,6 +458,49 @@ export default function Automations() {
     }
     handleDragEnd();
   }, [draggedUid, flowItems, handleDragEnd]);
+
+  // ===== Palette drag handlers (palette → canvas) =====
+  const handlePaletteDragStart = useCallback((e: React.DragEvent, type: string, optionId: string) => {
+    setPaletteDragType(type);
+    setPaletteDragId(optionId);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.setData("text/plain", `palette:${type}:${optionId}`);
+  }, []);
+
+  const handlePaletteDragEnd = useCallback(() => {
+    setPaletteDragType(null);
+    setPaletteDragId(null);
+    setIsDragging(false);
+    setCanvasDragOver(false);
+  }, []);
+
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    // Only show canvas highlight if dragging from palette
+    if (paletteDragType) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      setCanvasDragOver(true);
+    }
+  }, [paletteDragType]);
+
+  const handleCanvasDragLeave = useCallback(() => {
+    setCanvasDragOver(false);
+  }, []);
+
+  const handleCanvasDrop = useCallback((e: React.DragEvent) => {
+    if (!paletteDragType || !paletteDragId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (paletteDragType === "trigger") {
+      addTrigger(paletteDragId);
+    } else if (paletteDragType === "condition") {
+      addCondition(paletteDragId);
+    } else if (paletteDragType === "action") {
+      addAction(paletteDragId);
+    }
+    handlePaletteDragEnd();
+  }, [paletteDragType, paletteDragId, addTrigger, addCondition, addAction, handlePaletteDragEnd]);
 
   // ===== Save =====
   const triggerItem = flowItems.find(i => i.type === "trigger");
@@ -858,22 +906,31 @@ export default function Automations() {
                         <span className="text-[11px] text-muted-foreground">— Arraste para reordenar. Arraste para a lixeira para remover.</span>
                       </div>
 
-                      {/* Flow canvas */}
+                      {/* Flow canvas with snap-grid and palette drop target */}
                       <div
+                        onDragOver={handleCanvasDragOver}
+                        onDragLeave={handleCanvasDragLeave}
+                        onDrop={handleCanvasDrop}
                         className={cn(
-                          "min-h-[80px] rounded-xl border-2 border-dashed p-4 transition-colors",
-                          isDragging ? "border-primary/50 bg-primary/5" : "border-border bg-background"
+                          "min-h-[80px] rounded-xl border-2 border-dashed p-4 transition-all flow-snap-grid",
+                          canvasDragOver
+                            ? "border-primary/60 bg-primary/10 scale-[1.01]"
+                            : isDragging
+                              ? "border-primary/50 bg-primary/5"
+                              : "border-border bg-background"
                         )}
                       >
                         {flowItems.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-8 text-center">
-                            <Layers className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                            <Layers className={cn("h-8 w-8 mb-2 transition-colors", canvasDragOver ? "text-primary/60" : "text-muted-foreground/30")} />
                             <p className="text-xs text-muted-foreground">
-                              Selecione um gatilho, condições e ações abaixo para montar o fluxo
+                              {canvasDragOver
+                                ? "Solte aqui para adicionar ao fluxo"
+                                : "Arraste um gatilho, condições e ações abaixo para montar o fluxo"}
                             </p>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-0 flex-wrap">
                             {flowItems.map((item, idx) => {
                               const Icon = item.icon;
                               const isDragged = draggedUid === item.uid;
@@ -882,16 +939,16 @@ export default function Automations() {
                               const typeColor = item.type === "trigger" ? "text-amber-400/60" : item.type === "condition" ? "text-blue-400/60" : "text-purple-400/60";
 
                               return (
-                                <div key={item.uid} className="flex items-center gap-2">
-                                  {/* Arrow between items */}
+                                <div key={item.uid} className="flex items-center gap-0">
+                                  {/* Animated connector between items */}
                                   {idx > 0 && (
-                                    <ArrowRight className={cn(
-                                      "h-4 w-4 shrink-0",
-                                      isDragged ? "text-primary/40" : "text-muted-foreground/40"
+                                    <div className={cn(
+                                      "flow-connector",
+                                      isDragged && "opacity-30"
                                     )} />
                                   )}
 
-                                  {/* Draggable flow block */}
+                                  {/* Draggable flow block with snap */}
                                   <div
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, item.uid)}
@@ -899,10 +956,10 @@ export default function Automations() {
                                     onDragOver={(e) => handleDragOver(e, item.uid)}
                                     onDrop={(e) => handleDrop(e, item.uid)}
                                     className={cn(
-                                      "group relative flex items-center gap-2 rounded-lg border px-3 py-2 cursor-grab active:cursor-grabbing transition-all",
+                                      "flow-block-snap group relative flex items-center gap-2 rounded-lg border px-3 py-2 cursor-grab active:cursor-grabbing",
                                       item.bg,
-                                      isDragged && "opacity-40 scale-95",
-                                      isDragOver && "ring-2 ring-primary/50 scale-105",
+                                      isDragged && "dragging opacity-40",
+                                      isDragOver && "snap-over ring-2 ring-primary/50",
                                       !isDragged && !isDragOver && "hover:shadow-md"
                                     )}
                                   >
@@ -955,7 +1012,7 @@ export default function Automations() {
                                 onDragLeave={() => setDragOverTrash(false)}
                                 onDrop={handleDropToTrash}
                                 className={cn(
-                                  "flex items-center gap-1.5 rounded-lg border-2 border-dashed px-3 py-2 transition-all ml-auto",
+                                  "flex items-center gap-1.5 rounded-lg border-2 border-dashed px-3 py-2 transition-all ml-2",
                                   dragOverTrash
                                     ? "border-destructive bg-destructive/10 scale-105"
                                     : "border-destructive/30 bg-destructive/5"
@@ -999,18 +1056,23 @@ export default function Automations() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-400">1</div>
                       <h4 className="text-sm font-semibold">Gatilho</h4>
-                      <span className="text-[11px] text-muted-foreground">— Clique para adicionar ao fluxo</span>
+                      <span className="text-[11px] text-muted-foreground">— Arraste para o fluxo ou clique para adicionar</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {triggerOptions.map((t) => {
                         const Icon = t.icon;
                         const isSelected = isInFlow("trigger", t.id);
+                        const isPaletteDrag = paletteDragType === "trigger" && paletteDragId === t.id;
                         return (
                           <button
                             key={t.id}
                             onClick={() => addTrigger(t.id)}
+                            draggable
+                            onDragStart={(e) => handlePaletteDragStart(e, "trigger", t.id)}
+                            onDragEnd={handlePaletteDragEnd}
                             className={cn(
-                              "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all",
+                              "palette-draggable flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all",
+                              isPaletteDrag && "dragging",
                               isSelected
                                 ? cn("border-2 ring-1 ring-current", t.bg)
                                 : "border-border bg-background hover:border-primary/30"
@@ -1033,18 +1095,23 @@ export default function Automations() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/15 text-[10px] font-bold text-blue-400">2</div>
                       <h4 className="text-sm font-semibold">Condições</h4>
-                      <span className="text-[11px] text-muted-foreground">— Clique para adicionar/remover do fluxo</span>
+                      <span className="text-[11px] text-muted-foreground">— Arraste para o fluxo ou clique para adicionar/remover</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {conditionOptions.map((c) => {
                         const Icon = c.icon;
                         const isSelected = isInFlow("condition", c.id);
+                        const isPaletteDrag = paletteDragType === "condition" && paletteDragId === c.id;
                         return (
                           <button
                             key={c.id}
                             onClick={() => addCondition(c.id)}
+                            draggable
+                            onDragStart={(e) => handlePaletteDragStart(e, "condition", c.id)}
+                            onDragEnd={handlePaletteDragEnd}
                             className={cn(
-                              "flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all",
+                              "palette-draggable flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all",
+                              isPaletteDrag && "dragging",
                               isSelected
                                 ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                                 : "border-border bg-background hover:border-primary/30"
@@ -1067,18 +1134,23 @@ export default function Automations() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-400">3</div>
                       <h4 className="text-sm font-semibold">Ações</h4>
-                      <span className="text-[11px] text-muted-foreground">— Clique para adicionar/remover do fluxo</span>
+                      <span className="text-[11px] text-muted-foreground">— Arraste para o fluxo ou clique para adicionar/remover</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                       {actionOptions.map((a) => {
                         const Icon = a.icon;
                         const isSelected = isInFlow("action", a.id);
+                        const isPaletteDrag = paletteDragType === "action" && paletteDragId === a.id;
                         return (
                           <button
                             key={a.id}
                             onClick={() => addAction(a.id)}
+                            draggable
+                            onDragStart={(e) => handlePaletteDragStart(e, "action", a.id)}
+                            onDragEnd={handlePaletteDragEnd}
                             className={cn(
-                              "flex flex-col items-center gap-1.5 rounded-lg border p-3 transition-all",
+                              "palette-draggable flex flex-col items-center gap-1.5 rounded-lg border p-3 transition-all",
+                              isPaletteDrag && "dragging",
                               isSelected
                                 ? cn("border-2 ring-1 ring-current", a.bg)
                                 : "border-border bg-background hover:border-primary/30"
