@@ -1,3 +1,7 @@
+/**
+ * Sidebar — Navegação lateral com 5 categorias.
+ * Labels internacionalizadas via useI18n (PT/EN/ZH).
+ */
 import {
   ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database,
   X, Cpu, Users, HardDrive, Play, Car, Server, ScrollText, UserCog,
@@ -5,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SidebarProps {
   activeView: string;
@@ -13,57 +18,60 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
+// Keys for i18n lookup
 const navSections = [
   {
-    title: "Operação",
+    titleKey: "nav.operacao",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
-      { id: "events", label: "Eventos", icon: Activity },
-      { id: "cameras", label: "Câmeras", icon: Camera },
-      { id: "playback", label: "Playback", icon: Play },
-      { id: "alerts", label: "Alertas", icon: Bell },
+      { id: "dashboard", labelKey: "nav.dashboard", icon: LayoutGrid },
+      { id: "events", labelKey: "nav.events", icon: Activity },
+      { id: "cameras", labelKey: "nav.cameras", icon: Camera },
+      { id: "playback", labelKey: "nav.playback", icon: Play },
+      { id: "alerts", labelKey: "nav.alerts", icon: Bell },
     ],
   },
   {
-    title: "Inteligência",
+    titleKey: "nav.inteligencia",
     items: [
-      { id: "automations", label: "Automações", icon: Zap },
-      { id: "ai-config", label: "Funções AI", icon: Cpu },
-      { id: "semantic-search", label: "Busca Semântica", icon: Search },
-      { id: "ai-summary", label: "Resumo IA", icon: FileText },
+      { id: "automations", labelKey: "nav.automations", icon: Zap },
+      { id: "ai-config", labelKey: "nav.ai-config", icon: Cpu },
+      { id: "semantic-search", labelKey: "nav.semantic-search", icon: Search },
+      { id: "ai-summary", labelKey: "nav.ai-summary", icon: FileText },
     ],
   },
   {
-    title: "Pessoas & Acesso",
+    titleKey: "nav.pessoas-acesso",
     items: [
-      { id: "frequencia", label: "Frequência", icon: CalendarCheck },
-      { id: "person-timeline", label: "Timeline Pessoa", icon: ScanFace },
-      { id: "visitor-invite", label: "Convite Visitante", icon: UserPlus },
-      { id: "vehicle-access", label: "Clausura Veicular", icon: Car },
-      { id: "elevator", label: "Elevador", icon: Building },
+      { id: "frequencia", labelKey: "nav.frequencia", icon: CalendarCheck },
+      { id: "person-timeline", labelKey: "nav.person-timeline", icon: ScanFace },
+      { id: "visitor-invite", labelKey: "nav.visitor-invite", icon: UserPlus },
+      { id: "vehicle-access", labelKey: "nav.vehicle-access", icon: Car },
+      { id: "elevator", labelKey: "nav.elevator", icon: Building },
     ],
   },
   {
-    title: "Gestão",
+    titleKey: "nav.gestao",
     items: [
-      { id: "devices", label: "Dispositivos", icon: HardDrive },
-      { id: "ai-box", label: "AI Box", icon: Boxes },
-      { id: "face-library", label: "Bib. de Rostos", icon: Users },
-      { id: "vehicles", label: "Bib. de Veículos", icon: Car },
-      { id: "system-config", label: "Config. Sistema", icon: Server },
+      { id: "devices", labelKey: "nav.devices", icon: HardDrive },
+      { id: "ai-box", labelKey: "nav.ai-box", icon: Boxes },
+      { id: "face-library", labelKey: "nav.face-library", icon: Users },
+      { id: "vehicles", labelKey: "nav.vehicles", icon: Car },
+      { id: "system-config", labelKey: "nav.system-config", icon: Server },
     ],
   },
   {
-    title: "Administração",
+    titleKey: "nav.administracao",
     items: [
-      { id: "user-admin", label: "Operadores", icon: UserCog },
-      { id: "audit-log", label: "Auditoria", icon: ScrollText },
-      { id: "settings", label: "Config. GuardIA", icon: Settings },
+      { id: "user-admin", labelKey: "nav.user-admin", icon: UserCog },
+      { id: "audit-log", labelKey: "nav.audit-log", icon: ScrollText },
+      { id: "settings", labelKey: "nav.settings", icon: Settings },
     ],
   },
 ];
 
 export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileClose }: SidebarProps) {
+  const { t } = useI18n();
+
   const handleNavigate = (view: string) => {
     onNavigate(view);
     onMobileClose();
@@ -101,7 +109,7 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
           <button
             onClick={onMobileClose}
             className="flex h-7 w-7 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-white lg:hidden transition-colors"
-            aria-label="Fechar menu"
+            aria-label="Close menu"
           >
             <X className="h-4 w-4" />
           </button>
@@ -110,9 +118,9 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
         {/* Navigation with sections */}
         <nav className="flex-1 px-2 py-3 overflow-y-auto">
           {navSections.map((section) => (
-            <div key={section.title} className="mb-4">
+            <div key={section.titleKey} className="mb-4">
               <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
-                {section.title}
+                {t(section.titleKey)}
               </p>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
@@ -130,7 +138,7 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
                       )}
                     >
                       <Icon className={cn("h-4 w-4 shrink-0")} />
-                      {item.label}
+                      {t(item.labelKey)}
                     </button>
                   );
                 })}
@@ -147,8 +155,8 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
               <Zap className="h-3.5 w-3.5 text-green-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-white">Connector Online</p>
-              <p className="text-[9px] text-sidebar-foreground/50 font-mono-tech">sync: agora</p>
+              <p className="text-[11px] font-semibold text-white">{t("connector.online")}</p>
+              <p className="text-[9px] text-sidebar-foreground/50 font-mono-tech">{t("connector.sync_now")}</p>
             </div>
             <div className="h-2 w-2 rounded-full bg-green-400 live-dot" />
           </div>
@@ -166,10 +174,10 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-medium text-white">
-                {isSupabaseConfigured ? "Supabase Conectado" : "Modo Demo"}
+                {isSupabaseConfigured ? t("supabase.connected") : t("supabase.demo")}
               </p>
               <p className="text-[9px] text-sidebar-foreground/50">
-                {isSupabaseConfigured ? "Tempo real" : "Dados mockados"}
+                {isSupabaseConfigured ? t("supabase.realtime") : t("supabase.mock")}
               </p>
             </div>
           </div>

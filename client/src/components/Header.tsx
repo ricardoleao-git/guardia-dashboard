@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FilterState } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,7 @@ interface HeaderProps {
 }
 
 export default function Header({ title, subtitle, filters, onFiltersChange, onRefresh, totalEvents }: HeaderProps) {
+  const { t, lang } = useI18n();
   const [notifCount, setNotifCount] = useState(0);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
@@ -26,7 +29,8 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-      setCurrentTime(now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      const locale = lang === "pt" ? "pt-BR" : lang === "zh" ? "zh-CN" : "en-US";
+      setCurrentTime(now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     };
     updateClock();
     const interval = setInterval(updateClock, 1000);
@@ -55,6 +59,9 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
               <span>{currentTime}</span>
             </div>
 
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Notifications */}
             <div className="relative">
               <button
@@ -71,12 +78,12 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
               {showNotifPanel && (
                 <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border border-border bg-popover shadow-xl z-50">
                   <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                    <span className="font-display text-sm font-semibold">Notificações</span>
-                    <button onClick={() => setNotifCount(0)} className="text-xs text-primary hover:underline">Marcar todas como lidas</button>
+                    <span className="font-display text-sm font-semibold">{t("notif.title")}</span>
+                    <button onClick={() => setNotifCount(0)} className="text-xs text-primary hover:underline">{lang === "zh" ? "全部已读" : lang === "en" ? "Mark all read" : "Marcar todas como lidas"}</button>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
                     {notifCount === 0 ? (
-                      <div className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma notificação nova</div>
+                      <div className="px-4 py-8 text-center text-sm text-muted-foreground">{lang === "zh" ? "暂无新通知" : lang === "en" ? "No new notifications" : "Nenhuma notificação nova"}</div>
                     ) : (
                       <>
                         <div className="px-4 py-3 border-b border-border/50 hover:bg-accent/50 cursor-pointer">
@@ -124,11 +131,11 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
 
             <Button variant="outline" size="sm" onClick={onRefresh} className="gap-2">
               <RefreshCw className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Atualizar</span>
+              <span className="hidden sm:inline">{t("header.refresh")}</span>
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Exportar</span>
+              <span className="hidden sm:inline">{t("header.export")}</span>
             </Button>
 
             {/* User info + logout */}
@@ -141,7 +148,7 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
           <div className="relative flex-1 min-w-0 sm:min-w-[200px] sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por ID, serial ou nome..."
+              placeholder={lang === "zh" ? "搜索ID、序列号或姓名..." : lang === "en" ? "Search by ID, serial or name..." : "Buscar por ID, serial ou nome..."}
               value={filters.search || ""}
               onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
               className="pl-9"
@@ -157,7 +164,7 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
                 <SelectValue placeholder="Câmera" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas as câmeras</SelectItem>
+                <SelectItem value="all">{lang === "zh" ? "所有摄像头" : lang === "en" ? "All cameras" : "Todas as câmeras"}</SelectItem>
                 {mockCameras.map((cam) => (
                   <SelectItem key={cam.serial} value={cam.serial}>
                     {cam.serial} — {cam.location}
@@ -174,18 +181,18 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
                 <SelectValue placeholder="Operador" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="FaceReco">Reconhecimento Facial</SelectItem>
-                <SelectItem value="AccessControl">Controle de Acesso</SelectItem>
-                <SelectItem value="VehicleReco">Reconhecimento de Veículo</SelectItem>
-                <SelectItem value="MotionDetection">Detecção de Movimento</SelectItem>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
+                <SelectItem value="FaceReco">{lang === "zh" ? "人脸识别" : lang === "en" ? "Facial Recognition" : "Reconhecimento Facial"}</SelectItem>
+                <SelectItem value="AccessControl">{lang === "zh" ? "门禁控制" : lang === "en" ? "Access Control" : "Controle de Acesso"}</SelectItem>
+                <SelectItem value="VehicleReco">{lang === "zh" ? "车辆识别" : lang === "en" ? "Vehicle Recognition" : "Reconhecimento de Veículo"}</SelectItem>
+                <SelectItem value="MotionDetection">{lang === "zh" ? "移动检测" : lang === "en" ? "Motion Detection" : "Detecção de Movimento"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground sm:ml-auto">
             <Filter className="h-3.5 w-3.5" />
-            <span className="font-mono-tech text-xs">{totalEvents} eventos</span>
+            <span className="font-mono-tech text-xs">{totalEvents} {lang === "zh" ? "事件" : lang === "en" ? "events" : "eventos"}</span>
           </div>
         </div>
       </div>
@@ -195,6 +202,7 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
 
 function UserMenu() {
   const { user, profile, signOut, isDemoMode, isAdmin } = useAuth();
+  const { lang } = useI18n();
   const [showMenu, setShowMenu] = useState(false);
 
   if (isDemoMode) {
@@ -242,7 +250,7 @@ function UserMenu() {
               className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
             >
               <LogOut className="h-4 w-4" />
-              Sair
+              {lang === "zh" ? "退出" : lang === "en" ? "Sign Out" : "Sair"}
             </button>
           </div>
         </>

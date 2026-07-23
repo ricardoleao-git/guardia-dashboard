@@ -37,6 +37,9 @@ export default function DeviceManagement() {
   const [showBatchModal, setShowBatchModal] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNetworkScan, setShowNetworkScan] = useState(false);
+  const [showOnvifScan, setShowOnvifScan] = useState(false);
+  const [onvifScanning, setOnvifScanning] = useState(false);
+  const [onvifResults, setOnvifResults] = useState<{ip: string; mac: string; type: string; status: string; onvif: boolean; addable: boolean}[]>([]);
   const [scanning, setScanning] = useState(false);
   const [scanResults, setScanResults] = useState<{ip: string; mac: string; type: string; status: string}[]>([]);
   const [batchFormData, setBatchFormData] = useState({ password: "", ipPrefix: "192.168.254." });
@@ -97,6 +100,46 @@ export default function DeviceManagement() {
     setShowBatchModal(null);
   };
 
+  const handleOnvifDiscovery = () => {
+    setOnvifScanning(true);
+    setOnvifResults([]);
+    // Simulate ONVIF discovery scan
+    setTimeout(() => {
+      const knownIPs = devices.map(d => d.ip);
+      setOnvifResults([
+        { ip: "192.168.254.115", mac: "5A:5A:00:F0:FD:01", type: "H5AI-50", status: "Detectado", onvif: true,  addable: !knownIPs.includes("192.168.254.115") },
+        { ip: "192.168.254.206", mac: "5A:5A:00:F0:FD:02", type: "F4C-T",   status: "Detectado", onvif: true,  addable: !knownIPs.includes("192.168.254.206") },
+        { ip: "192.168.254.207", mac: "5A:5A:00:F0:FD:05", type: "F4C-T",   status: "Detectado", onvif: true,  addable: !knownIPs.includes("192.168.254.207") },
+        { ip: "192.168.254.208", mac: "5A:5A:00:F0:FD:03", type: "F4C-T",   status: "Detectado", onvif: true,  addable: !knownIPs.includes("192.168.254.208") },
+        { ip: "192.168.254.209", mac: "5A:5A:00:F0:FD:06", type: "T5AI",    status: "Detectado", onvif: true,  addable: !knownIPs.includes("192.168.254.209") },
+        { ip: "192.168.254.227", mac: "5A:5A:00:F0:FD:04", type: "T5AI",    status: "Detectado", onvif: true,  addable: !knownIPs.includes("192.168.254.227") },
+        { ip: "192.168.254.100", mac: "AA:BB:CC:00:00:0A", type: "Generic ONVIF", status: "Detectado", onvif: true, addable: true },
+        { ip: "192.168.254.101", mac: "AA:BB:CC:00:00:0B", type: "Generic ONVIF", status: "Detectado", onvif: true, addable: true },
+      ]);
+      setOnvifScanning(false);
+    }, 2500);
+  };
+
+  const handleOnvifAdd = (ip: string, type: string) => {
+    const channelNum = devices.length + 1;
+    const newDevice: Device = {
+      channel: `D${channelNum}`,
+      status: "online",
+      ip,
+      name: `ONVIF ${ip.split(".").pop()}`,
+      protocol: "ONVIF",
+      type,
+      firmware: "—",
+      mac: "—",
+      bandwidth: "2.0 Mbps",
+      ai: false,
+      face: false,
+      recording: true,
+    };
+    setDevices([...devices, newDevice]);
+    setOnvifResults(prev => prev.map(r => r.ip === ip ? { ...r, addable: false, status: "Adicionado" } : r));
+  };
+
   const handleNetworkScan = () => {
     setScanning(true);
     setScanResults([]);
@@ -140,10 +183,16 @@ export default function DeviceManagement() {
                 <Plus className="h-3.5 w-3.5" /> Adicionar Personalizado
               </button>
               <button
+                onClick={() => { setShowOnvifScan(true); handleOnvifDiscovery(); }}
+                className="flex items-center gap-1.5 rounded-md bg-primary/20 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/30 transition-colors ring-1 ring-primary/30"
+              >
+                <ScanLine className="h-3.5 w-3.5" /> ONVIF Discovery
+              </button>
+              <button
                 onClick={() => { setShowNetworkScan(true); handleNetworkScan(); }}
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
               >
-                <ScanLine className="h-3.5 w-3.5" /> Detecção de Rede
+                <Network className="h-3.5 w-3.5" /> Detecção de Rede
               </button>
               <button className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
                 <Network className="h-3.5 w-3.5" /> Rede
@@ -543,6 +592,107 @@ export default function DeviceManagement() {
               >
                 Adicionar Canal
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ONVIF Discovery Modal */}
+      {showOnvifScan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowOnvifScan(false)}>
+          <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <div className="flex items-center gap-2.5">
+                <ScanLine className="h-4 w-4 text-primary" />
+                <div>
+                  <h3 className="text-sm font-semibold">ONVIF Discovery</h3>
+                  <p className="text-[10px] text-muted-foreground">Auto-detecção de câmeras IP via protocolo ONVIF</p>
+                </div>
+              </div>
+              <button onClick={() => setShowOnvifScan(false)} className="rounded p-1 hover:bg-accent"><X className="h-4 w-4 text-muted-foreground" /></button>
+            </div>
+            <div className="px-5 py-4">
+              {onvifScanning ? (
+                <div className="flex flex-col items-center py-10 gap-3">
+                  <ScanLine className="h-10 w-10 text-primary animate-pulse" />
+                  <p className="text-xs text-muted-foreground">Escaneando rede via WS-Discovery (porta 3702)...</p>
+                  <div className="w-full max-w-xs h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary animate-pulse" style={{ width: "45%" }} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/60 font-mono-tech">Multicast 239.255.255.250:3702</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-muted-foreground">
+                      {onvifResults.length} dispositivo(s) ONVIF encontrado(s) — {onvifResults.filter(r => r.addable).length} novo(s)
+                    </p>
+                    <button
+                      onClick={handleOnvifDiscovery}
+                      className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-[10px] font-medium hover:bg-accent transition-colors"
+                    >
+                      <RefreshCw className="h-3 w-3" /> Re-escanear
+                    </button>
+                  </div>
+                  <div className="rounded-lg border border-border overflow-hidden max-h-80 overflow-y-auto">
+                    <table className="w-full">
+                      <thead className="sticky top-0">
+                        <tr className="border-b border-border bg-muted/80 backdrop-blur">
+                          <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground">IP</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground">MAC</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground">Tipo</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground">ONVIF</th>
+                          <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground">Status</th>
+                          <th className="px-3 py-2 text-right text-[10px] font-semibold text-muted-foreground">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {onvifResults.map((r) => (
+                          <tr key={r.ip} className={cn("border-b border-border/50 hover:bg-accent/20", !r.addable && "opacity-50")}>
+                            <td className="px-3 py-2 text-xs font-mono-tech">{r.ip}</td>
+                            <td className="px-3 py-2 text-xs font-mono-tech text-muted-foreground">{r.mac}</td>
+                            <td className="px-3 py-2 text-xs font-mono-tech">{r.type}</td>
+                            <td className="px-3 py-2">
+                              <span className={cn("inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full", r.onvif ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400")}>
+                                {r.onvif ? "Sim" : "Não"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2">
+                              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", r.status === "Adicionado" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400")}>{r.status}</span>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              {r.addable ? (
+                                <button
+                                  onClick={() => handleOnvifAdd(r.ip, r.type)}
+                                  className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                                >
+                                  + Adicionar
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">{r.status === "Adicionado" ? "OK" : "Existe"}</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground/60">
+                      ONVIF WS-Discovery usa multicast 239.255.255.250:3702 — dispositivos devem ter ONVIF habilitado
+                    </p>
+                    <button
+                      onClick={() => {
+                        onvifResults.filter(r => r.addable).forEach(r => handleOnvifAdd(r.ip, r.type));
+                      }}
+                      disabled={onvifResults.filter(r => r.addable).length === 0}
+                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Adicionar Todos ({onvifResults.filter(r => r.addable).length})
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

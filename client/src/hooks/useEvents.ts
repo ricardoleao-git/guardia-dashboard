@@ -75,8 +75,15 @@ export function useEvents(filters: FilterState) {
         setEvents(prev => [newEvent as CameraEvent, ...prev].slice(0, 100));
       });
     } else {
-      // Polling para mock mode
-      const interval = setInterval(fetchEvents, POLL_INTERVAL);
+      // Mock mode: simulate periodic new events for realtime feel
+      const interval = setInterval(() => {
+        setEvents(prev => {
+          const newEvent = generateMockEvents(1)[0];
+          // Only add if not already present
+          if (prev.some(e => e.event_id === newEvent.event_id)) return prev;
+          return [newEvent, ...prev].slice(0, 100);
+        });
+      }, POLL_INTERVAL);
       return () => clearInterval(interval);
     }
 

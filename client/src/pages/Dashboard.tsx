@@ -31,6 +31,7 @@ import SemanticSearch from "@/pages/SemanticSearch";
 import AISummary from "@/pages/AISummary";
 import ElevatorControl from "@/pages/ElevatorControl";
 import AIBox from "@/pages/AIBox";
+import RealtimeNotifications from "@/components/RealtimeNotifications";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -374,6 +375,8 @@ export default function Dashboard() {
           )}
         </main>
       </div>
+
+      <RealtimeNotifications newEventCount={events.length} />
 
       <ImageViewer
         event={selectedEvent}
