@@ -21,6 +21,8 @@ import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
 import UserAdmin from "@/pages/UserAdmin";
 import AuditLog from "@/pages/AuditLog";
+import Automations from "@/pages/Automations";
+import Frequencia from "@/pages/Frequencia";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -331,6 +333,14 @@ export default function Dashboard() {
 
           {activeView === "audit-log" && (
             <AuditLog />
+          )}
+
+          {activeView === "automations" && (
+            <Automations />
+          )}
+
+          {activeView === "frequencia" && (
+            <Frequencia />
           )}
         </main>
       </div>

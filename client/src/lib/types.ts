@@ -42,4 +42,11 @@ export interface CameraInfo {
   location: string;
   online: boolean;
   lastEvent: string | null;
+  // Bancada real fields
+  channel: string;       // D1, D2, D3, D4, D5, D6
+  ip: string;            // 192.168.254.xxx
+  type: string;          // H5AI-50, F4C-T, T5AI
+  ai: boolean;           // tem IA integrada
+  face: boolean;         // faz reconhecimento facial
+  recording: boolean;    // está gravando
 }

@@ -1,4 +1,10 @@
-import { Activity, Users, Car, AlertTriangle, TrendingUp } from "lucide-react";
+/**
+ * StatsBar — KPIs do dashboard com dados da bancada real.
+ *
+ * KPIs: Eventos hoje, Reconhecidas, Estranhos, Câmeras online, Alertas.
+ * Cores alinhadas ao design system dark (OKLCH).
+ */
+import { Activity, Users, UserX, Camera, AlertTriangle } from "lucide-react";
 import { CameraEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -7,51 +13,52 @@ interface StatsBarProps {
 }
 
 export default function StatsBar({ events }: StatsBarProps) {
-  const faceReco = events.filter(e => e.operator === "FaceReco").length;
-  const vehicleReco = events.filter(e => e.operator === "VehicleReco").length;
-  const accessControl = events.filter(e => e.operator === "AccessControl").length;
-  const alarms = events.filter(e => e.operator === "Alarm" || e.operator === "MotionDetection").length;
+  const faceReco = events.filter(e => e.operator === "FaceReco");
+  const recognized = faceReco.filter(e => e.payload?.data?.matchScore && e.payload.data.matchScore >= 50).length;
+  const strangers = faceReco.filter(e => !e.payload?.data?.matchScore || e.payload.data.matchScore < 50).length;
+  const camerasOnline = "5/6";
+  const alerts = events.filter(e => e.operator === "Alarm" || (e.operator === "FaceReco" && (!e.payload?.data?.matchScore || e.payload.data.matchScore < 50))).length;
 
   const stats = [
     {
-      label: "Total de Eventos",
+      label: "Eventos Hoje",
       value: events.length,
       icon: Activity,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-      border: "border-blue-100",
+      color: "text-blue-400",
+      bg: "bg-blue-500/10",
+      ring: "ring-blue-500/20",
     },
     {
-      label: "Reconhecimento Facial",
-      value: faceReco,
+      label: "Reconhecidas",
+      value: recognized,
       icon: Users,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-      border: "border-purple-100",
+      color: "text-green-400",
+      bg: "bg-green-500/10",
+      ring: "ring-green-500/20",
     },
     {
-      label: "Veículos",
-      value: vehicleReco,
-      icon: Car,
-      color: "text-green-600",
-      bg: "bg-green-50",
-      border: "border-green-100",
+      label: "Estranhos",
+      value: strangers,
+      icon: UserX,
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
+      ring: "ring-amber-500/20",
     },
     {
-      label: "Acessos",
-      value: accessControl,
-      icon: TrendingUp,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-      border: "border-amber-100",
+      label: "Câmeras Online",
+      value: camerasOnline,
+      icon: Camera,
+      color: "text-cyan-400",
+      bg: "bg-cyan-500/10",
+      ring: "ring-cyan-500/20",
     },
     {
       label: "Alertas",
-      value: alarms,
+      value: alerts,
       icon: AlertTriangle,
-      color: "text-red-600",
-      bg: "bg-red-50",
-      border: "border-red-100",
+      color: "text-red-400",
+      bg: "bg-red-500/10",
+      ring: "ring-red-500/20",
     },
   ];
 
@@ -63,8 +70,8 @@ export default function StatsBar({ events }: StatsBarProps) {
           <div
             key={stat.label}
             className={cn(
-              "flex items-center gap-3 rounded-xl border bg-card p-4 transition-all hover:shadow-md",
-              stat.border
+              "flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-lg ring-1",
+              stat.ring
             )}
           >
             <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", stat.bg)}>

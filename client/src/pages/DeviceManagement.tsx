@@ -14,15 +14,19 @@ interface Device {
   firmware: string;
   mac: string;
   bandwidth: string;
+  ai: boolean;
+  face: boolean;
+  recording: boolean;
 }
 
+// Dados REAIS da bancada (spec 05 §1)
 const mockDevices: Device[] = [
-  { channel: "D1", status: "offline", ip: "192.168.254.115", name: "IPC", protocol: "P6S", type: "H5AI-500", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:01", bandwidth: "—" },
-  { channel: "D2", status: "online", ip: "192.168.254.206", name: "Corredor", protocol: "P6S", type: "F4C-T", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:02", bandwidth: "4.2 Mbps" },
-  { channel: "D3", status: "online", ip: "192.168.254.207", name: "Recepção", protocol: "P6S", type: "F4C-T", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:03", bandwidth: "3.8 Mbps" },
-  { channel: "D4", status: "online", ip: "192.168.254.208", name: "Portão", protocol: "P6S", type: "F4C-T", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:04", bandwidth: "5.1 Mbps" },
-  { channel: "D5", status: "online", ip: "192.168.254.209", name: "COPA", protocol: "P6S", type: "F4C-T", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:05", bandwidth: "2.1 Mbps" },
-  { channel: "D6", status: "offline", ip: "192.168.254.210", name: "AI IPC", protocol: "P6S", type: "H5AI-50", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:06", bandwidth: "—" },
+  { channel: "D1", status: "offline", ip: "192.168.254.115", name: "CAM01",   protocol: "P6S", type: "H5AI-50", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:01", bandwidth: "—",          ai: false, face: false, recording: false },
+  { channel: "D2", status: "online",  ip: "192.168.254.206", name: "Corredor", protocol: "P6S", type: "F4C-T",   firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:02", bandwidth: "4.2 Mbps",  ai: true,  face: true,  recording: true  },
+  { channel: "D3", status: "online",  ip: "192.168.254.208", name: "Recepção", protocol: "P6S", type: "F4C-T",   firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:03", bandwidth: "3.8 Mbps",  ai: true,  face: true,  recording: true  },
+  { channel: "D4", status: "online",  ip: "192.168.254.227", name: "AI IPC",   protocol: "P6S", type: "T5AI",    firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:04", bandwidth: "5.1 Mbps",  ai: true,  face: false, recording: false },
+  { channel: "D5", status: "online",  ip: "192.168.254.207", name: "COPA",     protocol: "P6S", type: "F4C-T",   firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:05", bandwidth: "2.1 Mbps",  ai: true,  face: true,  recording: true  },
+  { channel: "D6", status: "online",  ip: "192.168.254.209", name: "AI IPC",   protocol: "P6S", type: "T5AI",    firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:06", bandwidth: "3.5 Mbps",  ai: true,  face: false, recording: false },
 ];
 
 export default function DeviceManagement() {
@@ -52,6 +56,9 @@ export default function DeviceManagement() {
       firmware: "—",
       mac: "—",
       bandwidth: "—",
+      ai: false,
+      face: false,
+      recording: false,
     };
     setDevices([...devices, newDevice]);
     setShowAddModal(false);
@@ -95,11 +102,12 @@ export default function DeviceManagement() {
     setScanResults([]);
     setTimeout(() => {
       setScanResults([
-        { ip: "192.168.254.115", mac: "5A:5A:00:F0:FD:01", type: "H5AI-500", status: "Detectado" },
-        { ip: "192.168.254.206", mac: "5A:5A:00:F0:FD:02", type: "F4C-T", status: "Detectado" },
-        { ip: "192.168.254.207", mac: "5A:5A:00:F0:FD:03", type: "F4C-T", status: "Detectado" },
-        { ip: "192.168.254.220", mac: "5A:5A:00:F0:FD:0A", type: "F4C-T", status: "Novo" },
-        { ip: "192.168.254.221", mac: "5A:5A:00:F0:FD:0B", type: "H5AI-50", status: "Novo" },
+        { ip: "192.168.254.115", mac: "5A:5A:00:F0:FD:01", type: "H5AI-50", status: "Detectado" },
+        { ip: "192.168.254.206", mac: "5A:5A:00:F0:FD:02", type: "F4C-T",  status: "Detectado" },
+        { ip: "192.168.254.207", mac: "5A:5A:00:F0:FD:05", type: "F4C-T",  status: "Detectado" },
+        { ip: "192.168.254.208", mac: "5A:5A:00:F0:FD:03", type: "F4C-T",  status: "Detectado" },
+        { ip: "192.168.254.209", mac: "5A:5A:00:F0:FD:06", type: "T5AI",   status: "Detectado" },
+        { ip: "192.168.254.227", mac: "5A:5A:00:F0:FD:04", type: "T5AI",   status: "Detectado" },
       ]);
       setScanning(false);
     }, 2000);
@@ -217,7 +225,20 @@ export default function DeviceManagement() {
                     <td className="px-3 py-2.5 text-xs font-mono-tech text-muted-foreground">{device.ip}</td>
                     <td className="px-3 py-2.5 text-xs font-medium">{device.name}</td>
                     <td className="px-3 py-2.5 text-xs font-mono-tech">{device.protocol}</td>
-                    <td className="px-3 py-2.5 text-xs font-mono-tech text-muted-foreground">{device.type}</td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-mono-tech text-muted-foreground">{device.type}</span>
+                        {device.ai && (
+                          <span className="rounded bg-primary/20 px-1 py-0.5 text-[8px] font-bold text-primary">AI</span>
+                        )}
+                        {device.face && (
+                          <span className="rounded bg-purple-500/20 px-1 py-0.5 text-[8px] font-bold text-purple-400">FACE</span>
+                        )}
+                        {device.recording && (
+                          <span className="rounded bg-red-500/20 px-1 py-0.5 text-[8px] font-bold text-red-400">REC</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-2.5 text-xs font-mono-tech text-muted-foreground">{device.firmware}</td>
                     <td className="px-3 py-2.5 text-xs font-mono-tech text-muted-foreground">{device.mac}</td>
                     <td className="px-3 py-2.5 text-xs font-mono-tech">
