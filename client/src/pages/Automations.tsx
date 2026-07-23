@@ -19,7 +19,8 @@ import {
   TimerOff, Save, ArrowRight, Layers, GripVertical, Trash,
   Eye, EyeOff, Sparkles, Copy, Calendar, Moon, Sun,
   Building2, GraduationCap, ShieldAlert, Wrench,
-  Download, Upload, GitBranch, AlertCircle
+  Download, Upload, GitBranch, AlertCircle,
+  Copy as CopyIcon, History, PlayCircle, PauseCircle, Filter, Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -75,11 +76,26 @@ const mockAutomations: Automation[] = [
   },
 ];
 
-const mockDisparos = [
-  { id: "d1", automacao: "Estranho fora de horário", hora: "22:14", camera: "D2 Corredor", resultado: "WhatsApp enviado", status: "ok" },
-  { id: "d2", automacao: "Portaria vazia", hora: "18:32", camera: "D3 Recepção", resultado: "Notificação supervisor", status: "ok" },
-  { id: "d3", automacao: "Estranho fora de horário", hora: "21:47", camera: "D5 COPA", resultado: "WhatsApp enviado", status: "ok" },
-  { id: "d4", automacao: "Estranho fora de horário", hora: "20:15", camera: "D2 Corredor", resultado: "WhatsApp enviado", status: "ok" },
+interface DisparoRecord {
+  id: string;
+  automacao: string;
+  automacaoId: string;
+  data: string; // ISO date
+  hora: string;
+  camera: string;
+  resultado: string;
+  status: "ok" | "fail" | "partial";
+  detalhes?: string;
+}
+
+const mockDisparos: DisparoRecord[] = [
+  { id: "d1", automacao: "Estranho fora de horário", automacaoId: "a1", data: "2026-07-23", hora: "22:14", camera: "D2 Corredor", resultado: "WhatsApp enviado", status: "ok", detalhes: "Score facial: 12% — Estranho detectado. Mensagem enviada para +55 11 98888-7777." },
+  { id: "d2", automacao: "Portaria vazia", automacaoId: "a2", data: "2026-07-23", hora: "18:32", camera: "D3 Recepção", resultado: "Notificação supervisor", status: "ok", detalhes: "Sem movimento por 8min. Push enviado para supervisor@escola.com." },
+  { id: "d3", automacao: "Estranho fora de horário", automacaoId: "a1", data: "2026-07-22", hora: "21:47", camera: "D5 COPA", resultado: "WhatsApp enviado", status: "ok", detalhes: "Score facial: 8% — Estranho detectado. Mensagem enviada para +55 11 98888-7777." },
+  { id: "d4", automacao: "Estranho fora de horário", automacaoId: "a1", data: "2026-07-22", hora: "20:15", camera: "D2 Corredor", resultado: "WhatsApp enviado", status: "ok", detalhes: "Score facial: 15% — Estranho detectado. Mensagem enviada para +55 11 98888-7777." },
+  { id: "d5", automacao: "Aluno não chegou", automacaoId: "a3", data: "2026-07-22", hora: "08:05", camera: "D4 Portaria", resultado: "Aviso ao responsável", status: "partial", detalhes: "Aluno João Silva (turma 6A) não registrou entrada até 08h. WhatsApp enviado mas email falhou." },
+  { id: "d6", automacao: "Estranho fora de horário", automacaoId: "a1", data: "2026-07-21", hora: "23:02", camera: "D2 Corredor", resultado: "WhatsApp + Sirene", status: "ok", detalhes: "Score facial: 5% — Estranho detectado. Sirene ativada por 30s. WhatsApp enviado." },
+  { id: "d7", automacao: "Portaria vazia", automacaoId: "a2", data: "2026-07-21", hora: "19:10", camera: "D3 Recepção", resultado: "Notificação supervisor", status: "fail", detalhes: "Sem movimento por 12min. Push falhou — token expirado. Email enviado com sucesso." },
 ];
 
 // ===== Editor Options =====
@@ -282,6 +298,19 @@ export default function Automations() {
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // History state
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyFilterRule, setHistoryFilterRule] = useState<string>("all");
+  const [historyFilterStatus, setHistoryFilterStatus] = useState<string>("all");
+  const [historySearch, setHistorySearch] = useState("");
+  const [expandedDisparo, setExpandedDisparo] = useState<string | null>(null);
+
+  // Simulation state
+  const [showSimulation, setShowSimulation] = useState(false);
+  const [simStep, setSimStep] = useState(0); // 0=idle, 1=trigger, 2=conditions, 3=actions, 4=done
+  const [simRunning, setSimRunning] = useState(false);
+  const [simLog, setSimLog] = useState<{ time: string; type: string; message: string; status: "info" | "success" | "warn" | "error" }[]>([]);
 
   // Drag-and-drop state
   const [draggedUid, setDraggedUid] = useState<string | null>(null);
@@ -641,6 +670,102 @@ export default function Automations() {
     setShowEditor(false);
   };
 
+  // ===== Clone Rule =====
+  const cloneRule = (id: string) => {
+    const rule = automations.find(a => a.id === id);
+    if (!rule) return;
+    const cloned: Automation = {
+      ...rule,
+      id: `clone-${Date.now()}`,
+      nome: `${rule.nome} (cópia)`,
+      ativa: false,
+      disparos: 0,
+      ultimoDisparo: null,
+    };
+    setAutomations([...automations, cloned]);
+  };
+
+  // ===== Simulation =====
+  const runSimulation = () => {
+    if (!triggerItem || actionItems.length === 0) return;
+    setShowSimulation(true);
+    setSimRunning(true);
+    setSimStep(0);
+    setSimLog([]);
+
+    const steps: { delay: number; step: number; type: string; message: string; status: "info" | "success" | "warn" | "error" }[] = [];
+    const now = new Date();
+    const ts = () => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+    // Step 1: Trigger
+    steps.push({
+      delay: 300, step: 1, type: "trigger",
+      message: `Gatilho "${triggerItem.label}" detectado na câmera D2 Corredor`,
+      status: "info",
+    });
+
+    // Step 2: Conditions
+    if (conditionItems.length > 0) {
+      conditionItems.forEach((c, i) => {
+        steps.push({
+          delay: 500 + i * 300, step: 2, type: "condition",
+          message: `Condição "${c.label}"${c.param ? ` (${c.param})` : ""} — atendida`,
+          status: "success",
+        });
+      });
+    } else {
+      steps.push({
+        delay: 500, step: 2, type: "condition",
+        message: "Nenhuma condição configurada — prosseguindo",
+        status: "warn",
+      });
+    }
+
+    // Step 3: Actions
+    actionItems.forEach((a, i) => {
+      steps.push({
+        delay: 900 + i * 400, step: 3, type: "action",
+        message: `Ação "${a.label}" executada com sucesso`,
+        status: "success",
+      });
+    });
+
+    // Step 4: Done
+    steps.push({
+      delay: 900 + actionItems.length * 400 + 300, step: 4, type: "done",
+      message: `Simulação concluída — ${actionItems.length} ação(ões) disparada(s)`,
+      status: "success",
+    });
+
+    steps.forEach(s => {
+      setTimeout(() => {
+        setSimStep(s.step);
+        setSimLog(prev => [...prev, { time: ts(), type: s.type, message: s.message, status: s.status }]);
+        if (s.step === 4) setSimRunning(false);
+      }, s.delay);
+    });
+  };
+
+  const resetSimulation = () => {
+    setShowSimulation(false);
+    setSimStep(0);
+    setSimRunning(false);
+    setSimLog([]);
+  };
+
+  // ===== Filtered Disparos =====
+  const filteredDisparos = mockDisparos.filter(d => {
+    if (historyFilterRule !== "all" && d.automacaoId !== historyFilterRule) return false;
+    if (historyFilterStatus !== "all" && d.status !== historyFilterStatus) return false;
+    if (historySearch) {
+      const q = historySearch.toLowerCase();
+      if (!d.automacao.toLowerCase().includes(q) &&
+          !d.camera.toLowerCase().includes(q) &&
+          !d.resultado.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
   const activeCount = automations.filter(a => a.ativa).length;
   const totalDisparos = automations.reduce((acc, a) => acc + a.disparos, 0);
 
@@ -671,6 +796,13 @@ export default function Automations() {
               <p className="text-xs text-muted-foreground">Regras evento → condição → ação</p>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowHistory(true)}
+                className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+                title="Histórico de disparos"
+              >
+                <History className="h-3.5 w-3.5" /> Histórico
+              </button>
               <button
                 onClick={handleExport}
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
@@ -813,6 +945,13 @@ export default function Automations() {
                         title="Editar"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => cloneRule(rule.id)}
+                        className="rounded p-1.5 hover:bg-accent text-muted-foreground hover:text-blue-400 transition-colors"
+                        title="Clonar"
+                      >
+                        <CopyIcon className="h-3.5 w-3.5" />
                       </button>
                       <button className="rounded p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Excluir">
                         <Trash2 className="h-3.5 w-3.5" />
@@ -1432,6 +1571,19 @@ export default function Automations() {
                       Cancelar
                     </button>
                     <button
+                      onClick={runSimulation}
+                      disabled={!canSave}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-medium transition-colors",
+                        canSave
+                          ? "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                          : "bg-muted text-muted-foreground cursor-not-allowed"
+                      )}
+                      title="Simular o fluxo com dados mock"
+                    >
+                      <PlayCircle className="h-3.5 w-3.5" /> Testar
+                    </button>
+                    <button
                       onClick={handleSave}
                       disabled={!canSave}
                       className={cn(
@@ -1527,6 +1679,298 @@ export default function Automations() {
                   )}
                 >
                   <Upload className="h-3.5 w-3.5" /> Importar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== History Modal ===== */}
+      {showHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowHistory(false)}>
+          <div
+            className="relative w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                  <History className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-display text-base font-semibold">Histórico de Disparos</h2>
+                  <p className="text-xs text-muted-foreground">{filteredDisparos.length} de {mockDisparos.length} registro(s)</p>
+                </div>
+              </div>
+              <button onClick={() => setShowHistory(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="flex items-center gap-3 border-b border-border px-6 py-3 bg-muted/30">
+              <div className="flex items-center gap-1.5">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                <select
+                  value={historyFilterRule}
+                  onChange={(e) => setHistoryFilterRule(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                >
+                  <option value="all">Todas as regras</option>
+                  {automations.map(a => (
+                    <option key={a.id} value={a.id}>{a.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <select
+                value={historyFilterStatus}
+                onChange={(e) => setHistoryFilterStatus(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              >
+                <option value="all">Todos os status</option>
+                <option value="ok">Sucesso</option>
+                <option value="partial">Parcial</option>
+                <option value="fail">Falha</option>
+              </select>
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  className="w-full rounded-md border border-border bg-background pl-7 pr-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {filteredDisparos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <History className="h-8 w-8 mb-2 opacity-40" />
+                  <p className="text-sm">Nenhum disparo encontrado</p>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+                  <div className="space-y-4">
+                    {filteredDisparos.map((d) => (
+                      <div key={d.id} className="relative pl-12">
+                        {/* Dot */}
+                        <div className={cn(
+                          "absolute left-2.5 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2",
+                          d.status === "ok" && "border-green-500 bg-green-500/20",
+                          d.status === "partial" && "border-amber-500 bg-amber-500/20",
+                          d.status === "fail" && "border-red-500 bg-red-500/20"
+                        )}>
+                          <div className={cn(
+                            "h-1.5 w-1.5 rounded-full",
+                            d.status === "ok" && "bg-green-500",
+                            d.status === "partial" && "bg-amber-500",
+                            d.status === "fail" && "bg-red-500"
+                          )} />
+                        </div>
+
+                        {/* Card */}
+                        <div
+                          className="rounded-lg border border-border bg-card p-3 cursor-pointer hover:border-primary/40 transition-colors"
+                          onClick={() => setExpandedDisparo(expandedDisparo === d.id ? null : d.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-foreground">{d.automacao}</span>
+                              <span className={cn(
+                                "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                                d.status === "ok" && "bg-green-500/10 text-green-400",
+                                d.status === "partial" && "bg-amber-500/10 text-amber-400",
+                                d.status === "fail" && "bg-red-500/10 text-red-400"
+                              )}>
+                                {d.status === "ok" ? "Sucesso" : d.status === "partial" ? "Parcial" : "Falha"}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-muted-foreground">{d.data} · {d.hora}</span>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><Camera className="h-3 w-3" /> {d.camera}</span>
+                            <span>→ {d.resultado}</span>
+                          </div>
+                          {expandedDisparo === d.id && d.detalhes && (
+                            <div className="mt-2 rounded-md bg-muted/50 p-2 text-[11px] text-muted-foreground border-l-2 border-primary/30">
+                              {d.detalhes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-border px-6 py-3">
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-green-500" /> Sucesso</span>
+                <span className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-amber-500" /> Parcial</span>
+                <span className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-red-500" /> Falha</span>
+              </div>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="rounded-md bg-muted px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Simulation Modal ===== */}
+      {showSimulation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => !simRunning && resetSimulation()}>
+          <div
+            className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+                  simStep === 0 && "bg-muted",
+                  simStep === 1 && "bg-amber-500/10",
+                  simStep === 2 && "bg-blue-500/10",
+                  simStep === 3 && "bg-purple-500/10",
+                  simStep === 4 && "bg-green-500/10"
+                )}>
+                  {simRunning ? (
+                    <PlayCircle className={cn(
+                      "h-4.5 w-4.5 animate-pulse",
+                      simStep === 1 && "text-amber-400",
+                      simStep === 2 && "text-blue-400",
+                      simStep === 3 && "text-purple-400"
+                    )} />
+                  ) : (
+                    <Check className="h-4.5 w-4.5 text-green-400" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="font-display text-base font-semibold">Simulação de Fluxo</h2>
+                  <p className="text-xs text-muted-foreground">{ruleName || "Regra sem nome"}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => !simRunning && resetSimulation()}
+                disabled={simRunning}
+                className={cn(
+                  "transition-colors",
+                  simRunning ? "text-muted-foreground/40 cursor-not-allowed" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Step indicators */}
+            <div className="flex items-center gap-2 border-b border-border px-6 py-3 bg-muted/30">
+              {[
+                { n: 1, label: "Gatilho", icon: Zap, color: "amber" },
+                { n: 2, label: "Condições", icon: Clock, color: "blue" },
+                { n: 3, label: "Ações", icon: Bell, color: "purple" },
+                { n: 4, label: "Concluído", icon: Check, color: "green" },
+              ].map((s, i) => (
+                <div key={s.n} className="flex items-center gap-2">
+                  {i > 0 && <div className={cn("h-px w-6", simStep >= s.n ? "bg-primary" : "bg-border")} />}
+                  <div className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                    simStep === s.n && cn("bg-" + s.color + "-500/10 text-" + s.color + "-400 scale-105"),
+                    simStep > s.n && "bg-green-500/10 text-green-400",
+                    simStep < s.n && "text-muted-foreground/50"
+                  )}>
+                    <s.icon className="h-3 w-3" />
+                    {s.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Log */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 min-h-[200px] max-h-[300px]">
+              {simLog.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <PlayCircle className="h-8 w-8 mb-2 opacity-40" />
+                  <p className="text-sm">Iniciando simulação...</p>
+                </div>
+              ) : (
+                <div className="space-y-2 font-mono">
+                  {simLog.map((entry, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "flex items-start gap-3 rounded-md p-2 text-xs animate-in fade-in slide-in-from-bottom-1 duration-200",
+                        entry.status === "info" && "bg-blue-500/5",
+                        entry.status === "success" && "bg-green-500/5",
+                        entry.status === "warn" && "bg-amber-500/5",
+                        entry.status === "error" && "bg-red-500/5"
+                      )}
+                    >
+                      <span className="text-[10px] text-muted-foreground pt-0.5 shrink-0">{entry.time}</span>
+                      <div className={cn(
+                        "mt-0.5 h-1.5 w-1.5 rounded-full shrink-0",
+                        entry.status === "info" && "bg-blue-400",
+                        entry.status === "success" && "bg-green-400",
+                        entry.status === "warn" && "bg-amber-400",
+                        entry.status === "error" && "bg-red-400"
+                      )} />
+                      <span className={cn(
+                        entry.status === "success" && "text-green-300",
+                        entry.status === "warn" && "text-amber-300",
+                        entry.status === "error" && "text-red-300",
+                        entry.status === "info" && "text-foreground"
+                      )}>
+                        {entry.message}
+                      </span>
+                    </div>
+                  ))}
+                  {simRunning && (
+                    <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
+                      <div className="h-3 w-3 animate-spin rounded-full border border-muted-foreground border-t-transparent" />
+                      Processando...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-border px-6 py-3">
+              <div className="text-[11px] text-muted-foreground">
+                {simStep === 4 ? "Simulação concluída" : simRunning ? "Executando..." : "Pronto para simular"}
+              </div>
+              <div className="flex items-center gap-2">
+                {simStep === 4 && (
+                  <button
+                    onClick={() => runSimulation()}
+                    className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+                  >
+                    <PlayCircle className="h-3.5 w-3.5" /> Repetir
+                  </button>
+                )}
+                <button
+                  onClick={() => resetSimulation()}
+                  disabled={simRunning}
+                  className={cn(
+                    "rounded-md px-4 py-2 text-xs font-medium transition-colors",
+                    simRunning
+                      ? "bg-muted text-muted-foreground/40 cursor-not-allowed"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )}
+                >
+                  Fechar
                 </button>
               </div>
             </div>
