@@ -1,0 +1,67 @@
+# ============================================================
+# GuardIA Connector — Configuração
+# Copie para config.yaml e preencha com suas credenciais
+# ============================================================
+
+supabase:
+  url: "https://SEU-PROJETO.supabase.co"
+  # Use service_role key (não a anon key) para bypass de RLS
+  service_role_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+connector:
+  id: "connector-bancada-01"
+  org_id: "zenite-tech"
+  poll_interval_seconds: 30       # Intervalo de polling por câmera
+  heartbeat_interval_seconds: 60  # Intervalo de heartbeat
+  max_events_per_poll: 50         # Máximo de eventos por requisição
+  image_upload: true              # Fazer upload de imagens para Storage
+  log_level: "INFO"               # DEBUG, INFO, WARNING, ERROR
+
+cameras:
+  - serial: "D1"
+    ip: "192.168.254.115"
+    model: "H5AI-50"
+    location: "Portaria"
+    username: "admin"
+    password: "SENHA_DA_CAMERA"
+    enabled: false                # D1 offline — desabilitar até consertar
+
+  - serial: "D2"
+    ip: "192.168.254.206"
+    model: "F4C-T"
+    location: "Corredor"
+    username: "admin"
+    password: "SENHA_DA_CAMERA"
+    enabled: true
+
+  - serial: "D3"
+    ip: "192.168.254.208"
+    model: "F4C-T"
+    location: "Recepção"
+    username: "admin"
+    password: "SENHA_DA_CAMERA"
+    enabled: true
+
+  - serial: "D4"
+    ip: "192.168.254.227"
+    model: "T5AI"
+    location: "AI IPC"
+    username: "admin"
+    password: "SENHA_DA_CAMERA"
+    enabled: true
+
+  - serial: "D5"
+    ip: "192.168.254.207"
+    model: "F4C-T"
+    location: "Portão / COPA"
+    username: "admin"
+    password: "SENHA_DA_CAMERA"
+    enabled: true
+
+  - serial: "D6"
+    ip: "192.168.254.209"
+    model: "T5AI"
+    location: "Estacionamento"
+    username: "admin"
+    password: "SENHA_DA_CAMERA"
+    enabled: true

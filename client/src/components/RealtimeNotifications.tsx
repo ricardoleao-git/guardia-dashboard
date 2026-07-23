@@ -189,7 +189,7 @@ const severityConfig = {
     border: "border-red-500/40",
     ring: "ring-red-500/20",
     glow: "shadow-red-500/20",
-    label: "CRITICAL",
+    labelKey: "notif.severity.critical",
   },
   warning: {
     icon: AlertTriangle,
@@ -198,7 +198,7 @@ const severityConfig = {
     border: "border-amber-500/40",
     ring: "ring-amber-500/20",
     glow: "shadow-amber-500/20",
-    label: "WARNING",
+    labelKey: "notif.severity.warning",
   },
   info: {
     icon: Info,
@@ -207,7 +207,7 @@ const severityConfig = {
     border: "border-blue-500/40",
     ring: "ring-blue-500/20",
     glow: "shadow-blue-500/20",
-    label: "INFO",
+    labelKey: "notif.severity.info",
   },
   success: {
     icon: CheckCircle2,
@@ -216,7 +216,7 @@ const severityConfig = {
     border: "border-green-500/40",
     ring: "ring-green-500/20",
     glow: "shadow-green-500/20",
-    label: "OK",
+    labelKey: "notif.severity.success",
   },
 };
 
@@ -281,7 +281,7 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
       clearTimeout(initialTimer);
       clearInterval(interval);
     };
-  }, [addNotification]);
+  }, [addNotification, t]);
 
   // React to external event count changes
   useEffect(() => {
@@ -345,7 +345,7 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={cn("text-[9px] font-bold tracking-wider", cfg.color)}>{cfg.label}</span>
+                      <span className={cn("text-[9px] font-bold tracking-wider", cfg.color)}>{t(cfg.labelKey)}</span>
                       <span className="text-[9px] text-muted-foreground font-mono-tech">
                         {notif.timestamp.toLocaleTimeString(lang === "zh" ? "zh-CN" : lang === "en" ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                       </span>

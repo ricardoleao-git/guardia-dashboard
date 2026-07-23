@@ -355,6 +355,11 @@ const translations: Record<Language, Record<string, string>> = {
     "notif.scenario.recognized_msg": "João Silva — Lista Branca (98%)",
     "notif.scenario.blacklist": "Lista Negra detectada",
     "notif.scenario.blacklist_msg": "Match 92% com cadastro de alerta",
+    // Severity labels
+    "notif.severity.critical": "CRÍTICO",
+    "notif.severity.warning": "ALERTA",
+    "notif.severity.info": "INFO",
+    "notif.severity.success": "OK",
     // Camera names
     "camera.d1": "D1 — Portaria",
     "camera.d2": "D2 — Corredor",
@@ -742,6 +747,11 @@ const translations: Record<Language, Record<string, string>> = {
     "notif.scenario.recognized_msg": "Joao Silva — Whitelist (98%)",
     "notif.scenario.blacklist": "Blacklist Match",
     "notif.scenario.blacklist_msg": "92% match with alert registry",
+    // Severity labels
+    "notif.severity.critical": "CRITICAL",
+    "notif.severity.warning": "WARNING",
+    "notif.severity.info": "INFO",
+    "notif.severity.success": "OK",
     // Camera names
     "camera.d1": "D1 — Gatehouse",
     "camera.d2": "D2 — Corridor",
@@ -1129,6 +1139,11 @@ const translations: Record<Language, Record<string, string>> = {
     "notif.scenario.recognized_msg": "若昂·席尔瓦 — 白名单 (98%)",
     "notif.scenario.blacklist": "黑名单匹配",
     "notif.scenario.blacklist_msg": "与警报登记 92% 匹配",
+    // Severity labels
+    "notif.severity.critical": "严重",
+    "notif.severity.warning": "警告",
+    "notif.severity.info": "信息",
+    "notif.severity.success": "正常",
     // Camera names
     "camera.d1": "D1 — 门卫室",
     "camera.d2": "D2 — 走廊",
