@@ -17,6 +17,7 @@ import { FilterState, CameraEvent } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
 import { Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
 import { useLocation } from "wouter";
+import { useI18n } from "@/contexts/I18nContext";
 import Playback from "@/pages/Playback";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
@@ -106,7 +107,9 @@ export default function Dashboard() {
     setActiveViewState(view);
     const path = viewToPath[view] || "/";
     if (path !== location) {
+      setPageLoading(true);
       navigate(path);
+      setTimeout(() => setPageLoading(false), 300);
     }
   };
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
@@ -116,6 +119,8 @@ export default function Dashboard() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [smartFilters, setSmartFilters] = useState<SmartSearchFilters>(defaultSmartFilters);
   const [smartSearchActive, setSmartSearchActive] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
+  const { t } = useI18n();
 
   const { events, loading, refetch } = useEvents(filters);
   const connectorStatus = useConnectorStatus();
@@ -232,6 +237,37 @@ export default function Dashboard() {
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
 
+  // Build breadcrumb from navSections data
+  const breadcrumbSections: Record<string, string> = {
+    dashboard: t("nav.operacao"), events: t("nav.operacao"), cameras: t("nav.operacao"),
+    playback: t("nav.operacao"), alerts: t("nav.operacao"),
+    automations: t("nav.inteligencia"), "ai-config": t("nav.inteligencia"),
+    "semantic-search": t("nav.inteligencia"), "ai-summary": t("nav.inteligencia"),
+    frequencia: t("nav.pessoas-acesso"), "person-timeline": t("nav.pessoas-acesso"),
+    "visitor-invite": t("nav.pessoas-acesso"), "vehicle-access": t("nav.pessoas-acesso"),
+    elevator: t("nav.pessoas-acesso"),
+    devices: t("nav.gestao"), "ai-box": t("nav.gestao"), "face-library": t("nav.gestao"),
+    vehicles: t("nav.gestao"), "system-config": t("nav.gestao"),
+    "user-admin": t("nav.administracao"), "audit-log": t("nav.administracao"),
+    settings: t("nav.administracao"),
+  };
+  const breadcrumbLabels: Record<string, string> = {
+    dashboard: t("nav.dashboard"), events: t("nav.events"), cameras: t("nav.cameras"),
+    playback: t("nav.playback"), alerts: t("nav.alerts"),
+    automations: t("nav.automations"), "ai-config": t("nav.ai-config"),
+    "semantic-search": t("nav.semantic-search"), "ai-summary": t("nav.ai-summary"),
+    frequencia: t("nav.frequencia"), "person-timeline": t("nav.person-timeline"),
+    "visitor-invite": t("nav.visitor-invite"), "vehicle-access": t("nav.vehicle-access"),
+    elevator: t("nav.elevator"), devices: t("nav.devices"), "ai-box": t("nav.ai-box"),
+    "face-library": t("nav.face-library"), vehicles: t("nav.vehicles"),
+    "system-config": t("nav.system-config"), "user-admin": t("nav.user-admin"),
+    "audit-log": t("nav.audit-log"), settings: t("nav.settings"),
+  };
+  const breadcrumb = activeView !== "dashboard" ? {
+    section: breadcrumbSections[activeView] || "",
+    label: breadcrumbLabels[activeView] || currentView.title,
+  } : undefined;
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar
@@ -250,6 +286,8 @@ export default function Dashboard() {
           onFiltersChange={setFilters}
           onRefresh={refetch}
           totalEvents={events.length}
+          breadcrumb={breadcrumb}
+          pageLoading={pageLoading}
         />
 
         <main className="p-6">

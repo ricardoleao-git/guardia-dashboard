@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   activeView: string;
@@ -17,6 +18,9 @@ interface SidebarProps {
   mobileOpen: boolean;
   onMobileClose: () => void;
 }
+
+// Views that require admin role
+const adminOnlyViews = ["user-admin", "audit-log", "settings", "system-config"];
 
 // Keys for i18n lookup
 const navSections = [
@@ -71,6 +75,7 @@ const navSections = [
 
 export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileClose }: SidebarProps) {
   const { t } = useI18n();
+  const { isGuest } = useAuth();
 
   const handleNavigate = (view: string) => {
     onNavigate(view);
@@ -117,13 +122,20 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
 
         {/* Navigation with sections */}
         <nav className="flex-1 px-2 py-3 overflow-y-auto">
-          {navSections.map((section) => (
+          {navSections.map((section) => {
+            // Filter out admin-only items for guests
+            const visibleItems = isGuest
+              ? section.items.filter((item) => !adminOnlyViews.includes(item.id))
+              : section.items;
+            // Hide entire section if no items visible
+            if (visibleItems.length === 0) return null;
+            return (
             <div key={section.titleKey} className="mb-4">
               <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
                 {t(section.titleKey)}
               </p>
               <div className="space-y-0.5">
-                {section.items.map((item) => {
+                {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeView === item.id;
                   return (
@@ -144,7 +156,8 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </nav>
 
         {/* Footer with status indicators */}

@@ -1,5 +1,6 @@
-import { Search, Filter, Download, RefreshCw, Bell, Clock } from "lucide-react";
+import { Search, Filter, Download, RefreshCw, Bell, Clock, ChevronRight, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,13 +19,16 @@ interface HeaderProps {
   onFiltersChange: (filters: FilterState) => void;
   onRefresh: () => void;
   totalEvents: number;
+  breadcrumb?: { section: string; label: string };
+  pageLoading?: boolean;
 }
 
-export default function Header({ title, subtitle, filters, onFiltersChange, onRefresh, totalEvents }: HeaderProps) {
+export default function Header({ title, subtitle, filters, onFiltersChange, onRefresh, totalEvents, breadcrumb, pageLoading }: HeaderProps) {
   const { t, lang } = useI18n();
   const [notifCount, setNotifCount] = useState(0);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
+  const [showLoader, setShowLoader] = useState(false);
 
   useEffect(() => {
     const updateClock = () => {
@@ -43,13 +47,43 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
     setNotifCount(critical);
   }, [totalEvents]);
 
+  // Show loading indicator briefly when pageLoading changes
+  useEffect(() => {
+    if (pageLoading) {
+      setShowLoader(true);
+      const timer = setTimeout(() => setShowLoader(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [pageLoading]);
+
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="px-4 py-3 lg:px-6 lg:py-4">
         {/* Title row */}
         <div className="flex items-center justify-between mb-3 lg:mb-4">
           <div className="min-w-0">
-            <h2 className="font-display text-xl lg:text-2xl font-bold tracking-tight truncate">{title}</h2>
+            {/* Breadcrumb */}
+            {breadcrumb && (
+              <Breadcrumb className="mb-1.5">
+                <BreadcrumbList className="text-[11px]">
+                  <BreadcrumbItem>
+                    <BreadcrumbLink className="text-muted-foreground/60">GuardIA</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink className="text-muted-foreground/80">{breadcrumb.section}</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="font-medium text-foreground">{breadcrumb.label}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            )}
+            <div className="flex items-center gap-2">
+              {showLoader && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
+              <h2 className={cn("font-display text-xl lg:text-2xl font-bold tracking-tight truncate transition-opacity", showLoader && "opacity-60")}>{title}</h2>
+            </div>
             <p className="text-xs lg:text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
