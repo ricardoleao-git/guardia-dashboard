@@ -141,6 +141,26 @@
 }
 
 @layer base {
+  /* When a standalone page is embedded inside the Dashboard layout,
+     hide its internal sidebar, mobile header, and outer layout wrapper */
+  .embedded-page > div.min-h-screen,
+  .embedded-page > div.flex.min-h-screen {
+    display: contents !important;
+  }
+  .embedded-page > div.min-h-screen > [class*="sidebar"],
+  .embedded-page > div.min-h-screen > aside,
+  .embedded-page > div.min-h-screen > nav,
+  .embedded-page [class*="lg:ml-60"] > [class*="mobile-header"],
+  .embedded-page [class*="lg:ml-60"] > header:first-child {
+    display: none !important;
+  }
+  .embedded-page [class*="lg:ml-60"] {
+    margin-left: 0 !important;
+  }
+  .embedded-page > div.min-h-screen > div[class*="lg:ml-60"],
+  .embedded-page > div.min-h-screen > div[class*="flex-1"] {
+    min-height: unset !important;
+  }
   * {
     @apply border-border outline-ring/50;
   }

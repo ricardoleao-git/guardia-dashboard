@@ -376,15 +376,15 @@ export default function Dashboard() {
           )}
 
           {activeView === "playback" && (
-            <Playback />
+            <div className="embedded-page"><Playback /></div>
           )}
 
           {activeView === "vehicles" && (
-            <VehicleManagement />
+            <div className="embedded-page"><VehicleManagement /></div>
           )}
 
           {activeView === "alerts" && (
-            <AbsenceAlerts />
+            <div className="embedded-page"><AbsenceAlerts /></div>
           )}
 
           {activeView === "settings" && (
@@ -392,63 +392,63 @@ export default function Dashboard() {
           )}
 
           {activeView === "system-config" && (
-            <SystemConfig />
+            <div className="embedded-page"><SystemConfig /></div>
           )}
 
           {activeView === "user-admin" && (
-            <UserAdmin />
+            <div className="embedded-page"><UserAdmin /></div>
           )}
 
           {activeView === "audit-log" && (
-            <AuditLog />
+            <div className="embedded-page"><AuditLog /></div>
           )}
 
           {activeView === "automations" && (
-            <Automations />
+            <div className="embedded-page"><Automations /></div>
           )}
 
           {activeView === "frequencia" && (
-            <Frequencia />
+            <div className="embedded-page"><Frequencia /></div>
           )}
 
           {activeView === "person-timeline" && (
-            <PersonTimeline />
+            <div className="embedded-page"><PersonTimeline /></div>
           )}
 
           {activeView === "vehicle-access" && (
-            <VehicleAccess />
+            <div className="embedded-page"><VehicleAccess /></div>
           )}
 
           {activeView === "visitor-invite" && (
-            <VisitorInvite />
+            <div className="embedded-page"><VisitorInvite /></div>
           )}
 
           {activeView === "semantic-search" && (
-            <SemanticSearch />
+            <div className="embedded-page"><SemanticSearch /></div>
           )}
 
           {activeView === "ai-summary" && (
-            <AISummary />
+            <div className="embedded-page"><AISummary /></div>
           )}
 
           {activeView === "elevator" && (
-            <ElevatorControl />
+            <div className="embedded-page"><ElevatorControl /></div>
           )}
 
           {activeView === "ai-box" && (
-            <AIBox />
+            <div className="embedded-page"><AIBox /></div>
           )}
 
           {activeView === "devices" && (
-            <DeviceManagement />
+            <div className="embedded-page"><DeviceManagement /></div>
           )}
 
           {activeView === "ai-config" && (
-            <AIConfig />
+            <div className="embedded-page"><AIConfig /></div>
           )}
 
           {activeView === "face-library" && (
-            <FaceLibrary />
+            <div className="embedded-page"><FaceLibrary /></div>
           )}
         </main>
       </div>
