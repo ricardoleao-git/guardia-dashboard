@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import Header from "@/components/Header";
@@ -16,6 +16,7 @@ import { useEventAlerts } from "@/hooks/useCriticalAlerts";
 import { FilterState, CameraEvent } from "@/lib/types";
 import { mockCameras } from "@/lib/mock-data";
 import { Bell, Settings, ShieldCheck, Inbox } from "lucide-react";
+import { useLocation } from "wouter";
 import Playback from "@/pages/Playback";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
@@ -31,6 +32,9 @@ import SemanticSearch from "@/pages/SemanticSearch";
 import AISummary from "@/pages/AISummary";
 import ElevatorControl from "@/pages/ElevatorControl";
 import AIBox from "@/pages/AIBox";
+import DeviceManagement from "@/pages/DeviceManagement";
+import AIConfig from "@/pages/AIConfig";
+import FaceLibrary from "@/pages/FaceLibrary";
 import RealtimeNotifications from "@/components/RealtimeNotifications";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -55,8 +59,56 @@ function getCategoryLabel(key: string): string {
   return categoryLabels[key] || key;
 }
 
+// Map sidebar IDs to URL paths
+const viewToPath: Record<string, string> = {
+  dashboard: "/",
+  events: "/events",
+  cameras: "/cameras",
+  playback: "/playback",
+  alerts: "/alerts",
+  automations: "/automations",
+  "ai-config": "/ai-config",
+  "semantic-search": "/semantic-search",
+  "ai-summary": "/ai-summary",
+  frequencia: "/frequencia",
+  "person-timeline": "/person-timeline",
+  "visitor-invite": "/visitor-invite",
+  "vehicle-access": "/vehicle-access",
+  elevator: "/elevator",
+  devices: "/devices",
+  "ai-box": "/ai-box",
+  "face-library": "/face-library",
+  vehicles: "/vehicles",
+  "system-config": "/system-config",
+  "user-admin": "/user-admin",
+  "audit-log": "/audit-log",
+  settings: "/settings",
+};
+
+const pathToView: Record<string, string> = Object.entries(viewToPath).reduce(
+  (acc, [view, path]) => { acc[path] = view; return acc; },
+  {} as Record<string, string>
+);
+
 export default function Dashboard() {
-  const [activeView, setActiveView] = useState("dashboard");
+  const [location, navigate] = useLocation();
+  // Derive activeView from URL path, fallback to dashboard
+  const urlView = pathToView[location] || "dashboard";
+  const [activeView, setActiveViewState] = useState(urlView);
+
+  // Sync state when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    setActiveViewState(urlView);
+  }, [urlView]);
+
+  // Navigate to URL when view changes
+  const setActiveView = (view: string) => {
+    setActiveViewState(view);
+    const path = viewToPath[view] || "/";
+    if (path !== location) {
+      navigate(path);
+    }
+  };
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("all");
   const [selectedEvent, setSelectedEvent] = useState<CameraEvent | null>(null);
@@ -164,6 +216,18 @@ export default function Dashboard() {
     "system-config": { title: "Config. Sistema", subtitle: "Rede, sistema e armazenamento do NVR" },
     "user-admin": { title: "Operadores", subtitle: "Administração de usuários e níveis de acesso" },
     "audit-log": { title: "Auditoria", subtitle: "Rastreabilidade de ações dos operadores" },
+    automations: { title: "Automações", subtitle: "Regras e automações de segurança" },
+    frequencia: { title: "Frequência", subtitle: "Análise de frequência de pessoas" },
+    "person-timeline": { title: "Linha do Tempo", subtitle: "Histórico de aparições por pessoa" },
+    "vehicle-access": { title: "Acesso de Veículos", subtitle: "Controle de acesso por placa" },
+    "visitor-invite": { title: "Convite de Visitantes", subtitle: "Gestão de visitantes e convites" },
+    "semantic-search": { title: "Busca Semântica", subtitle: "Busca inteligente por atributos" },
+    "ai-summary": { title: "Resumo IA", subtitle: "Resumo automático de eventos por IA" },
+    elevator: { title: "Controle de Elevador", subtitle: "Integração com controle de elevadores" },
+    "ai-box": { title: "AI Box", subtitle: "Configuração de caixas de IA" },
+    devices: { title: "Dispositivos", subtitle: "Gestão de dispositivos conectados" },
+    "ai-config": { title: "Config. IA", subtitle: "Configuração de IA por câmera" },
+    "face-library": { title: "Biblioteca Facial", subtitle: "Cadastro e gestão de faces" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -373,6 +437,18 @@ export default function Dashboard() {
 
           {activeView === "ai-box" && (
             <AIBox />
+          )}
+
+          {activeView === "devices" && (
+            <DeviceManagement />
+          )}
+
+          {activeView === "ai-config" && (
+            <AIConfig />
+          )}
+
+          {activeView === "face-library" && (
+            <FaceLibrary />
           )}
         </main>
       </div>

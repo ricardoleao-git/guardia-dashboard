@@ -45,27 +45,72 @@ function Router() {
         {isDemoMode || isGuest || user ? <Redirect to="/" /> : <Login />}
       </Route>
 
-      {/* Protected routes */}
+      {/* Protected routes — all views rendered inside Dashboard layout */}
       <Route path="/" >
         <ProtectedRoute component={Dashboard} />
       </Route>
-      <Route path="/devices">
-        <ProtectedRoute component={DeviceManagement} />
+      <Route path="/events">
+        <ProtectedRoute component={Dashboard} />
       </Route>
-      <Route path="/ai-config">
-        <ProtectedRoute component={AIConfig} />
-      </Route>
-      <Route path="/face-library">
-        <ProtectedRoute component={FaceLibrary} />
+      <Route path="/cameras">
+        <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/playback">
-        <ProtectedRoute component={Playback} />
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/alerts">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/automations">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/ai-config">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/semantic-search">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/ai-summary">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/frequencia">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/person-timeline">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/visitor-invite">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/vehicle-access">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/elevator">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/devices">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/ai-box">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/face-library">
+        <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/vehicles">
-        <ProtectedRoute component={VehicleManagement} />
+        <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/system-config">
-        <ProtectedRoute component={SystemConfig} />
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/user-admin">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/audit-log">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute component={Dashboard} />
       </Route>
 
       <Route path="/404" component={NotFound} />
