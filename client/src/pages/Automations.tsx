@@ -17,7 +17,8 @@ import {
   Trash2, Edit2, ChevronRight, X, Check, Mail, Smartphone,
   ScanFace, Car, PersonStanding, Fence, MoveRight, Users2,
   TimerOff, Save, ArrowRight, Layers, GripVertical, Trash,
-  Eye, EyeOff
+  Eye, EyeOff, Sparkles, Copy, Calendar, Moon, Sun,
+  Building2, GraduationCap, ShieldAlert, Wrench
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +126,121 @@ function getAcaoIcon(acao: string): typeof Bell {
   return Bell;
 }
 
+// ===== Pre-configured Templates =====
+interface AutomationTemplate {
+  id: string;
+  nome: string;
+  descricao: string;
+  categoria: string;
+  icon: typeof Bell;
+  triggerId: string;
+  conditions: { id: string; param?: string }[];
+  actions: string[];
+}
+
+const automationTemplates: AutomationTemplate[] = [
+  {
+    id: "tpl-ausencia-aluno",
+    nome: "Ausência de Aluno",
+    descricao: "Avisa responsável quando aluno não chega até horário limite",
+    categoria: "Educação",
+    icon: GraduationCap,
+    triggerId: "ausencia",
+    conditions: [{ id: "horario", param: "até 08h00" }, { id: "pessoa", param: "turma 6A" }],
+    actions: ["whatsapp", "email"],
+  },
+  {
+    id: "tpl-atraso-manha",
+    nome: "Atraso Matutino",
+    descricao: "Alerta quando funcionário chega após 08h15",
+    categoria: "Presença",
+    icon: Clock,
+    triggerId: "facial-branca",
+    conditions: [{ id: "horario", param: "após 08h15" }, { id: "camera", param: "D3 Recepção" }],
+    actions: ["push", "email"],
+  },
+  {
+    id: "tpl-estranho-noturno",
+    nome: "Estranho Fora de Horário",
+    descricao: "Detecta rosto desconhecido no período noturno",
+    categoria: "Segurança",
+    icon: ShieldAlert,
+    triggerId: "facial-estranho",
+    conditions: [{ id: "horario", param: "18h00-07h00" }, { id: "duracao", param: "30s" }],
+    actions: ["whatsapp", "snapshot", "sirene"],
+  },
+  {
+    id: "tpl-lista-negra",
+    nome: "Lista Negra Detectada",
+    descricao: "Pessoa da lista negra reconhecida em qualquer câmera",
+    categoria: "Segurança",
+    icon: ScanFace,
+    triggerId: "facial-negra",
+    conditions: [],
+    actions: ["whatsapp", "push", "sirene", "snapshot"],
+  },
+  {
+    id: "tpl-portaria-vazia",
+    nome: "Portaria Vazia",
+    descricao: "Sem movimento na portaria por mais de 5 minutos",
+    categoria: "Operacional",
+    icon: Building2,
+    triggerId: "off-duty",
+    conditions: [{ id: "camera", param: "D3 Recepção" }, { id: "duracao", param: "5min" }],
+    actions: ["push", "email"],
+  },
+  {
+    id: "tpl-entrada-fora-horario",
+    nome: "Entrada Fora de Horário",
+    descricao: "Movimento detectado fora do expediente",
+    categoria: "Segurança",
+    icon: Moon,
+    triggerId: "movimento",
+    conditions: [{ id: "horario", param: "após 19h00" }, { id: "camera", param: "D2 Corredor" }],
+    actions: ["whatsapp", "snapshot", "gravar"],
+  },
+  {
+    id: "tpl-cerca-eletronica",
+    nome: "Invasão de Cerca",
+    descricao: "Pessoa atravessa cerca eletrônica virtual",
+    categoria: "Segurança",
+    icon: Fence,
+    triggerId: "cerca",
+    conditions: [{ id: "camera", param: "D1 Estacionamento" }],
+    actions: ["sirene", "whatsapp", "snapshot"],
+  },
+  {
+    id: "tpl-veiculo-estacionamento",
+    nome: "Veículo no Estacionamento",
+    descricao: "Veículo detectado no estacionamento fora do horário",
+    categoria: "Operacional",
+    icon: Car,
+    triggerId: "veiculo",
+    conditions: [{ id: "horario", param: "22h00-06h00" }, { id: "camera", param: "D1 Estacionamento" }],
+    actions: ["snapshot", "push"],
+  },
+  {
+    id: "tpl-saida-antecipada",
+    nome: "Saída Antecipada",
+    descricao: "Funcionário sai antes do horário de saída",
+    categoria: "Presença",
+    icon: Sun,
+    triggerId: "facial-branca",
+    conditions: [{ id: "horario", param: "antes de 17h30" }, { id: "camera", param: "D3 Recepção" }],
+    actions: ["push", "email"],
+  },
+  {
+    id: "tpl-manutencao",
+    nome: "Manutenção Programada",
+    descricao: "Lembrete de manutenção por detecção de movimento em sala técnica",
+    categoria: "Operacional",
+    icon: Wrench,
+    triggerId: "movimento",
+    conditions: [{ id: "camera", param: "D6 Sala Téc" }, { id: "horario", param: "janela 06h-07h" }],
+    actions: ["push", "email"],
+  },
+];
+
 // ===== Helper to create flow items =====
 let uidCounter = 0;
 function makeUid() { return `fi_${++uidCounter}_${Date.now()}`; }
@@ -159,6 +275,7 @@ export default function Automations() {
   const [flowItems, setFlowItems] = useState<FlowItem[]>([]);
   const [conditionParams, setConditionParams] = useState<Record<string, string>>({});
   const [showFlowBuilder, setShowFlowBuilder] = useState(true);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Drag-and-drop state
   const [draggedUid, setDraggedUid] = useState<string | null>(null);
@@ -169,6 +286,25 @@ export default function Automations() {
 
   const toggleAutomation = (id: string) => {
     setAutomations(automations.map(a => a.id === id ? { ...a, ativa: !a.ativa } : a));
+  };
+
+  const applyTemplate = (tpl: AutomationTemplate) => {
+    setEditingId(null);
+    setRuleName(tpl.nome);
+    const items: FlowItem[] = [];
+    const trig = triggerToFlowItem(tpl.triggerId);
+    if (trig) items.push(trig);
+    tpl.conditions.forEach(c => {
+      const item = conditionToFlowItem(c.id, c.param);
+      if (item) items.push(item);
+    });
+    tpl.actions.forEach(a => {
+      const item = actionToFlowItem(a);
+      if (item) items.push(item);
+    });
+    setFlowItems(items);
+    setShowTemplates(false);
+    setShowEditor(true);
   };
 
   const openEditor = (id?: string) => {
@@ -383,12 +519,20 @@ export default function Automations() {
               </h2>
               <p className="text-xs text-muted-foreground">Regras evento → condição → ação</p>
             </div>
-            <button
-              onClick={() => openEditor()}
-              className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" /> Nova Automação
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Templates
+              </button>
+              <button
+                onClick={() => openEditor()}
+                className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" /> Nova Automação
+              </button>
+            </div>
           </div>
         </div>
 
@@ -547,6 +691,112 @@ export default function Automations() {
               </table>
             </div>
           </div>
+
+          {/* ===== TEMPLATES MODAL ===== */}
+          {showTemplates && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+              onClick={() => setShowTemplates(false)}
+            >
+              <div
+                className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl border border-border bg-card shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Templates header */}
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15">
+                      <Sparkles className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-base font-semibold">Templates de Automação</h3>
+                      <p className="text-[11px] text-muted-foreground">Clique para criar uma regra pré-configurada</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowTemplates(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Templates grid */}
+                <div className="p-6">
+                  {/* Category filter chips */}
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    {Array.from(new Set(automationTemplates.map(t => t.categoria))).map(cat => (
+                      <span key={cat} className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {automationTemplates.map((tpl) => {
+                      const Icon = tpl.icon;
+                      const trigOpt = triggerOptions.find(t => t.id === tpl.triggerId);
+                      const actOpts = tpl.actions.map(a => actionOptions.find(o => o.id === a)!).filter(Boolean);
+                      return (
+                        <button
+                          key={tpl.id}
+                          onClick={() => applyTemplate(tpl)}
+                          className="group flex flex-col gap-3 rounded-xl border border-border bg-background p-4 text-left transition-all hover:border-primary/40 hover:shadow-md"
+                        >
+                          {/* Template header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", trigOpt?.bg || "bg-muted")}>
+                                <Icon className={cn("h-4.5 w-4.5", trigOpt?.color || "text-muted-foreground")} />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold">{tpl.nome}</span>
+                                <span className="text-[10px] text-muted-foreground">{tpl.categoria}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[9px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Copy className="h-3 w-3" /> USAR
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{tpl.descricao}</p>
+
+                          {/* Flow preview */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {trigOpt && (
+                              <span className={cn("rounded px-1.5 py-0.5 text-[9px] font-medium", trigOpt.bg, trigOpt.color)}>
+                                {trigOpt.label}
+                              </span>
+                            )}
+                            {tpl.conditions.map(c => {
+                              const opt = conditionOptions.find(o => o.id === c.id);
+                              return opt ? (
+                                <span key={c.id} className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-300">
+                                  {opt.label}{c.param ? `: ${c.param}` : ""}
+                                </span>
+                              ) : null;
+                            })}
+                            <ArrowRight className="h-3 w-3 text-muted-foreground/40" />
+                            {actOpts.map(a => (
+                              <span key={a.id} className={cn("rounded px-1.5 py-0.5 text-[9px] font-medium", a.bg, a.color)}>
+                                {a.label}
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Footer hint */}
+                  <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    <p className="text-[11px] text-muted-foreground">
+                      Ao clicar em um template, o editor visual abre com todos os campos pré-preenchidos. Você pode ajustar parâmetros antes de salvar.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ===== VISUAL EDITOR MODAL WITH DRAG-AND-DROP ===== */}
           {showEditor && (
