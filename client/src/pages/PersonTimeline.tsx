@@ -121,9 +121,9 @@ export default function PersonTimeline() {
   };
 
   const listLabel = (list: string) => {
-    if (list === "branca") return "Lista Branca";
-    if (list === "negra") return "Lista Negra";
-    return "Estranho";
+    if (list === "branca") return t("timeline.white_list");
+    if (list === "negra") return t("timeline.black_list");
+    return t("timeline.stranger");
   };
 
   const scoreColor = (score: number) => {
@@ -147,7 +147,7 @@ export default function PersonTimeline() {
           {/* Header */}
           <div className="mb-6">
             <h1 className="font-display text-2xl font-bold tracking-tight">{t("timeline.title")}</h1>
-            <p className="text-sm text-muted-foreground mt-1">Histórico de aparições e correlação de identidade entre câmeras</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("timeline.subtitle")}</p>
           </div>
 
           {/* Person selector cards */}
@@ -192,14 +192,14 @@ export default function PersonTimeline() {
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Camera className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[11px] text-muted-foreground">Total Aparições</span>
+                  <span className="text-[11px] text-muted-foreground">{t("timeline.total_appearances")}</span>
                 </div>
                 <p className="font-display text-xl font-bold">{stats.total}</p>
               </div>
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="h-3.5 w-3.5 text-blue-400" />
-                  <span className="text-[11px] text-muted-foreground">Câmeras Distintas</span>
+                  <span className="text-[11px] text-muted-foreground">{t("timeline.distinct_cameras")}</span>
                 </div>
                 <p className="font-display text-xl font-bold">{stats.cameras}</p>
               </div>
@@ -242,7 +242,7 @@ export default function PersonTimeline() {
                 className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
               >
                 {cameras.map(c => (
-                  <option key={c} value={c}>{c === "all" ? "Todas as câmeras" : c}</option>
+                  <option key={c} value={c}>{c === "all" ? t("timeline.all_cameras") : c}</option>
                 ))}
               </select>
             </div>
@@ -252,7 +252,7 @@ export default function PersonTimeline() {
               className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
             >
               {lists.map(l => (
-                <option key={l} value={l}>{l === "all" ? "Todas as listas" : listLabel(l)}</option>
+                <option key={l} value={l}>{l === "all" ? t("timeline.all_lists") : listLabel(l)}</option>
               ))}
             </select>
             <select
@@ -261,14 +261,14 @@ export default function PersonTimeline() {
               className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
             >
               <option value="time">Ordenar: Mais recente</option>
-              <option value="camera">Ordenar: Câmera</option>
+              <option value="camera">{t("timeline.sort_camera")}</option>
               <option value="score">Ordenar: Score</option>
             </select>
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar..."
+                placeholder={t("timeline.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-md border border-border bg-background pl-7 pr-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground"
@@ -379,7 +379,7 @@ export default function PersonTimeline() {
                                 </div>
                                 {/* Camera info */}
                                 <div className="space-y-1">
-                                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Câmera</p>
+                                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">{t("timeline.camera")}</p>
                                   <p className="text-xs">{ap.cameraId} — {ap.cameraName}</p>
                                   <p className="text-xs text-muted-foreground">IP: 192.168.254.{ap.cameraId === "D1" ? "115" : ap.cameraId === "D2" ? "206" : ap.cameraId === "D3" ? "208" : ap.cameraId === "D4" ? "227" : ap.cameraId === "D5" ? "207" : "209"}</p>
                                 </div>

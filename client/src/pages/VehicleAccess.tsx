@@ -57,10 +57,10 @@ const mockVehicleEvents: VehicleEvent[] = [
 ];
 
 const statusConfig = {
-  authorized: { label: "Autorizado", icon: ShieldCheck, color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
-  denied: { label: "Negado", icon: ShieldAlert, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
-  pending: { label: "Pendente", icon: AlertCircle, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  manual: { label: "Manual", icon: Shield, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+  authorized: { labelKey: "vehicle.authorized", icon: ShieldCheck, color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
+  denied: { labelKey: "vehicle.denied_status", icon: ShieldAlert, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20" },
+  pending: { labelKey: "vehicle.pending_status", icon: AlertCircle, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+  manual: { labelKey: "vehicle.manual", icon: Shield, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
 };
 
 export default function VehicleAccess() {
@@ -109,10 +109,10 @@ export default function VehicleAccess() {
           <div className="mb-6 flex items-start justify-between">
             <div>
               <h1 className="font-display text-2xl font-bold tracking-tight">{t("vehicle.title")}</h1>
-              <p className="text-sm text-muted-foreground mt-1">LPR + UHF + Facial — correlação de entrada/saída de veículos</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("vehicle.subtitle")}</p>
             </div>
             <button className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              <Plus className="h-3.5 w-3.5" /> Cadastrar Veículo
+              <Plus className="h-3.5 w-3.5" /> {t("vehicle.register")}
             </button>
           </div>
 
@@ -121,28 +121,28 @@ export default function VehicleAccess() {
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Car className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[11px] text-muted-foreground">Veículos Únicos</span>
+                <span className="text-[11px] text-muted-foreground">{t("vehicle.unique_vehicles")}</span>
               </div>
               <p className="font-display text-xl font-bold">{stats.uniqueVehicles}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <ArrowRight className="h-3.5 w-3.5 text-green-400" />
-                <span className="text-[11px] text-muted-foreground">Entradas / Saídas</span>
+                <span className="text-[11px] text-muted-foreground">{t("vehicle.entries_exits")}</span>
               </div>
               <p className="font-display text-xl font-bold">{stats.entries} / {stats.exits}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <ShieldCheck className="h-3.5 w-3.5 text-green-400" />
-                <span className="text-[11px] text-muted-foreground">Autorizados</span>
+                <span className="text-[11px] text-muted-foreground">{t("vehicle.authorized")}</span>
               </div>
               <p className="font-display text-xl font-bold text-green-400">{stats.authorized}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <ShieldAlert className="h-3.5 w-3.5 text-red-400" />
-                <span className="text-[11px] text-muted-foreground">Negados / Pendentes</span>
+                <span className="text-[11px] text-muted-foreground">{t("vehicle.denied")} / {t("vehicle.pending")}</span>
               </div>
               <p className="font-display text-xl font-bold">
                 <span className="text-red-400">{stats.denied}</span>
@@ -161,11 +161,11 @@ export default function VehicleAccess() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
               >
-                <option value="all">Todos os status</option>
-                <option value="authorized">Autorizado</option>
-                <option value="denied">Negado</option>
-                <option value="pending">Pendente</option>
-                <option value="manual">Manual</option>
+                <option value="all">{t("vehicle.all")}</option>
+                <option value="authorized">{t("vehicle.authorized")}</option>
+                <option value="denied">{t("vehicle.denied_status")}</option>
+                <option value="pending">{t("vehicle.pending_status")}</option>
+                <option value="manual">{t("vehicle.manual")}</option>
               </select>
             </div>
             <select
@@ -173,9 +173,9 @@ export default function VehicleAccess() {
               onChange={(e) => setDirectionFilter(e.target.value)}
               className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
             >
-              <option value="all">Entradas e saídas</option>
-              <option value="entry">Apenas entradas</option>
-              <option value="exit">Apenas saídas</option>
+              <option value="all">{t("vehicle.entry")} + {t("vehicle.exit")}</option>
+              <option value="entry">{t("vehicle.entry")}</option>
+              <option value="exit">{t("vehicle.exit")}</option>
             </select>
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -285,7 +285,7 @@ export default function VehicleAccess() {
                           <td className="px-3 py-2.5 text-center">
                             <span className={cn("inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium", sc.bg, sc.color, sc.border)}>
                               <StatusIcon className="h-3 w-3" />
-                              {sc.label}
+                              {t(sc.labelKey)}
                             </span>
                           </td>
                           <td className="px-3 py-2.5">
@@ -331,7 +331,7 @@ export default function VehicleAccess() {
                                     <StatusIcon className={cn("h-4 w-4", sc.color)} />
                                     <div>
                                       <p className="text-[10px] text-muted-foreground">Decisão</p>
-                                      <p className={cn("text-xs font-semibold", sc.color)}>{sc.label}</p>
+                                      <p className={cn("text-xs font-semibold", sc.color)}>{t(sc.labelKey)}</p>
                                     </div>
                                   </div>
                                 </div>

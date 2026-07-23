@@ -13,6 +13,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
+import { useI18n } from "@/contexts/I18nContext";
 import {
   AlertTriangle, Bell, MessageSquare, Mail, Smartphone,
   Clock, UserX, Plus, Trash2, Edit2, CheckCircle2, XCircle,
@@ -126,6 +127,7 @@ const channelConfig = {
 };
 
 export default function AbsenceAlerts() {
+  const { t } = useI18n();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [alerts, setAlerts] = useState(mockAlerts);
   const [rules, setRules] = useState(mockRules);
@@ -168,7 +170,7 @@ export default function AbsenceAlerts() {
             <div>
               <h2 className="font-display text-lg font-semibold flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-400" />
-                Alertas de Ausência
+                {t("alerts.title")}
               </h2>
               <p className="text-xs text-muted-foreground">Notificações automáticas de falta e atraso</p>
             </div>
@@ -176,7 +178,7 @@ export default function AbsenceAlerts() {
               onClick={() => setShowNewRule(true)}
               className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" /> Nova Regra
+              <Plus className="h-3.5 w-3.5" /> {t("alerts.new_rule")}
             </button>
           </div>
         </div>
@@ -185,9 +187,9 @@ export default function AbsenceAlerts() {
           {/* Tabs */}
           <div className="flex items-center gap-1 border-b border-border">
             {([
-              { id: "alertas", label: `Alertas Ativos (${activeAlerts.length})` },
-              { id: "regras", label: `Regras (${rules.length})` },
-              { id: "destinatarios", label: "Destinatários" },
+              { id: "alertas", label: `${t("alerts.active")} (${activeAlerts.length})` },
+              { id: "regras", label: `${t("alerts.rules")} (${rules.length})` },
+              { id: "destinatarios", label: t("alerts.recipients") },
             ] as const).map((tab) => (
               <button
                 key={tab.id}
@@ -279,7 +281,7 @@ export default function AbsenceAlerts() {
                       <div className="border-t border-border bg-muted/30 p-4 space-y-3">
                         {/* Destinatários */}
                         <div>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">Destinatários</p>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">{t("alerts.recipients")}</p>
                           <div className="flex flex-wrap gap-1.5">
                             {alert.destinatarios.map((d, i) => (
                               <span key={i} className="rounded-md bg-muted px-2 py-1 text-[11px] font-mono-tech text-muted-foreground">
@@ -291,7 +293,7 @@ export default function AbsenceAlerts() {
 
                         {/* Channel status */}
                         <div>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">Status por canal</p>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">{t("alerts.channel_status")}</p>
                           <div className="grid grid-cols-3 gap-2">
                             {(["whatsapp", "push", "email"] as const).map((ch) => {
                               const cfg = channelConfig[ch];
