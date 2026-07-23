@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 // Configuração do Supabase para o frontend
 // Usa a ANON KEY (não a service role) por segurança no browser
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://ycqrgrczrunvyivxfnch.supabase.co";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_6ulf03swTJNZdt7DYPqjvg_KJ9z2ckh";
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
