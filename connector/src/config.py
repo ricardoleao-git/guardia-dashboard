@@ -39,10 +39,20 @@ class ConnectorConfig:
 
 
 @dataclass
+class WhatsAppConfig:
+    enabled: bool = False
+    phone_number_id: str = ""
+    access_token: str = ""
+    recipient_phone: str = ""
+    alert_types: List[str] = field(default_factory=lambda: ["stranger", "blacklist", "access_denied", "alarm"])
+
+
+@dataclass
 class AppConfig:
     supabase: SupabaseConfig
     connector: ConnectorConfig
     cameras: List[CameraConfig] = field(default_factory=list)
+    whatsapp: Optional[WhatsAppConfig] = None
 
 
 def load_config(config_path: Optional[str] = None) -> AppConfig:
@@ -98,4 +108,16 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             port=int(cam.get("port", 80)),
         ))
     
-    return AppConfig(supabase=supabase_cfg, connector=connector_cfg, cameras=cameras)
+    # WhatsApp (opcional)
+    wa_raw = raw.get("whatsapp", {})
+    whatsapp_cfg = None
+    if wa_raw.get("enabled", False):
+        whatsapp_cfg = WhatsAppConfig(
+            enabled=True,
+            phone_number_id=wa_raw.get("phone_number_id", ""),
+            access_token=wa_raw.get("access_token", ""),
+            recipient_phone=wa_raw.get("recipient_phone", ""),
+            alert_types=wa_raw.get("alert_types", ["stranger", "blacklist", "access_denied", "alarm"]),
+        )
+    
+    return AppConfig(supabase=supabase_cfg, connector=connector_cfg, cameras=cameras, whatsapp=whatsapp_cfg)

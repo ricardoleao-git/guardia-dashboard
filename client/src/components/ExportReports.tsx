@@ -90,6 +90,56 @@ export default function ExportReports({ events, filters }: ExportReportsProps) {
       const dateStr = now.toLocaleDateString("pt-BR");
       const timeStr = now.toLocaleTimeString("pt-BR");
 
+      // Estatísticas por câmera
+      const cameraStats: Record<string, number> = {};
+      events.forEach((e) => {
+        const cam = e.payload?.cameraName || e.camera_serial;
+        cameraStats[cam] = (cameraStats[cam] || 0) + 1;
+      });
+      const cameraBars = Object.entries(cameraStats)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([cam, count]) => {
+          const maxCount = Math.max(...Object.values(cameraStats));
+          const width = Math.round((count / maxCount) * 100);
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="width:80px;font-size:10px;color:#64748b;text-align:right">${cam}</div>
+            <div style="flex:1;background:#e2e8f0;border-radius:4px;height:16px;overflow:hidden">
+              <div style="width:${width}%;height:100%;background:linear-gradient(90deg,#1e40af,#0ea5e9);border-radius:4px"></div>
+            </div>
+            <div style="width:30px;font-size:10px;font-weight:600;color:#1e293b">${count}</div>
+          </div>`;
+        })
+        .join("");
+
+      // Estatísticas por hora (últimas 24h)
+      const hourlyStats: number[] = new Array(24).fill(0);
+      events.forEach((e) => {
+        const h = new Date(e.timestamp).getHours();
+        if (h >= 0 && h < 24) hourlyStats[h]++;
+      });
+      const maxHourly = Math.max(...hourlyStats, 1);
+      const hourlyBars = hourlyStats
+        .map((count, h) => {
+          const height = Math.round((count / maxHourly) * 60);
+          return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:2px">
+            <div style="font-size:8px;color:#64748b">${count || ""}</div>
+            <div style="width:100%;max-width:14px;height:${height}px;background:${count > 0 ? "#1e40af" : "#e2e8f0"};border-radius:2px 2px 0 0;min-height:2px"></div>
+            <div style="font-size:7px;color:#94a3b8">${h}</div>
+          </div>`;
+        })
+        .join("");
+
+      // Eventos críticos (stranger, blacklist, alarm)
+      const criticalEvents = events.filter((e) =>
+        e.payload?.faceList?.toLowerCase() === "stranger" ||
+        e.payload?.faceList?.toLowerCase() === "blacklist" ||
+        e.operator === "Alarm"
+      );
+      const warningEvents = events.filter((e) =>
+        e.payload?.matchScore && e.payload.matchScore < 70 && e.payload.matchScore > 0
+      );
+
       // Build HTML for PDF
       const filterSummary = filters
         ? Object.entries(filters)
@@ -107,20 +157,24 @@ export default function ExportReports({ events, filters }: ExportReportsProps) {
         : "";
 
       const eventRows = events
+        .slice(0, 100)
         .map((e, i) => {
           const time = new Date(e.timestamp).toLocaleString("pt-BR");
           const op = operatorLabels[e.operator] || e.operator;
           const name = e.payload?.name || e.payload?.plateNumber || e.payload?.plate || "—";
           const score = e.payload?.matchScore ? `${e.payload.matchScore}%` : "—";
           const dir = e.payload?.direction || "—";
-          const rowBg = i % 2 === 0 ? "#f8fafc" : "#ffffff";
+          const faceList = e.payload?.faceList || "";
+          const isCritical = faceList.toLowerCase() === "stranger" || faceList.toLowerCase() === "blacklist" || e.operator === "Alarm";
+          const rowBg = isCritical ? "#fef2f2" : i % 2 === 0 ? "#f8fafc" : "#ffffff";
+          const criticalIcon = isCritical ? "⚠" : "";
           return `
             <tr style="background:${rowBg}">
-              <td style="padding:6px 8px;font-size:10px;font-family:monospace;border-bottom:1px solid #e2e8f0">${e.id}</td>
+              <td style="padding:6px 8px;font-size:10px;font-family:monospace;border-bottom:1px solid #e2e8f0">${criticalIcon} ${e.id.slice(0, 12)}</td>
               <td style="padding:6px 8px;font-size:10px;border-bottom:1px solid #e2e8f0">${time}</td>
               <td style="padding:6px 8px;font-size:10px;border-bottom:1px solid #e2e8f0">${e.payload?.cameraName || e.camera_serial}</td>
               <td style="padding:6px 8px;font-size:10px;border-bottom:1px solid #e2e8f0">${op}</td>
-              <td style="padding:6px 8px;font-size:10px;border-bottom:1px solid #e2e8f0">${dir}</td>
+              <td style="padding:6px 8px;font-size:10px;border-bottom:1px solid #e2e8f0">${faceList || dir}</td>
               <td style="padding:6px 8px;font-size:10px;border-bottom:1px solid #e2e8f0">${name}</td>
               <td style="padding:6px 8px;font-size:10px;font-family:monospace;text-align:center;border-bottom:1px solid #e2e8f0">${score}</td>
             </tr>`;
@@ -143,21 +197,28 @@ export default function ExportReports({ events, filters }: ExportReportsProps) {
   .meta strong { color: #1e293b; }
   .summary { background: #f1f5f9; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
   .summary h3 { font-size: 12px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .stats { display: flex; gap: 24px; margin-bottom: 20px; }
+  .stats { display: flex; gap: 16px; margin-bottom: 20px; }
   .stat { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
-  .stat .num { font-size: 24px; font-weight: 700; color: #1e40af; }
-  .stat .label { font-size: 10px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+  .stat .num { font-size: 22px; font-weight: 700; color: #1e40af; }
+  .stat .label { font-size: 9px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+  .stat.critical .num { color: #dc2626; }
+  .stat.warning .num { color: #f59e0b; }
+  .section-title { font-size: 13px; font-weight: 700; color: #1e293b; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+  .chart-container { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .hourly-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; padding: 0 4px; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #1e40af; color: white; padding: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; text-align: left; }
   .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 9px; color: #94a3b8; text-align: center; }
+  @media print { body { padding: 15px; } .page-break { page-break-before: always; } }
 </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">Guard<span>IA</span> — Relatório de Eventos</div>
+    <div class="logo">Guard<span>IA</span> — Relatório Executivo de Eventos</div>
     <div class="meta">
       Gerado em: <strong>${dateStr} às ${timeStr}</strong><br/>
-      Total de registros: <strong>${events.length}</strong>
+      Total de registros: <strong>${events.length}</strong><br/>
+      Período: <strong>${events.length > 0 ? new Date(events[events.length-1].timestamp).toLocaleDateString("pt-BR") + " — " + new Date(events[0].timestamp).toLocaleDateString("pt-BR") : "N/A"}</strong>
     </div>
   </div>
 
@@ -171,10 +232,38 @@ export default function ExportReports({ events, filters }: ExportReportsProps) {
     <div class="stat"><div class="num">${events.length}</div><div class="label">Total de Eventos</div></div>
     <div class="stat"><div class="num">${events.filter((e) => e.operator === "FaceReco").length}</div><div class="label">Facial</div></div>
     <div class="stat"><div class="num">${events.filter((e) => e.operator === "VehicleReco").length}</div><div class="label">Veículos</div></div>
-    <div class="stat"><div class="num">${events.filter((e) => e.operator === "AccessControl").length}</div><div class="label">Acesso</div></div>
-    <div class="stat"><div class="num">${events.filter((e) => e.operator === "Alarm").length}</div><div class="label">Alarmes</div></div>
+    <div class="stat critical"><div class="num">${criticalEvents.length}</div><div class="label">Críticos</div></div>
+    <div class="stat warning"><div class="num">${warningEvents.length}</div><div class="label">Match Baixo</div></div>
+    <div class="stat"><div class="num">${Object.keys(cameraStats).length}</div><div class="label">Câmeras</div></div>
   </div>
 
+  <div class="section-title">Distribuição por Hora (24h)</div>
+  <div class="chart-container">
+    <div class="hourly-chart">${hourlyBars}</div>
+  </div>
+
+  <div class="section-title">Top Câmeras por Volume de Eventos</div>
+  <div class="chart-container">${cameraBars}</div>
+
+  ${criticalEvents.length > 0 ? `
+  <div class="section-title">Eventos Críticos (${criticalEvents.length})</div>
+  <div class="chart-container" style="background:#fef2f2;border-color:#fecaca">
+    ${criticalEvents.slice(0, 10).map((e) => {
+      const time = new Date(e.timestamp).toLocaleString("pt-BR");
+      const cam = e.payload?.cameraName || e.camera_serial;
+      const name = e.payload?.name || "Não identificado";
+      const faceList = e.payload?.faceList || "";
+      return `<div style="display:flex;gap:12px;padding:6px 0;border-bottom:1px solid #fecaca">
+        <div style="font-size:10px;color:#dc2626;font-weight:600">⚠ ${faceList || e.operator}</div>
+        <div style="font-size:10px;color:#64748b">${time}</div>
+        <div style="font-size:10px">${cam}</div>
+        <div style="font-size:10px;font-weight:500">${name}</div>
+      </div>`;
+    }).join("")}
+    ${criticalEvents.length > 10 ? `<div style="font-size:10px;color:#64748b;margin-top:6px">+ ${criticalEvents.length - 10} eventos críticos adicionais...</div>` : ""}
+  </div>` : ""}
+
+  <div class="section-title">Lista de Eventos${events.length > 100 ? ` (Primeiros 100 de ${events.length})` : ""}</div>
   <table>
     <thead>
       <tr>
@@ -182,7 +271,7 @@ export default function ExportReports({ events, filters }: ExportReportsProps) {
         <th>Data/Hora</th>
         <th>Câmera</th>
         <th>Operador</th>
-        <th>Direção</th>
+        <th>Lista/Dir</th>
         <th>Identificação</th>
         <th>Score</th>
       </tr>
@@ -194,7 +283,8 @@ export default function ExportReports({ events, filters }: ExportReportsProps) {
 
   <div class="footer">
     GuardIA — Sistema de Monitoramento Inteligente | Zênite Tech<br/>
-    Documento gerado automaticamente pelo Dashboard GuardIA
+    Documento gerado automaticamente pelo Dashboard GuardIA em ${dateStr} às ${timeStr}<br/>
+    Para suporte: atendimento@zenite.tech
   </div>
 </body>
 </html>`;

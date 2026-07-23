@@ -64,3 +64,19 @@ cameras:
     username: "admin"
     password: "SENHA_DA_CAMERA_D6"
     enabled: true
+
+# ============================================================
+# WhatsApp — Alertas críticos via WhatsApp Business API
+# Para ativar: preencha phone_number_id e access_token
+# Documentação: https://developers.facebook.com/docs/whatsapp
+# ============================================================
+whatsapp:
+  enabled: false                    # Trocar para true quando configurar
+  phone_number_id: ""               # Meta Cloud API Phone Number ID
+  access_token: ""                  # Meta Cloud API Access Token
+  recipient_phone: "5588999999999"  # Número do operador (DDI+DDD+numero)
+  alert_types:
+    - stranger                      # Pessoa não cadastrada
+    - blacklist                     # Pessoa em lista negra
+    - access_denied                 # Acesso negado
+    - alarm                         # Alarme disparado

@@ -27,12 +27,14 @@ from p6s_client import P6SClient
 from supabase_sink import SupabaseSink
 from image_uploader import ImageUploader
 from event_mapper import EventMapper
+from whatsapp_alerts import WhatsAppAlerter
 
 
 # ===== Estado global =====
 camera_clients: Dict[str, P6SClient] = {}
 last_event_times: Dict[str, Optional[str]] = {}
 total_events_sent: int = 0
+whatsapp_alerter: Optional[WhatsAppAlerter] = None
 
 
 def setup_logging(log_level: str = "INFO"):
@@ -60,6 +62,7 @@ def poll_camera(
     mapper: EventMapper,
     config: AppConfig,
     dry_run: bool = False,
+    alerter: Optional[WhatsAppAlerter] = None,
 ):
     """Faz polling de uma câmera e envia eventos ao Supabase."""
     global total_events_sent
@@ -96,6 +99,15 @@ def poll_camera(
         sent = sink.insert_events_batch(processed)
         total_events_sent += sent
         logger.info(f"[{camera.serial}] {sent}/{len(processed)} eventos enviados ao Supabase")
+
+        # Enviar alertas WhatsApp para eventos críticos
+        if alerter:
+            for event in processed:
+                img_url = event.get("recognize_image") or event.get("capture_image")
+                if img_url:
+                    alerter.send_image_alert(event, img_url)
+                else:
+                    alerter.send_alert(event)
 
         # Atualizar timestamp do último evento
         if processed:
@@ -147,6 +159,20 @@ def run(config: AppConfig, dry_run: bool = False):
     if config.connector.image_upload:
         uploader = ImageUploader(config.supabase.url, config.supabase.service_role_key)
     
+    # Inicializar WhatsApp alerter (opcional)
+    global whatsapp_alerter
+    if config.whatsapp and config.whatsapp.enabled:
+        whatsapp_alerter = WhatsAppAlerter(
+            phone_number_id=config.whatsapp.phone_number_id,
+            access_token=config.whatsapp.access_token,
+            recipient_phone=config.whatsapp.recipient_phone,
+            alert_types=config.whatsapp.alert_types,
+            enabled=True,
+        )
+        logger.info(f"  WhatsApp: ativo para {config.whatsapp.recipient_phone}")
+    else:
+        logger.info("  WhatsApp: desativado")
+    
     mapper = EventMapper(
         uploader=uploader,
         connector_id=config.connector.id,
@@ -177,6 +203,7 @@ def run(config: AppConfig, dry_run: bool = False):
                 mapper=mapper,
                 config=config,
                 dry_run=dry_run,
+                alerter=whatsapp_alerter,
             )
 
     # Agendar heartbeat
@@ -195,6 +222,7 @@ def run(config: AppConfig, dry_run: bool = False):
                 mapper=mapper,
                 config=config,
                 dry_run=dry_run,
+                alerter=whatsapp_alerter,
             )
     heartbeat(config, sink)
 
