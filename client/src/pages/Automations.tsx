@@ -1,14 +1,14 @@
 /**
- * Automations — Lista de regras + editor visual de automações.
+ * Automations — Lista de regras + editor visual com drag-and-drop.
  *
- * Lote 2 (3b): Editor visual completo com:
- * - Seleção visual de gatilho (cards clicáveis)
- * - Condições múltiplas (horário, câmera, zona, pessoa)
- * - Ações múltiplas (WhatsApp, push, email, sirene, porta, TTS, snapshot)
- * - Preview do fluxo em tempo real
+ * Aprimorado: Editor visual com fluxo construído por arrastar e soltar.
+ * - Gatilho, condições e ações aparecem como blocos arrastáveis no fluxo
+ * - Reordenação por drag-and-drop nativo HTML5
+ * - Remoção de itens ao arrastar para zona de descarte
+ * - Preview do fluxo em tempo real com indicadores visuais de drop
  * - Validação e salvamento
  */
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import {
@@ -16,10 +16,12 @@ import {
   Clock, Camera, UserX, AlertTriangle, Activity, Power,
   Trash2, Edit2, ChevronRight, X, Check, Mail, Smartphone,
   ScanFace, Car, PersonStanding, Fence, MoveRight, Users2,
-  TimerOff, Save, ArrowRight, Layers
+  TimerOff, Save, ArrowRight, Layers, GripVertical, Trash,
+  Eye, EyeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// ===== Types =====
 interface Automation {
   id: string;
   nome: string;
@@ -33,6 +35,20 @@ interface Automation {
   ultimoDisparo: string | null;
 }
 
+type FlowItemType = "trigger" | "condition" | "action";
+
+interface FlowItem {
+  uid: string;
+  type: FlowItemType;
+  optionId: string;
+  label: string;
+  icon: typeof Bell;
+  color: string;
+  bg: string;
+  param?: string;
+}
+
+// ===== Mock Data =====
 const mockAutomations: Automation[] = [
   {
     id: "a1", nome: "Estranho fora de horário",
@@ -64,36 +80,36 @@ const mockDisparos = [
   { id: "d4", automacao: "Estranho fora de horário", hora: "20:15", camera: "D2 Corredor", resultado: "WhatsApp enviado", status: "ok" },
 ];
 
-// Visual editor options
+// ===== Editor Options =====
 const triggerOptions = [
-  { id: "facial-estranho", label: "Facial: Estranho", icon: UserX, color: "text-amber-400", bg: "bg-amber-500/10", desc: "Rosto não cadastrado detectado" },
-  { id: "facial-negra", label: "Facial: Lista Negra", icon: ScanFace, color: "text-red-400", bg: "bg-red-500/10", desc: "Rosto da lista negra detectado" },
-  { id: "facial-branca", label: "Facial: Lista Branca", icon: ScanFace, color: "text-green-400", bg: "bg-green-500/10", desc: "Pessoa cadastrada reconhecida" },
-  { id: "movimento", label: "Detecção de Movimento", icon: PersonStanding, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Movimento na área monitorada" },
-  { id: "off-duty", label: "Fora de Horário", icon: TimerOff, color: "text-orange-400", bg: "bg-orange-500/10", desc: "Movimento fora do horário comercial" },
-  { id: "ausencia", label: "Ausência Facial", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", desc: "Pessoa esperada não apareceu" },
-  { id: "veiculo", label: "Veículo Detectado", icon: Car, color: "text-purple-400", bg: "bg-purple-500/10", desc: "Placa ou modelo reconhecido" },
-  { id: "cerca", label: "Cerca Eletrônica", icon: Fence, color: "text-cyan-400", bg: "bg-cyan-500/10", desc: "Invasão de área proibida" },
-  { id: "linha", label: "Travessia de Linha", icon: MoveRight, color: "text-indigo-400", bg: "bg-indigo-500/10", desc: "Travessia de linha direcional" },
+  { id: "facial-estranho", label: "Facial: Estranho", icon: UserX, color: "text-amber-400", bg: "bg-amber-500/10", desc: "Rosto não cadastrado" },
+  { id: "facial-negra", label: "Facial: Lista Negra", icon: ScanFace, color: "text-red-400", bg: "bg-red-500/10", desc: "Rosto da lista negra" },
+  { id: "facial-branca", label: "Facial: Lista Branca", icon: ScanFace, color: "text-green-400", bg: "bg-green-500/10", desc: "Pessoa cadastrada" },
+  { id: "movimento", label: "Movimento", icon: PersonStanding, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Movimento na área" },
+  { id: "off-duty", label: "Fora de Horário", icon: TimerOff, color: "text-orange-400", bg: "bg-orange-500/10", desc: "Fora do horário comercial" },
+  { id: "ausencia", label: "Ausência Facial", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", desc: "Pessoa não apareceu" },
+  { id: "veiculo", label: "Veículo Detectado", icon: Car, color: "text-purple-400", bg: "bg-purple-500/10", desc: "Placa reconhecida" },
+  { id: "cerca", label: "Cerca Eletrônica", icon: Fence, color: "text-cyan-400", bg: "bg-cyan-500/10", desc: "Invasão de área" },
+  { id: "linha", label: "Travessia de Linha", icon: MoveRight, color: "text-indigo-400", bg: "bg-indigo-500/10", desc: "Linha direcional" },
 ];
 
 const conditionOptions = [
-  { id: "horario", label: "Horário", icon: Clock, desc: "Em um horário específico ou intervalo" },
-  { id: "camera", label: "Câmera específica", icon: Camera, desc: "Apenas em câmera(s) selecionada(s)" },
-  { id: "duracao", label: "Duração mínima", icon: TimerOff, desc: "Evento persiste por X minutos" },
-  { id: "pessoa", label: "Pessoa específica", icon: Users2, desc: "Apenas para pessoa(s) cadastrada(s)" },
-  { id: "zona", label: "Zona/Região", icon: Fence, desc: "Apenas em zona definida no frame" },
+  { id: "horario", label: "Horário", icon: Clock, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Horário ou intervalo" },
+  { id: "camera", label: "Câmera", icon: Camera, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Câmera(s) específica(s)" },
+  { id: "duracao", label: "Duração mín.", icon: TimerOff, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Persiste por X min" },
+  { id: "pessoa", label: "Pessoa", icon: Users2, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Pessoa(s) específica(s)" },
+  { id: "zona", label: "Zona/Região", icon: Fence, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Zona no frame" },
 ];
 
 const actionOptions = [
   { id: "whatsapp", label: "WhatsApp", icon: MessageSquare, color: "text-green-400", bg: "bg-green-500/10" },
-  { id: "push", label: "Push Notification", icon: Smartphone, color: "text-blue-400", bg: "bg-blue-500/10" },
+  { id: "push", label: "Push", icon: Smartphone, color: "text-blue-400", bg: "bg-blue-500/10" },
   { id: "email", label: "Email", icon: Mail, color: "text-amber-400", bg: "bg-amber-500/10" },
   { id: "sirene", label: "Sirene", icon: Siren, color: "text-red-400", bg: "bg-red-500/10" },
   { id: "porta", label: "Abrir Porta", icon: DoorOpen, color: "text-green-400", bg: "bg-green-500/10" },
   { id: "tts", label: "TTS (Voz)", icon: Volume2, color: "text-purple-400", bg: "bg-purple-500/10" },
   { id: "snapshot", label: "Snapshot", icon: Camera, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-  { id: "gravar", label: "Iniciar Gravação", icon: Activity, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+  { id: "gravar", label: "Gravação", icon: Activity, color: "text-indigo-400", bg: "bg-indigo-500/10" },
 ];
 
 const acaoIcons: Record<string, typeof Bell> = {
@@ -109,6 +125,29 @@ function getAcaoIcon(acao: string): typeof Bell {
   return Bell;
 }
 
+// ===== Helper to create flow items =====
+let uidCounter = 0;
+function makeUid() { return `fi_${++uidCounter}_${Date.now()}`; }
+
+function triggerToFlowItem(optionId: string): FlowItem | null {
+  const t = triggerOptions.find(t => t.id === optionId);
+  if (!t) return null;
+  return { uid: makeUid(), type: "trigger", optionId: t.id, label: t.label, icon: t.icon, color: t.color, bg: t.bg };
+}
+
+function conditionToFlowItem(optionId: string, param?: string): FlowItem | null {
+  const c = conditionOptions.find(c => c.id === optionId);
+  if (!c) return null;
+  return { uid: makeUid(), type: "condition", optionId: c.id, label: c.label, icon: c.icon, color: c.color, bg: c.bg, param };
+}
+
+function actionToFlowItem(optionId: string): FlowItem | null {
+  const a = actionOptions.find(a => a.id === optionId);
+  if (!a) return null;
+  return { uid: makeUid(), type: "action", optionId: a.id, label: a.label, icon: a.icon, color: a.color, bg: a.bg };
+}
+
+// ===== Main Component =====
 export default function Automations() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [automations, setAutomations] = useState(mockAutomations);
@@ -117,12 +156,16 @@ export default function Automations() {
 
   // Editor state
   const [ruleName, setRuleName] = useState("");
-  const [selectedTrigger, setSelectedTrigger] = useState<string | null>(null);
-  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
-  const [conditionParams, setConditionParams] = useState<Record<string, string>>({
-    horario: "", camera: "", duracao: "", pessoa: "", zona: "",
-  });
+  const [flowItems, setFlowItems] = useState<FlowItem[]>([]);
+  const [conditionParams, setConditionParams] = useState<Record<string, string>>({});
+  const [showFlowBuilder, setShowFlowBuilder] = useState(true);
+
+  // Drag-and-drop state
+  const [draggedUid, setDraggedUid] = useState<string | null>(null);
+  const [dragOverUid, setDragOverUid] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOverTrash, setDragOverTrash] = useState(false);
+  const dragCounter = useRef(0);
 
   const toggleAutomation = (id: string) => {
     setAutomations(automations.map(a => a.id === id ? { ...a, ativa: !a.ativa } : a));
@@ -134,62 +177,176 @@ export default function Automations() {
       if (rule) {
         setEditingId(id);
         setRuleName(rule.nome);
-        setSelectedTrigger(null);
-        setSelectedConditions([]);
-        setSelectedActions([]);
+        // Reconstruct flow from existing rule
+        const items: FlowItem[] = [];
+        const trig = triggerOptions.find(t => t.label === rule.gatilho);
+        if (trig) items.push(triggerToFlowItem(trig.id)!);
+        // Parse conditions
+        rule.condicao.split(", ").forEach(cond => {
+          const parts = cond.split(": ");
+          const opt = conditionOptions.find(c => c.label === parts[0]);
+          if (opt) items.push(conditionToFlowItem(opt.id, parts[1])!);
+        });
+        // Parse actions
+        rule.acao.split(" + ").forEach(act => {
+          const opt = actionOptions.find(a => a.label === act);
+          if (opt) items.push(actionToFlowItem(opt.id)!);
+        });
+        setFlowItems(items);
       }
     } else {
       setEditingId(null);
       setRuleName("");
-      setSelectedTrigger(null);
-      setSelectedConditions([]);
-      setSelectedActions([]);
+      setFlowItems([]);
     }
+    setConditionParams({});
     setShowEditor(true);
   };
 
-  const toggleCondition = (id: string) => {
-    setSelectedConditions(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
+  // ===== Flow item management =====
+  const addTrigger = (optionId: string) => {
+    // Replace existing trigger (only one allowed)
+    const existing = flowItems.find(i => i.type === "trigger");
+    if (existing) {
+      setFlowItems(prev => prev.map(i => i.type === "trigger" ? triggerToFlowItem(optionId)! : i));
+    } else {
+      const item = triggerToFlowItem(optionId);
+      if (item) setFlowItems(prev => [item, ...prev]);
+    }
   };
 
-  const toggleAction = (id: string) => {
-    setSelectedActions(prev =>
-      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-    );
+  const addCondition = (optionId: string) => {
+    // Toggle: if already in flow, remove; otherwise add
+    const existing = flowItems.find(i => i.type === "condition" && i.optionId === optionId);
+    if (existing) {
+      removeFlowItem(existing.uid);
+    } else {
+      const item = conditionToFlowItem(optionId, conditionParams[optionId]);
+      if (item) {
+        // Insert after trigger (and after existing conditions), before actions
+        setFlowItems(prev => {
+          const triggerIdx = prev.findIndex(i => i.type === "trigger");
+          const lastCondIdx = prev.map(i => i.type).lastIndexOf("condition");
+          const insertIdx = lastCondIdx >= 0 ? lastCondIdx + 1 : (triggerIdx >= 0 ? triggerIdx + 1 : 0);
+          const newArr = [...prev];
+          newArr.splice(insertIdx, 0, item);
+          return newArr;
+        });
+      }
+    }
   };
 
-  const canSave = ruleName.trim() && selectedTrigger && selectedActions.length > 0;
+  const addAction = (optionId: string) => {
+    const existing = flowItems.find(i => i.type === "action" && i.optionId === optionId);
+    if (existing) {
+      removeFlowItem(existing.uid);
+    } else {
+      const item = actionToFlowItem(optionId);
+      if (item) setFlowItems(prev => [...prev, item]);
+    }
+  };
+
+  const removeFlowItem = (uid: string) => {
+    setFlowItems(prev => prev.filter(i => i.uid !== uid));
+  };
+
+  const updateFlowItemParam = (uid: string, param: string) => {
+    setFlowItems(prev => prev.map(i => i.uid === uid ? { ...i, param } : i));
+  };
+
+  // ===== Drag-and-drop handlers =====
+  const handleDragStart = useCallback((e: React.DragEvent, uid: string) => {
+    setDraggedUid(uid);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", uid);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedUid(null);
+    setDragOverUid(null);
+    setIsDragging(false);
+    setDragOverTrash(false);
+    dragCounter.current = 0;
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, uid: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (uid !== draggedUid) setDragOverUid(uid);
+  }, [draggedUid]);
+
+  const handleDragOverTrashZone = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverTrash(true);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetUid: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedUid || draggedUid === targetUid) return;
+
+    const draggedItem = flowItems.find(i => i.uid === draggedUid);
+    const targetItem = flowItems.find(i => i.uid === targetUid);
+    if (!draggedItem || !targetItem) return;
+
+    // Enforce ordering: trigger can't move past conditions/actions
+    if (draggedItem.type === "trigger" && targetItem.type !== "trigger") return;
+    if (targetItem.type === "trigger" && draggedItem.type !== "trigger") return;
+
+    setFlowItems(prev => {
+      const newArr = [...prev];
+      const fromIdx = newArr.findIndex(i => i.uid === draggedUid);
+      const toIdx = newArr.findIndex(i => i.uid === targetUid);
+      const [moved] = newArr.splice(fromIdx, 1);
+      newArr.splice(toIdx, 0, moved);
+      return newArr;
+    });
+
+    handleDragEnd();
+  }, [draggedUid, flowItems, handleDragEnd]);
+
+  const handleDropToTrash = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedUid) return;
+    const item = flowItems.find(i => i.uid === draggedUid);
+    if (item && item.type !== "trigger") {
+      removeFlowItem(draggedUid);
+    }
+    handleDragEnd();
+  }, [draggedUid, flowItems, handleDragEnd]);
+
+  // ===== Save =====
+  const triggerItem = flowItems.find(i => i.type === "trigger");
+  const conditionItems = flowItems.filter(i => i.type === "condition");
+  const actionItems = flowItems.filter(i => i.type === "action");
+  const canSave = ruleName.trim() && triggerItem && actionItems.length > 0;
 
   const handleSave = () => {
     if (!canSave) return;
-    const trigger = triggerOptions.find(t => t.id === selectedTrigger);
-    const actions = selectedActions.map(id => actionOptions.find(a => a.id === id)!);
-    const condStr = selectedConditions.map(id => {
-      const opt = conditionOptions.find(c => c.id === id)!;
-      const param = conditionParams[id];
-      return param ? `${opt.label}: ${param}` : opt.label;
-    }).join(", ");
+    const condStr = conditionItems.map(c => c.param ? `${c.label}: ${c.param}` : c.label).join(", ");
+    const actionStr = actionItems.map(a => a.label).join(" + ");
 
     if (editingId) {
       setAutomations(automations.map(a => a.id === editingId ? {
         ...a, nome: ruleName,
-        gatilho: trigger?.label || a.gatilho,
-        gatilhoIcon: trigger?.icon || a.gatilhoIcon,
-        condicao: condStr || a.condicao,
-        acao: actions.map(a => a.label).join(" + "),
-        acaoIcon: actions[0]?.icon || a.acaoIcon,
+        gatilho: triggerItem!.label,
+        gatilhoIcon: triggerItem!.icon,
+        condicao: condStr || "sem condições",
+        acao: actionStr,
+        acaoIcon: actionItems[0].icon,
       } : a));
     } else {
       const newRule: Automation = {
         id: `a${Date.now()}`,
         nome: ruleName,
-        gatilho: trigger?.label || "",
-        gatilhoIcon: trigger?.icon || AlertTriangle,
+        gatilho: triggerItem!.label,
+        gatilhoIcon: triggerItem!.icon,
         condicao: condStr || "sem condições",
-        acao: actions.map(a => a.label).join(" + "),
-        acaoIcon: actions[0]?.icon || Bell,
+        acao: actionStr,
+        acaoIcon: actionItems[0].icon,
         ativa: true, disparos: 0, ultimoDisparo: null,
       };
       setAutomations([...automations, newRule]);
@@ -199,6 +356,10 @@ export default function Automations() {
 
   const activeCount = automations.filter(a => a.ativa).length;
   const totalDisparos = automations.reduce((acc, a) => acc + a.disparos, 0);
+
+  // Check if option is in flow
+  const isInFlow = (type: FlowItemType, optionId: string) =>
+    flowItems.some(i => i.type === type && i.optionId === optionId);
 
   return (
     <div className="min-h-screen bg-background">
@@ -304,7 +465,6 @@ export default function Automations() {
                         )}
                       </div>
 
-                      {/* Flow: gatilho → condição → ação */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1.5">
                           <TriggerIcon className="h-3.5 w-3.5 text-amber-400" />
@@ -388,18 +548,18 @@ export default function Automations() {
             </div>
           </div>
 
-          {/* ===== VISUAL EDITOR MODAL ===== */}
+          {/* ===== VISUAL EDITOR MODAL WITH DRAG-AND-DROP ===== */}
           {showEditor && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
               onClick={() => setShowEditor(false)}
             >
               <div
-                className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-card shadow-2xl"
+                className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-xl border border-border bg-card shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Editor header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
+                <div className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
                       <Layers className="h-4 w-4 text-primary" />
@@ -408,15 +568,25 @@ export default function Automations() {
                       <h3 className="font-display text-base font-semibold">
                         {editingId ? "Editar Automação" : "Nova Automação"}
                       </h3>
-                      <p className="text-[11px] text-muted-foreground">Construa a regra visualmente</p>
+                      <p className="text-[11px] text-muted-foreground">Arraste os blocos para montar o fluxo</p>
                     </div>
                   </div>
-                  <button onClick={() => setShowEditor(false)} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowFlowBuilder(!showFlowBuilder)}
+                      className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent transition-colors"
+                      title="Alternar visualização do fluxo"
+                    >
+                      {showFlowBuilder ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      Fluxo
+                    </button>
+                    <button onClick={() => setShowEditor(false)} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-5">
                   {/* Step 1: Name */}
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">Nome da regra</label>
@@ -429,21 +599,166 @@ export default function Automations() {
                     />
                   </div>
 
-                  {/* Step 2: Trigger */}
+                  {/* ===== FLOW BUILDER (DRAG-AND-DROP) ===== */}
+                  {showFlowBuilder && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">F</div>
+                        <h4 className="text-sm font-semibold">Fluxo Construído</h4>
+                        <span className="text-[11px] text-muted-foreground">— Arraste para reordenar. Arraste para a lixeira para remover.</span>
+                      </div>
+
+                      {/* Flow canvas */}
+                      <div
+                        className={cn(
+                          "min-h-[80px] rounded-xl border-2 border-dashed p-4 transition-colors",
+                          isDragging ? "border-primary/50 bg-primary/5" : "border-border bg-background"
+                        )}
+                      >
+                        {flowItems.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <Layers className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                            <p className="text-xs text-muted-foreground">
+                              Selecione um gatilho, condições e ações abaixo para montar o fluxo
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {flowItems.map((item, idx) => {
+                              const Icon = item.icon;
+                              const isDragged = draggedUid === item.uid;
+                              const isDragOver = dragOverUid === item.uid;
+                              const typeLabel = item.type === "trigger" ? "Gatilho" : item.type === "condition" ? "Condição" : "Ação";
+                              const typeColor = item.type === "trigger" ? "text-amber-400/60" : item.type === "condition" ? "text-blue-400/60" : "text-purple-400/60";
+
+                              return (
+                                <div key={item.uid} className="flex items-center gap-2">
+                                  {/* Arrow between items */}
+                                  {idx > 0 && (
+                                    <ArrowRight className={cn(
+                                      "h-4 w-4 shrink-0",
+                                      isDragged ? "text-primary/40" : "text-muted-foreground/40"
+                                    )} />
+                                  )}
+
+                                  {/* Draggable flow block */}
+                                  <div
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, item.uid)}
+                                    onDragEnd={handleDragEnd}
+                                    onDragOver={(e) => handleDragOver(e, item.uid)}
+                                    onDrop={(e) => handleDrop(e, item.uid)}
+                                    className={cn(
+                                      "group relative flex items-center gap-2 rounded-lg border px-3 py-2 cursor-grab active:cursor-grabbing transition-all",
+                                      item.bg,
+                                      isDragged && "opacity-40 scale-95",
+                                      isDragOver && "ring-2 ring-primary/50 scale-105",
+                                      !isDragged && !isDragOver && "hover:shadow-md"
+                                    )}
+                                  >
+                                    {/* Drag handle */}
+                                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+
+                                    {/* Icon */}
+                                    <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
+
+                                    {/* Label + type */}
+                                    <div className="flex flex-col min-w-0">
+                                      <span className={cn("text-[8px] font-semibold uppercase", typeColor)}>{typeLabel}</span>
+                                      <span className="text-xs font-medium truncate">{item.label}</span>
+                                      {item.param && (
+                                        <span className="text-[9px] text-muted-foreground font-mono-tech truncate">{item.param}</span>
+                                      )}
+                                    </div>
+
+                                    {/* Param input for conditions */}
+                                    {item.type === "condition" && (
+                                      <input
+                                        type="text"
+                                        placeholder="parâmetro..."
+                                        value={item.param || ""}
+                                        onChange={(e) => updateFlowItemParam(item.uid, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-20 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-mono-tech"
+                                      />
+                                    )}
+
+                                    {/* Remove button (not for trigger) */}
+                                    {item.type !== "trigger" && (
+                                      <button
+                                        onClick={() => removeFlowItem(item.uid)}
+                                        className="ml-1 rounded p-0.5 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                        title="Remover"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {/* Trash drop zone */}
+                            {isDragging && (
+                              <div
+                                onDragOver={handleDragOverTrashZone}
+                                onDragLeave={() => setDragOverTrash(false)}
+                                onDrop={handleDropToTrash}
+                                className={cn(
+                                  "flex items-center gap-1.5 rounded-lg border-2 border-dashed px-3 py-2 transition-all ml-auto",
+                                  dragOverTrash
+                                    ? "border-destructive bg-destructive/10 scale-105"
+                                    : "border-destructive/30 bg-destructive/5"
+                                )}
+                              >
+                                <Trash className={cn("h-4 w-4", dragOverTrash ? "text-destructive" : "text-destructive/50")} />
+                                <span className={cn("text-[10px] font-medium", dragOverTrash ? "text-destructive" : "text-destructive/50")}>
+                                  Descartar
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Flow stats */}
+                      {flowItems.length > 0 && (
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <div className="h-2 w-2 rounded-full bg-amber-400" />
+                            {flowItems.filter(i => i.type === "trigger").length} gatilho
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="h-2 w-2 rounded-full bg-blue-400" />
+                            {conditionItems.length} condição(ões)
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="h-2 w-2 rounded-full bg-purple-400" />
+                            {actionItems.length} ação(ões)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Divider */}
+                  <div className="h-px bg-border" />
+
+                  {/* Step 2: Trigger selection */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-400">1</div>
                       <h4 className="text-sm font-semibold">Gatilho</h4>
-                      <span className="text-[11px] text-muted-foreground">— O que dispara esta automação?</span>
+                      <span className="text-[11px] text-muted-foreground">— Clique para adicionar ao fluxo</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {triggerOptions.map((t) => {
                         const Icon = t.icon;
-                        const isSelected = selectedTrigger === t.id;
+                        const isSelected = isInFlow("trigger", t.id);
                         return (
                           <button
                             key={t.id}
-                            onClick={() => setSelectedTrigger(t.id)}
+                            onClick={() => addTrigger(t.id)}
                             className={cn(
                               "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all",
                               isSelected
@@ -451,10 +766,10 @@ export default function Automations() {
                                 : "border-border bg-background hover:border-primary/30"
                             )}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 w-full">
                               <Icon className={cn("h-4 w-4", t.color)} />
-                              <span className="text-xs font-medium">{t.label}</span>
-                              {isSelected && <Check className="h-3.5 w-3.5 text-green-400 ml-auto" />}
+                              <span className="text-xs font-medium flex-1">{t.label}</span>
+                              {isSelected && <Check className="h-3.5 w-3.5 text-green-400" />}
                             </div>
                             <span className="text-[10px] text-muted-foreground">{t.desc}</span>
                           </button>
@@ -468,40 +783,30 @@ export default function Automations() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/15 text-[10px] font-bold text-blue-400">2</div>
                       <h4 className="text-sm font-semibold">Condições</h4>
-                      <span className="text-[11px] text-muted-foreground">— Filtros opcionais (selecione um ou mais)</span>
+                      <span className="text-[11px] text-muted-foreground">— Clique para adicionar/remover do fluxo</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {conditionOptions.map((c) => {
                         const Icon = c.icon;
-                        const isSelected = selectedConditions.includes(c.id);
+                        const isSelected = isInFlow("condition", c.id);
                         return (
-                          <div key={c.id}>
-                            <button
-                              onClick={() => toggleCondition(c.id)}
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-lg border p-2.5 text-left transition-all",
-                                isSelected
-                                  ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                                  : "border-border bg-background hover:border-primary/30"
-                              )}
-                            >
-                              <Icon className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
-                              <div className="flex-1">
-                                <span className="text-xs font-medium">{c.label}</span>
-                                <p className="text-[10px] text-muted-foreground">{c.desc}</p>
-                              </div>
-                              {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
-                            </button>
-                            {isSelected && (
-                              <input
-                                type="text"
-                                placeholder={`Parâmetro: ${c.label.toLowerCase()}...`}
-                                value={conditionParams[c.id]}
-                                onChange={(e) => setConditionParams(prev => ({ ...prev, [c.id]: e.target.value }))}
-                                className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-mono-tech"
-                              />
+                          <button
+                            key={c.id}
+                            onClick={() => addCondition(c.id)}
+                            className={cn(
+                              "flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all",
+                              isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                                : "border-border bg-background hover:border-primary/30"
                             )}
-                          </div>
+                          >
+                            <Icon className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
+                            <div className="flex-1">
+                              <span className="text-xs font-medium">{c.label}</span>
+                              <p className="text-[10px] text-muted-foreground">{c.desc}</p>
+                            </div>
+                            {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
+                          </button>
                         );
                       })}
                     </div>
@@ -512,16 +817,16 @@ export default function Automations() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-400">3</div>
                       <h4 className="text-sm font-semibold">Ações</h4>
-                      <span className="text-[11px] text-muted-foreground">— O que executar quando disparar?</span>
+                      <span className="text-[11px] text-muted-foreground">— Clique para adicionar/remover do fluxo</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                       {actionOptions.map((a) => {
                         const Icon = a.icon;
-                        const isSelected = selectedActions.includes(a.id);
+                        const isSelected = isInFlow("action", a.id);
                         return (
                           <button
                             key={a.id}
-                            onClick={() => toggleAction(a.id)}
+                            onClick={() => addAction(a.id)}
                             className={cn(
                               "flex flex-col items-center gap-1.5 rounded-lg border p-3 transition-all",
                               isSelected
@@ -537,54 +842,10 @@ export default function Automations() {
                       })}
                     </div>
                   </div>
-
-                  {/* Live preview */}
-                  {(selectedTrigger || selectedActions.length > 0) && (
-                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                      <p className="text-[10px] font-semibold text-primary uppercase mb-2">Preview do fluxo</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {selectedTrigger && (() => {
-                          const t = triggerOptions.find(t => t.id === selectedTrigger)!;
-                          const Icon = t.icon;
-                          return (
-                            <div className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5", t.bg)}>
-                              <Icon className={cn("h-3.5 w-3.5", t.color)} />
-                              <span className="text-xs font-medium">{t.label}</span>
-                            </div>
-                          );
-                        })()}
-                        {selectedConditions.length > 0 && (
-                          <>
-                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40" />
-                            <div className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 px-2.5 py-1.5">
-                              <span className="text-xs font-medium text-blue-200">
-                                {selectedConditions.length} condição(ões)
-                              </span>
-                            </div>
-                          </>
-                        )}
-                        {selectedActions.length > 0 && (
-                          <>
-                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40" />
-                            <div className="flex items-center gap-1.5 rounded-lg bg-purple-500/10 px-2.5 py-1.5">
-                              {selectedActions.map(id => {
-                                const a = actionOptions.find(a => a.id === id)!;
-                                const Icon = a.icon;
-                                return <Icon key={id} className={cn("h-3.5 w-3.5", a.color)} />;
-                              })}
-                              <span className="text-xs font-medium text-purple-200">
-                                {selectedActions.length} ação(ões)
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Editor footer */}
-                <div className="sticky bottom-0 flex items-center justify-between border-t border-border bg-card px-6 py-4">
+                <div className="sticky bottom-0 z-20 flex items-center justify-between border-t border-border bg-card px-6 py-4">
                   <span className={cn(
                     "text-xs",
                     canSave ? "text-green-400" : "text-muted-foreground"
