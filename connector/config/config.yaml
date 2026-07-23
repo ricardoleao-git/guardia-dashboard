@@ -5,7 +5,7 @@
 supabase:
   url: "https://ycqrgrczrunvyivxfnch.supabase.co"
   # Publishable key (anon) — RLS configurado para permitir insert
-  service_role_key: "sb_publishable_6ulf03swTJNZdt7DYPqjvg_KJ9z2ckh"
+  service_role_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljcXJncmN6cnVudnlpdnhmbmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MDMzOTAsImV4cCI6MjEwMDM3OTM5MH0.mDpFTKZ1uDPuF5zW0uorhyhJFRicl1dlxFtjNwXoLa8"
 
 connector:
   id: "connector-bancada-01"

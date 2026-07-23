@@ -1,0 +1,4 @@
+id,email,full_name,role,avatar_url,created_at,updated_at
+1c51387e-e04e-44e2-84af-4c7688cef3be,visualizador@zenitetech.com,Visualizador Demo,viewer,,2026-07-23 11:59:46.498743+00:00,2026-07-23 11:59:46.507846+00:00
+18bcb820-19fc-494d-bfc6-2ed857e4490b,operador@zenitetech.com,Operador Zenite,operator,,2026-07-23 11:59:46.468641+00:00,2026-07-23 11:59:46.489459+00:00
+53eb2610-ac8b-4aa7-9197-6fe1b2d689ab,rjll70@gmail.com,Ricardo Leao,admin,,2026-07-23 11:51:56.049729+00:00,2026-07-23 11:51:56.071310+00:00

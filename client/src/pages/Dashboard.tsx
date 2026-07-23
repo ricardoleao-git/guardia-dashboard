@@ -377,7 +377,7 @@ export default function Dashboard() {
         </main>
       </div>
 
-      <RealtimeNotifications newEventCount={events.length} />
+      <RealtimeNotifications newEventCount={events.length} events={events} />
       <LanguageSwitcher variant="floating" />
 
       <ImageViewer

@@ -1,0 +1,1097 @@
+[
+  {
+    "event_id": "sim-dd21dde30cd7",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 96,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T04:30:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-d523f47cb883",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 90,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T15:38:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-194ce5658316",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Carlos Mendes",
+    "face_score": 93,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T08:51:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-7f747a528858",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 95,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T01:12:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-8331066233ef",
+    "camera_serial": "D3",
+    "camera_name": "Recepção",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 93,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T23:14:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-6fbb12f92680",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 84,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T07:30:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-17524a5e6fbb",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 85,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T16:38:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-46618e5415b2",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "João Santos",
+    "face_score": 83,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T20:47:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-7856b730a58c",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 95,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T11:21:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-23fa0736d45e",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "Maria Oliveira",
+    "face_score": 81,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T04:37:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-97909c1f017d",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 40,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T05:14:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-a81319b4d6d1",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "João Santos",
+    "face_score": 87,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T02:48:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-ab2f655881e3",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "Maria Oliveira",
+    "face_score": 77,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T18:24:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-ae522a7201a5",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 94,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T16:50:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-b8e3e8126c9a",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 50,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T03:11:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-e2c2fdeefc4b",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 89,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T13:03:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-7524e825cb16",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 35,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T05:09:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-f805854225ef",
+    "camera_serial": "D3",
+    "camera_name": "Recepção",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 91,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T17:30:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-2c0e76807b0a",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 95,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T03:22:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-28bcf27c49ab",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 34,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T05:44:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.99039+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-af82a79cbd2e",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 86,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T05:18:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-0271b8efdfb6",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 42,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T09:39:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-e03526fea273",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 40,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T13:39:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-42e224147813",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "Maria Oliveira",
+    "face_score": 79,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T16:05:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-cd5716c6ed15",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 90,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T17:02:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-8bb303e5de67",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Carlos Mendes",
+    "face_score": 95,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T06:53:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-cdbe895f7086",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 97,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T19:46:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-d379801292c3",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 93,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T17:38:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-465438ce03b5",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 89,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T18:11:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-abe3ec31dc9c",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 37,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T11:46:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-ae34396b50b4",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 92,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T05:57:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-6edae0a97fb4",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 96,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T13:37:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-615911f9922f",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "João Santos",
+    "face_score": 81,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T10:33:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-0ae677bdacf2",
+    "camera_serial": "D3",
+    "camera_name": "Recepção",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 40,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T06:09:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-53bc18462121",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "Maria Oliveira",
+    "face_score": 80,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T02:16:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-48ede658310b",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 100,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T17:27:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-a2e4bd005436",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Carlos Mendes",
+    "face_score": 91,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T10:33:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-b1d4be10f769",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "João Santos",
+    "face_score": 86,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T11:50:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-199ca8ff4166",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 93,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T16:53:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-229b70e79dcd",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 94,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T07:56:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.908958+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-a9b8b53ba238",
+    "camera_serial": "D3",
+    "camera_name": "Recepção",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 99,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T16:54:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-f7a2ce51e1ec",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 97,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T00:45:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-ef3a7c7beecb",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 35,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T15:28:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-2a5da1a46931",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 98,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T21:19:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-5493f3111b25",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 34,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T07:43:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-40545be29ca7",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "Maria Oliveira",
+    "face_score": 82,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T01:28:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-6363d9b5f3fa",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 92,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T04:24:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-8347de39ecd5",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 100,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T21:29:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-8c830b1e1b47",
+    "camera_serial": "D3",
+    "camera_name": "Recepção",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 92,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T09:13:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-d288ff713fca",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 90,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T03:27:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-787944dab210",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Carlos Mendes",
+    "face_score": 86,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T13:12:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-ad58db33ae7a",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Carlos Mendes",
+    "face_score": 90,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T08:11:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-cd0f29518a25",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 98,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T10:18:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-a429bc310bc7",
+    "camera_serial": "D6",
+    "camera_name": "Estacionamento",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 44,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T16:25:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-01968dddb6e8",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ana Paula Silva",
+    "face_score": 93,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T08:49:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-d77040534183",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Desconhecidos",
+    "person_name": null,
+    "face_score": 49,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T10:59:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-385d9cb791e7",
+    "camera_serial": "D1",
+    "camera_name": "Portaria",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 93,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-22T19:14:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "H5AI-50",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-2700e825a36c",
+    "camera_serial": "D4",
+    "camera_name": "AI IPC",
+    "event_type": "face",
+    "face_list": "Visitantes",
+    "person_name": "Maria Oliveira",
+    "face_score": 76,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T02:53:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "T5AI",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-ea0081be75a6",
+    "camera_serial": "D2",
+    "camera_name": "Corredor",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Fernanda Costa",
+    "face_score": 92,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T07:54:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "sim-aa804f81e765",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 95,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T07:24:33.698081+00:00",
+    "created_at": "2026-07-23T11:58:33.799706+00:00",
+    "attributes": {
+      "model": "F4C-T",
+      "simulated": true
+    },
+    "annotations": null
+  },
+  {
+    "event_id": "test-001",
+    "camera_serial": "D5",
+    "camera_name": "COPA",
+    "event_type": "face",
+    "face_list": "Funcionarios",
+    "person_name": "Ricardo Leao",
+    "face_score": 95,
+    "recognize_image": null,
+    "capture_image": null,
+    "event_time": "2026-07-23T11:00:00+00:00",
+    "created_at": "2026-07-23T11:57:52.362805+00:00",
+    "attributes": {},
+    "annotations": null
+  }
+]

@@ -32,21 +32,46 @@ export function evaluateCriticalEvent(event: CameraEvent): CriticalAlert | null 
     };
   }
 
-  // Reconhecimento facial com match baixo (pessoa não cadastrada / suspeita)
-  if (operator === "FaceReco" && data?.matchScore != null) {
-    if (data.matchScore < 50) {
+  // Reconhecimento facial — Stranger (pessoa não cadastrada)
+  if (operator === "FaceReco") {
+    const faceList = data?.faceList || event.payload?.data?.faceList;
+    const personName = data?.name || event.payload?.data?.name;
+    const score = data?.matchScore ?? data?.score;
+
+    // Stranger detectado — sempre crítico
+    if (faceList === "Stranger" || (faceList && faceList.toLowerCase() === "stranger") || (!personName && !score)) {
       return {
         level: "critical",
-        title: "Rosto Não Reconhecido",
-        message: `Pessoa não identificada na câmera ${event.camera_serial}. Score: ${data.matchScore}%`,
+        title: "Estranho Detectado",
+        message: `Pessoa NÃO cadastrada na câmera ${event.camera_serial}${personName ? ` (${personName})` : ""}. Score: ${score ?? "N/A"}%`,
         event,
       };
     }
-    if (data.matchScore < 70) {
+
+    // BlackList — crítico com prioridade máxima
+    if (faceList === "BlackList" || (faceList && faceList.toLowerCase() === "blacklist")) {
+      return {
+        level: "critical",
+        title: "Pessoa em Lista Negra",
+        message: `${personName || "Suspeito"} detectado na câmera ${event.camera_serial}. LISTA NEGRA.`,
+        event,
+      };
+    }
+
+    // Match baixo (pessoa cadastrada mas baixa confiança)
+    if (score != null && score < 50) {
+      return {
+        level: "critical",
+        title: "Rosto Não Reconhecido",
+        message: `Pessoa não identificada na câmera ${event.camera_serial}. Score: ${score}%`,
+        event,
+      };
+    }
+    if (score != null && score < 70) {
       return {
         level: "warning",
         title: "Match Baixo",
-        message: `${data.name || "Pessoa"} identificada com baixa confiança (${data.matchScore}%) em ${event.camera_serial}`,
+        message: `${personName || "Pessoa"} identificada com baixa confiança (${score}%) em ${event.camera_serial}`,
         event,
       };
     }

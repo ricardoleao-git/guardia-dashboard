@@ -10,6 +10,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { X, CheckCircle2, AlertTriangle, ShieldAlert, Info, Eye, EyeOff, ArrowUpCircle, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { CameraEvent } from "@/lib/types";
+import { evaluateCriticalEvent } from "@/lib/critical-events";
 
 export type NotifSeverity = "critical" | "warning" | "info" | "success";
 
@@ -26,6 +28,7 @@ export interface PushNotification {
 interface RealtimeNotificationsProps {
   newEventCount?: number;
   onAction?: (notifId: string, action: string) => void;
+  events?: CameraEvent[];
 }
 
 // ===== Alert Sound (Web Audio API — no external file needed) =====
@@ -220,7 +223,7 @@ const severityConfig = {
   },
 };
 
-export default function RealtimeNotifications({ newEventCount, onAction }: RealtimeNotificationsProps) {
+export default function RealtimeNotifications({ newEventCount, onAction, events }: RealtimeNotificationsProps) {
   const { t, lang } = useI18n();
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -265,34 +268,64 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
     return () => timers.forEach(t => t && clearTimeout(t));
   }, [notifications, dismissNotif]);
 
-  // Generate demo notifications periodically
+  // Generate real notifications from critical events
+  const processedEventIds = useRef<Set<string>>(new Set());
+
   useEffect(() => {
+    if (!events || events.length === 0) return;
+
+    // Process new events that haven't been notified yet
+    const newCriticalEvents = events.filter(
+      (e) => !processedEventIds.current.has(e.event_id)
+    );
+
+    for (const event of newCriticalEvents) {
+      processedEventIds.current.add(event.event_id);
+      const alert = evaluateCriticalEvent(event);
+      if (alert) {
+        const notif: PushNotification = {
+          id: `notif-${event.event_id}`,
+          severity: alert.level === "info" ? "info" : alert.level,
+          title: alert.title,
+          message: alert.message,
+          camera: event.camera_serial,
+          timestamp: new Date(event.timestamp),
+          actions: alert.level === "critical"
+            ? ["recognize", "ignore", "escalate"]
+            : alert.level === "warning"
+            ? ["recognize", "ignore"]
+            : ["ignore"],
+        };
+        addNotification(notif);
+      }
+    }
+
+    // Keep processed set from growing unbounded
+    if (processedEventIds.current.size > 500) {
+      const recent = new Set(events.map((e) => e.event_id));
+      processedEventIds.current = recent;
+    }
+  }, [events, addNotification]);
+
+  // Fallback: demo notifications only when no real events
+  useEffect(() => {
+    if (events && events.length > 0) return;
+
     const initialTimer = setTimeout(() => {
       addNotification(generateDemoNotification(t));
-    }, 3000);
+    }, 10000);
 
     const interval = setInterval(() => {
-      if (Math.random() > 0.5) {
+      if (Math.random() > 0.7) {
         addNotification(generateDemoNotification(t));
       }
-    }, 15000 + Math.random() * 15000);
+    }, 20000 + Math.random() * 15000);
 
     return () => {
       clearTimeout(initialTimer);
       clearInterval(interval);
     };
-  }, [addNotification, t]);
-
-  // React to external event count changes
-  useEffect(() => {
-    if (newEventCount && newEventCount > lastEventCountRef.current) {
-      const diff = newEventCount - lastEventCountRef.current;
-      if (diff > 0 && Math.random() > 0.3) {
-        addNotification(generateDemoNotification(t));
-      }
-    }
-    lastEventCountRef.current = newEventCount || 0;
-  }, [newEventCount, addNotification]);
+  }, [addNotification, t, events]);
 
   // Reset favicon when all notifications dismissed
   useEffect(() => {

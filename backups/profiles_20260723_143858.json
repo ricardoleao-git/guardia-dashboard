@@ -1,0 +1,29 @@
+[
+  {
+    "id": "1c51387e-e04e-44e2-84af-4c7688cef3be",
+    "email": "visualizador@zenitetech.com",
+    "full_name": "Visualizador Demo",
+    "role": "viewer",
+    "avatar_url": null,
+    "created_at": "2026-07-23T11:59:46.498743+00:00",
+    "updated_at": "2026-07-23T11:59:46.507846+00:00"
+  },
+  {
+    "id": "18bcb820-19fc-494d-bfc6-2ed857e4490b",
+    "email": "operador@zenitetech.com",
+    "full_name": "Operador Zenite",
+    "role": "operator",
+    "avatar_url": null,
+    "created_at": "2026-07-23T11:59:46.468641+00:00",
+    "updated_at": "2026-07-23T11:59:46.489459+00:00"
+  },
+  {
+    "id": "53eb2610-ac8b-4aa7-9197-6fe1b2d689ab",
+    "email": "rjll70@gmail.com",
+    "full_name": "Ricardo Leao",
+    "role": "admin",
+    "avatar_url": null,
+    "created_at": "2026-07-23T11:51:56.049729+00:00",
+    "updated_at": "2026-07-23T11:51:56.07131+00:00"
+  }
+]
