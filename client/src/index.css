@@ -390,3 +390,83 @@
   opacity: 0.5;
   transform: scale(0.95);
 }
+
+/* ===== Flow Validation States ===== */
+.flow-canvas-error {
+  border-color: oklch(0.55 0.22 27) !important;
+  background: oklch(0.55 0.22 27 / 0.05) !important;
+}
+
+.flow-canvas-warning {
+  border-color: oklch(0.68 0.17 85) !important;
+  background: oklch(0.68 0.17 85 / 0.05) !important;
+}
+
+/* ===== Tree View ===== */
+.flow-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.flow-tree-node {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.flow-tree-node::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 0;
+  bottom: 50%;
+  width: 2px;
+  background: var(--border);
+}
+
+.flow-tree-node::after {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  width: 1rem;
+  height: 2px;
+  background: var(--border);
+}
+
+.flow-tree-node:first-child::before {
+  display: none;
+}
+
+.flow-tree-children {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.flow-tree-children::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.flow-tree-branch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.flow-tree-branch::before {
+  content: '';
+  position: absolute;
+  left: -1.25rem;
+  top: 50%;
+  width: 1rem;
+  height: 2px;
+  background: var(--border);
+}

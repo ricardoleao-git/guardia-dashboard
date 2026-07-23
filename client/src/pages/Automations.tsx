@@ -18,7 +18,8 @@ import {
   ScanFace, Car, PersonStanding, Fence, MoveRight, Users2,
   TimerOff, Save, ArrowRight, Layers, GripVertical, Trash,
   Eye, EyeOff, Sparkles, Copy, Calendar, Moon, Sun,
-  Building2, GraduationCap, ShieldAlert, Wrench
+  Building2, GraduationCap, ShieldAlert, Wrench,
+  Download, Upload, GitBranch, AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -276,6 +277,11 @@ export default function Automations() {
   const [conditionParams, setConditionParams] = useState<Record<string, string>>({});
   const [showFlowBuilder, setShowFlowBuilder] = useState(true);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [viewMode, setViewMode] = useState<"horizontal" | "tree">("horizontal");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Drag-and-drop state
   const [draggedUid, setDraggedUid] = useState<string | null>(null);
@@ -508,6 +514,103 @@ export default function Automations() {
   const actionItems = flowItems.filter(i => i.type === "action");
   const canSave = ruleName.trim() && triggerItem && actionItems.length > 0;
 
+  // ===== Validation =====
+  const hasTrigger = !!triggerItem;
+  const hasAction = actionItems.length > 0;
+  const hasName = ruleName.trim().length > 0;
+  const validationErrors: { type: "error" | "warning"; message: string }[] = [];
+  if (!hasName) validationErrors.push({ type: "error", message: "Nome da regra não definido" });
+  if (!hasTrigger) validationErrors.push({ type: "error", message: "Nenhum gatilho selecionado" });
+  if (!hasAction) validationErrors.push({ type: "error", message: "Nenhuma ação selecionada" });
+  if (conditionItems.length > 0 && conditionItems.every(c => !c.param)) {
+    validationErrors.push({ type: "warning", message: "Condições sem parâmetros podem não funcionar corretamente" });
+  }
+  const hasErrors = validationErrors.some(e => e.type === "error");
+  const hasWarnings = validationErrors.some(e => e.type === "warning");
+
+  // ===== Export / Import =====
+  const handleExport = () => {
+    const exportData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      automations: automations.map(a => ({
+        id: a.id,
+        nome: a.nome,
+        gatilho: a.gatilho,
+        condicao: a.condicao,
+        acao: a.acao,
+        ativa: a.ativa,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `guardia-automacoes-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportRule = () => {
+    if (flowItems.length === 0) return;
+    const exportData = {
+      version: "1.0",
+      type: "single-rule",
+      nome: ruleName || "Regra sem nome",
+      flowItems: flowItems.map(i => ({
+        type: i.type,
+        optionId: i.optionId,
+        label: i.label,
+        param: i.param || null,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `regra-${(ruleName || "automacao").toLowerCase().replace(/\s+/g, "-")}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setImportText(ev.target?.result as string);
+      setImportError(null);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportApply = () => {
+    try {
+      const data = JSON.parse(importText);
+      if (!data.automations || !Array.isArray(data.automations)) {
+        throw new Error("Formato inválido: esperado campo 'automations' como array");
+      }
+      const imported: Automation[] = data.automations.map((a: Record<string, unknown>) => ({
+        id: `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        nome: a.nome as string || "Regra importada",
+        gatilho: a.gatilho as string || "",
+        gatilhoIcon: UserX,
+        condicao: a.condicao as string || "",
+        acao: a.acao as string || "",
+        acaoIcon: getAcaoIcon(a.acao as string || ""),
+        ativa: a.ativa as boolean ?? true,
+        disparos: 0,
+        ultimoDisparo: null,
+      }));
+      setAutomations([...automations, ...imported]);
+      setShowImportModal(false);
+      setImportText("");
+      setImportError(null);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Erro ao importar JSON");
+    }
+  };
+
   const handleSave = () => {
     if (!canSave) return;
     const condStr = conditionItems.map(c => c.param ? `${c.label}: ${c.param}` : c.label).join(", ");
@@ -568,6 +671,20 @@ export default function Automations() {
               <p className="text-xs text-muted-foreground">Regras evento → condição → ação</p>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+                title="Exportar todas as regras em JSON"
+              >
+                <Download className="h-3.5 w-3.5" /> Exportar
+              </button>
+              <button
+                onClick={() => { setImportText(""); setImportError(null); setShowImportModal(true); }}
+                className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+                title="Importar regras de um arquivo JSON"
+              >
+                <Upload className="h-3.5 w-3.5" /> Importar
+              </button>
               <button
                 onClick={() => setShowTemplates(true)}
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
@@ -900,13 +1017,50 @@ export default function Automations() {
                   {/* ===== FLOW BUILDER (DRAG-AND-DROP) ===== */}
                   {showFlowBuilder && (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">F</div>
-                        <h4 className="text-sm font-semibold">Fluxo Construído</h4>
-                        <span className="text-[11px] text-muted-foreground">— Arraste para reordenar. Arraste para a lixeira para remover.</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">F</div>
+                          <h4 className="text-sm font-semibold">Fluxo Construído</h4>
+                          <span className="text-[11px] text-muted-foreground">— Arraste para reordenar. Arraste para a lixeira para remover.</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {/* View mode toggle */}
+                          <div className="flex items-center rounded-md border border-border overflow-hidden">
+                            <button
+                              onClick={() => setViewMode("horizontal")}
+                              className={cn(
+                                "flex items-center gap-1 px-2 py-1 text-[10px] font-medium transition-colors",
+                                viewMode === "horizontal" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                              )}
+                              title="Vista horizontal"
+                            >
+                              <ArrowRight className="h-3 w-3" /> Horizontal
+                            </button>
+                            <button
+                              onClick={() => setViewMode("tree")}
+                              className={cn(
+                                "flex items-center gap-1 px-2 py-1 text-[10px] font-medium transition-colors",
+                                viewMode === "tree" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                              )}
+                              title="Vista em árvore"
+                            >
+                              <GitBranch className="h-3 w-3" /> Árvore
+                            </button>
+                          </div>
+                          {/* Export current rule */}
+                          {flowItems.length > 0 && (
+                            <button
+                              onClick={handleExportRule}
+                              className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-accent transition-colors"
+                              title="Exportar esta regra em JSON"
+                            >
+                              <Download className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Flow canvas with snap-grid and palette drop target */}
+                      {/* Flow canvas with snap-grid, validation, and palette drop target */}
                       <div
                         onDragOver={handleCanvasDragOver}
                         onDragLeave={handleCanvasDragLeave}
@@ -917,7 +1071,11 @@ export default function Automations() {
                             ? "border-primary/60 bg-primary/10 scale-[1.01]"
                             : isDragging
                               ? "border-primary/50 bg-primary/5"
-                              : "border-border bg-background"
+                              : hasErrors && flowItems.length > 0
+                                ? "flow-canvas-error"
+                                : hasWarnings && flowItems.length > 0
+                                  ? "flow-canvas-warning"
+                                  : "border-border bg-background"
                         )}
                       >
                         {flowItems.length === 0 ? (
@@ -929,7 +1087,68 @@ export default function Automations() {
                                 : "Arraste um gatilho, condições e ações abaixo para montar o fluxo"}
                             </p>
                           </div>
+                        ) : viewMode === "tree" ? (
+                          /* ===== TREE VIEW ===== */
+                          <div className="flow-tree">
+                            {/* Trigger node (root) */}
+                            {triggerItem && (() => {
+                              const TIcon = triggerItem.icon;
+                              return (
+                                <div className="flex items-center gap-2 pb-2">
+                                  <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-2", triggerItem.bg)}>
+                                    <TIcon className={cn("h-4 w-4", triggerItem.color)} />
+                                    <div className="flex flex-col">
+                                      <span className="text-[8px] font-semibold uppercase text-amber-400/60">Gatilho</span>
+                                      <span className="text-xs font-medium">{triggerItem.label}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Conditions branch */}
+                            {conditionItems.length > 0 && (
+                              <div className="flow-tree-children">
+                                <div className="flex items-center gap-2 py-1">
+                                  <span className="text-[9px] font-semibold uppercase text-blue-400/60">Condições</span>
+                                </div>
+                                {conditionItems.map((item) => {
+                                  const CIcon = item.icon;
+                                  return (
+                                    <div key={item.uid} className="flow-tree-branch">
+                                      <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-1.5", item.bg)}>
+                                        <CIcon className={cn("h-3.5 w-3.5", item.color)} />
+                                        <span className="text-xs font-medium">{item.label}</span>
+                                        {item.param && <span className="text-[9px] text-muted-foreground font-mono-tech">{item.param}</span>}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Actions branch */}
+                            {actionItems.length > 0 && (
+                              <div className="flow-tree-children">
+                                <div className="flex items-center gap-2 py-1">
+                                  <span className="text-[9px] font-semibold uppercase text-purple-400/60">Ações</span>
+                                </div>
+                                {actionItems.map((item) => {
+                                  const AIcon = item.icon;
+                                  return (
+                                    <div key={item.uid} className="flow-tree-branch">
+                                      <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-1.5", item.bg)}>
+                                        <AIcon className={cn("h-3.5 w-3.5", item.color)} />
+                                        <span className="text-xs font-medium">{item.label}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         ) : (
+                          /* ===== HORIZONTAL VIEW (existing) ===== */
                           <div className="flex items-center gap-0 flex-wrap">
                             {flowItems.map((item, idx) => {
                               const Icon = item.icon;
@@ -1028,21 +1247,47 @@ export default function Automations() {
                         )}
                       </div>
 
-                      {/* Flow stats */}
+                      {/* Flow stats + validation summary */}
                       {flowItems.length > 0 && (
-                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <div className="h-2 w-2 rounded-full bg-amber-400" />
-                            {flowItems.filter(i => i.type === "trigger").length} gatilho
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <div className="h-2 w-2 rounded-full bg-blue-400" />
-                            {conditionItems.length} condição(ões)
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <div className="h-2 w-2 rounded-full bg-purple-400" />
-                            {actionItems.length} ação(ões)
-                          </span>
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                            <span className={cn("flex items-center gap-1", !hasTrigger && "text-red-400")}>
+                              <div className={cn("h-2 w-2 rounded-full", hasTrigger ? "bg-amber-400" : "bg-red-400 animate-pulse")} />
+                              {flowItems.filter(i => i.type === "trigger").length} gatilho
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <div className="h-2 w-2 rounded-full bg-blue-400" />
+                              {conditionItems.length} condição(ões)
+                            </span>
+                            <span className={cn("flex items-center gap-1", !hasAction && "text-red-400")}>
+                              <div className={cn("h-2 w-2 rounded-full", hasAction ? "bg-purple-400" : "bg-red-400 animate-pulse")} />
+                              {actionItems.length} ação(ões)
+                            </span>
+                          </div>
+                          {/* Validation indicators */}
+                          {validationErrors.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              {validationErrors.map((v, i) => (
+                                <span
+                                  key={i}
+                                  className={cn(
+                                    "flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium",
+                                    v.type === "error"
+                                      ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                      : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                  )}
+                                >
+                                  <AlertCircle className="h-3 w-3" />
+                                  {v.message}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {validationErrors.length === 0 && (
+                            <span className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-400 border border-green-500/20">
+                              <Check className="h-3 w-3" /> Fluxo válido
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1168,16 +1413,17 @@ export default function Automations() {
 
                 {/* Editor footer */}
                 <div className="sticky bottom-0 z-20 flex items-center justify-between border-t border-border bg-card px-6 py-4">
-                  <span className={cn(
-                    "text-xs",
-                    canSave ? "text-green-400" : "text-muted-foreground"
-                  )}>
+                  <div className="flex items-center gap-2">
                     {canSave ? (
-                      <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5" /> Pronto para salvar</span>
+                      <span className="flex items-center gap-1.5 text-xs text-green-400"><Check className="h-3.5 w-3.5" /> Pronto para salvar</span>
+                    ) : hasErrors ? (
+                      <span className="flex items-center gap-1.5 text-xs text-red-400"><AlertCircle className="h-3.5 w-3.5" /> {validationErrors.find(e => e.type === "error")?.message}</span>
+                    ) : hasWarnings ? (
+                      <span className="flex items-center gap-1.5 text-xs text-amber-400"><AlertCircle className="h-3.5 w-3.5" /> {validationErrors.find(e => e.type === "warning")?.message}</span>
                     ) : (
-                      "Preencha nome, gatilho e ao menos uma ação"
+                      <span className="text-xs text-muted-foreground">Preencha nome, gatilho e ao menos uma ação</span>
                     )}
-                  </span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowEditor(false)}
@@ -1204,6 +1450,89 @@ export default function Automations() {
           )}
         </main>
       </div>
+
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        onChange={handleImportFile}
+        className="hidden"
+      />
+
+      {/* ===== Import Modal ===== */}
+      {showImportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowImportModal(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <Upload className="h-4 w-4 text-primary" />
+                Importar Regras (JSON)
+              </h3>
+              <button onClick={() => setShowImportModal(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">
+                  Arquivo JSON
+                </label>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 rounded-md border border-dashed border-border px-4 py-3 text-xs text-muted-foreground hover:border-primary/30 hover:bg-accent transition-colors w-full"
+                >
+                  <Upload className="h-4 w-4" />
+                  {fileInputRef.current?.files?.[0]?.name || "Selecionar arquivo..."}
+                </button>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase mb-1.5 block">
+                  Ou cole o JSON aqui
+                </label>
+                <textarea
+                  value={importText}
+                  onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
+                  placeholder='{"version":"1.0","automations":[...]}'
+                  className="w-full h-32 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono-tech resize-none"
+                />
+              </div>
+              {importError && (
+                <div className="flex items-center gap-2 rounded-md bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  {importError}
+                </div>
+              )}
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="rounded-md bg-muted px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleImportApply}
+                  disabled={!importText.trim()}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-medium transition-colors",
+                    importText.trim()
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  )}
+                >
+                  <Upload className="h-3.5 w-3.5" /> Importar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
