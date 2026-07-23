@@ -13,7 +13,7 @@ connector:
   poll_interval_seconds: 30
   heartbeat_interval_seconds: 60
   max_events_per_poll: 50
-  image_upload: false        # Desabilitar upload de imagens até configurar Storage
+  image_upload: true        # Desabilitar upload de imagens até configurar Storage
   log_level: "INFO"
 
 cameras:
