@@ -27,6 +27,10 @@ import PersonTimeline from "@/pages/PersonTimeline";
 import VehicleAccess from "@/pages/VehicleAccess";
 import VisitorInvite from "@/pages/VisitorInvite";
 import AbsenceAlerts from "@/pages/AbsenceAlerts";
+import SemanticSearch from "@/pages/SemanticSearch";
+import AISummary from "@/pages/AISummary";
+import ElevatorControl from "@/pages/ElevatorControl";
+import AIBox from "@/pages/AIBox";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -351,6 +355,22 @@ export default function Dashboard() {
 
           {activeView === "visitor-invite" && (
             <VisitorInvite />
+          )}
+
+          {activeView === "semantic-search" && (
+            <SemanticSearch />
+          )}
+
+          {activeView === "ai-summary" && (
+            <AISummary />
+          )}
+
+          {activeView === "elevator" && (
+            <ElevatorControl />
+          )}
+
+          {activeView === "ai-box" && (
+            <AIBox />
           )}
         </main>
       </div>

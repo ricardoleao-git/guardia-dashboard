@@ -1,4 +1,8 @@
-import { ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database, X, Cpu, Users, HardDrive, Play, Car, Server, ScrollText, UserCog, CalendarCheck, ScanFace, UserPlus } from "lucide-react";
+import {
+  ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database,
+  X, Cpu, Users, HardDrive, Play, Car, Server, ScrollText, UserCog,
+  CalendarCheck, ScanFace, UserPlus, Search, FileText, Building, Boxes,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -11,28 +15,47 @@ interface SidebarProps {
 
 const navSections = [
   {
-    title: "Monitoramento",
+    title: "Operação",
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
       { id: "events", label: "Eventos", icon: Activity },
-      { id: "playback", label: "Playback", icon: Play },
       { id: "cameras", label: "Câmeras", icon: Camera },
+      { id: "playback", label: "Playback", icon: Play },
       { id: "alerts", label: "Alertas", icon: Bell },
+    ],
+  },
+  {
+    title: "Inteligência",
+    items: [
       { id: "automations", label: "Automações", icon: Zap },
+      { id: "ai-config", label: "Funções AI", icon: Cpu },
+      { id: "semantic-search", label: "Busca Semântica", icon: Search },
+      { id: "ai-summary", label: "Resumo IA", icon: FileText },
+    ],
+  },
+  {
+    title: "Pessoas & Acesso",
+    items: [
       { id: "frequencia", label: "Frequência", icon: CalendarCheck },
       { id: "person-timeline", label: "Timeline Pessoa", icon: ScanFace },
-      { id: "vehicle-access", label: "Clausura Veicular", icon: Car },
       { id: "visitor-invite", label: "Convite Visitante", icon: UserPlus },
+      { id: "vehicle-access", label: "Clausura Veicular", icon: Car },
+      { id: "elevator", label: "Elevador", icon: Building },
     ],
   },
   {
     title: "Gestão",
     items: [
       { id: "devices", label: "Dispositivos", icon: HardDrive },
-      { id: "ai-config", label: "Funções AI", icon: Cpu },
+      { id: "ai-box", label: "AI Box", icon: Boxes },
       { id: "face-library", label: "Bib. de Rostos", icon: Users },
       { id: "vehicles", label: "Bib. de Veículos", icon: Car },
       { id: "system-config", label: "Config. Sistema", icon: Server },
+    ],
+  },
+  {
+    title: "Administração",
+    items: [
       { id: "user-admin", label: "Operadores", icon: UserCog },
       { id: "audit-log", label: "Auditoria", icon: ScrollText },
       { id: "settings", label: "Config. GuardIA", icon: Settings },
