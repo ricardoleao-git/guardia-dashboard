@@ -17,6 +17,7 @@ import {
   ShieldCheck, ShieldAlert, Wrench, RefreshCw, ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface Floor {
   number: number;
@@ -67,6 +68,7 @@ const groupColors: Record<string, string> = {
 };
 
 export default function ElevatorControl() {
+  const { t } = useI18n();
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
   const [elevatorFloor] = useState(2);
   const [elevatorDir] = useState<"up" | "down" | "idle">("idle");
@@ -89,7 +91,7 @@ export default function ElevatorControl() {
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Elevador Inteligente</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight">{t("elevator.title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">Controle de acesso por andar com reconhecimento facial</p>
             </div>
             <button className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">

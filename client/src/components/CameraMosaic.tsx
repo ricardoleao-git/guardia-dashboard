@@ -11,6 +11,7 @@ import { Camera, Maximize2, Wifi, WifiOff, Video, Radio, Settings2, Sparkles } f
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import LiveStream, { StreamProtocol } from "@/components/LiveStream";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface CameraFeed {
   id: string;
@@ -141,6 +142,7 @@ interface CameraMosaicProps {
 }
 
 export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
+  const { t } = useI18n();
   const [layout, setLayout] = useState<LayoutOption>("4");
   const [streamMode, setStreamMode] = useState<"live" | "snapshot">("live");
   const [autoRelevance, setAutoRelevance] = useState(true);
@@ -152,7 +154,7 @@ export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
       {/* Layout controls + stream mode + auto-relevância */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground mr-1">Mosaico:</span>
+          <span className="text-xs text-muted-foreground mr-1">{t("dash.mosaic")}:</span>
           {(Object.keys(layoutConfig) as LayoutOption[]).map((l) => (
             <button
               key={l}
@@ -182,7 +184,7 @@ export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
             title="Destaca automaticamente tiles com eventos recentes"
           >
             <Sparkles className="h-3 w-3" />
-            Auto-relevância
+            {t("mosaic.auto_relevance")}
           </button>
 
           {/* Stream mode toggle */}
@@ -197,7 +199,7 @@ export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
               )}
             >
               <Radio className="h-3 w-3" />
-              Live
+              {t("mosaic.live")}
             </button>
             <button
               onClick={() => setStreamMode("snapshot")}
@@ -209,17 +211,17 @@ export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
               )}
             >
               <Camera className="h-3 w-3" />
-              Snapshot
+              {t("mosaic.snapshot")}
             </button>
           </div>
 
           {/* Status counts */}
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-green-400" /> {benchFeeds.filter((f) => f.status === "online").length} Online
+              <div className="h-2 w-2 rounded-full bg-green-400" /> {benchFeeds.filter((f) => f.status === "online").length} {t("common.online")}
             </span>
             <span className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-red-400" /> {benchFeeds.filter((f) => f.status === "offline").length} Offline
+              <div className="h-2 w-2 rounded-full bg-red-400" /> {benchFeeds.filter((f) => f.status === "offline").length} {t("common.offline")}
             </span>
           </div>
         </div>

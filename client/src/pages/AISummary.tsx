@@ -16,6 +16,7 @@ import {
   Camera, Clock, Activity, Shield, ArrowRight, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SummarySection {
   title: string;
@@ -83,6 +84,7 @@ const mockMetrics = [
 ];
 
 export default function AISummary() {
+  const { t } = useI18n();
   const [period, setPeriod] = useState("today");
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(true);
@@ -105,7 +107,7 @@ export default function AISummary() {
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Resumo IA</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight">{t("summary.title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">Análise automática de eventos por inteligência artificial</p>
             </div>
             <div className="flex items-center gap-2">

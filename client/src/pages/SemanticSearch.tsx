@@ -16,6 +16,7 @@ import {
   Glasses, User, Calendar, Shirt, ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SearchResult {
   id: string;
@@ -68,6 +69,7 @@ const suggestedQueries = [
 ];
 
 export default function SemanticSearch() {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -102,7 +104,7 @@ export default function SemanticSearch() {
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="font-display text-2xl font-bold tracking-tight">Busca Semântica</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">{t("semantic.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">Encontre pessoas por descrição em linguagem natural</p>
           </div>
 

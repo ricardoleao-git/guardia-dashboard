@@ -17,6 +17,7 @@ import {
   XCircle, Download, ChevronDown, ChevronUp, Microchip,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface AIBoxDevice {
   id: string;
@@ -95,6 +96,7 @@ function getUsageText(value: number): string {
 }
 
 export default function AIBox() {
+  const { t } = useI18n();
   const [expandedId, setExpandedId] = useState<string | null>("box1");
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -107,7 +109,7 @@ export default function AIBox() {
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">AI Box</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight">{t("aibox.title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">Dispositivos de edge computing para inferência AI</p>
             </div>
             <div className="flex items-center gap-2">

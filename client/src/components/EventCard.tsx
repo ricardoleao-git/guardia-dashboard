@@ -12,6 +12,7 @@ import { CameraEvent } from "@/lib/types";
 import { operatorLabels, operatorColors } from "@/lib/mock-data";
 import { timeAgo, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface EventCardProps {
   event: CameraEvent;
@@ -35,6 +36,7 @@ const listColors: Record<string, { bg: string; text: string; border: string; lab
 };
 
 export default function EventCard({ event, onClick }: EventCardProps) {
+  const { t } = useI18n();
   const Icon = operatorIcons[event.operator] || Activity;
   const label = operatorLabels[event.operator] || event.operator;
   const colorClass = operatorColors[event.operator] || "bg-gray-100 text-gray-700 border-gray-200";
@@ -54,7 +56,7 @@ export default function EventCard({ event, onClick }: EventCardProps) {
   const hasGlasses = data?.glasses;
   const hasMask = data?.mask;
   const plate = data?.plate;
-  const direction = data?.direction === "entry" ? "Entrada" : "Saída";
+  const direction = data?.direction === "entry" ? t("freq.entry") : t("freq.exit");
   const cameraLabel = info?.cameraLabel || event.camera_serial;
 
   const listStyle = faceList ? listColors[faceList] : null;
@@ -87,7 +89,7 @@ export default function EventCard({ event, onClick }: EventCardProps) {
               </div>
             )}
             <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-medium text-white/80 backdrop-blur-sm">
-              Captura
+              {t("event.capture")}
             </span>
           </div>
 
@@ -107,13 +109,13 @@ export default function EventCard({ event, onClick }: EventCardProps) {
                     {initials || "?"}
                   </div>
                   <span className="text-[8px] text-muted-foreground/50">
-                    {faceList === "Estranho" ? "Sem cadastro" : "Placeholder"}
+                    {faceList === "Estranho" ? t("event.stranger") : "Placeholder"}
                   </span>
                 </div>
               </div>
             )}
             <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[8px] font-medium text-white/80 backdrop-blur-sm">
-              Cadastro
+              {t("event.registration")}
             </span>
           </div>
 
@@ -167,7 +169,7 @@ export default function EventCard({ event, onClick }: EventCardProps) {
           <>
             <div className="flex items-center justify-between gap-2">
               <span className="font-display text-sm font-semibold truncate">
-                {personName || "Estranho"}
+                {personName || t("event.stranger")}
               </span>
               {matchScore !== null && matchScore !== undefined && (
                 <span className={cn(
@@ -206,22 +208,22 @@ export default function EventCard({ event, onClick }: EventCardProps) {
             <div className="flex flex-wrap gap-1">
               {gender && (
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {gender === "M" ? "Masculino" : "Feminino"}
+                  {gender === "M" ? (t("event.gender") + ": M") : (t("event.gender") + ": F")}
                 </span>
               )}
               {age && (
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  ~{age} anos
+                  ~{age} {t("event.age")}
                 </span>
               )}
               {hasGlasses && (
                 <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  <Glasses className="h-2.5 w-2.5" /> Óculos
+                  <Glasses className="h-2.5 w-2.5" /> {t("event.glasses")}
                 </span>
               )}
               {hasMask && (
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  Máscara
+                  {t("event.mask")}
                 </span>
               )}
             </div>
@@ -247,11 +249,11 @@ export default function EventCard({ event, onClick }: EventCardProps) {
         {/* Action buttons (appear on hover) */}
         <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
-            <Video className="h-3 w-3" /> Ver vídeo
+            <Video className="h-3 w-3" /> {t("event.view_video")}
           </span>
           {isFacial && personName && (
             <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
-              <UserCircle className="h-3 w-3" /> Perfil
+              <UserCircle className="h-3 w-3" /> {t("event.profile")}
             </span>
           )}
         </div>

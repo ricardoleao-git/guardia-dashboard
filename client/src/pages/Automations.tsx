@@ -23,6 +23,7 @@ import {
   Copy as CopyIcon, History, PlayCircle, PauseCircle, Filter, Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 // ===== Types =====
 interface Automation {
@@ -282,6 +283,7 @@ function actionToFlowItem(optionId: string): FlowItem | null {
 
 // ===== Main Component =====
 export default function Automations() {
+  const { t } = useI18n();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [automations, setAutomations] = useState(mockAutomations);
   const [showEditor, setShowEditor] = useState(false);
@@ -791,7 +793,7 @@ export default function Automations() {
             <div>
               <h2 className="font-display text-lg font-semibold flex items-center gap-2">
                 <Zap className="h-5 w-5 text-amber-400" />
-                Automações
+                {t("auto.title")}
               </h2>
               <p className="text-xs text-muted-foreground">Regras evento → condição → ação</p>
             </div>
@@ -801,33 +803,33 @@ export default function Automations() {
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                 title="Histórico de disparos"
               >
-                <History className="h-3.5 w-3.5" /> Histórico
+                <History className="h-3.5 w-3.5" /> {t("auto.history")}
               </button>
               <button
                 onClick={handleExport}
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                 title="Exportar todas as regras em JSON"
               >
-                <Download className="h-3.5 w-3.5" /> Exportar
+                <Download className="h-3.5 w-3.5" /> {t("auto.export")}
               </button>
               <button
                 onClick={() => { setImportText(""); setImportError(null); setShowImportModal(true); }}
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                 title="Importar regras de um arquivo JSON"
               >
-                <Upload className="h-3.5 w-3.5" /> Importar
+                <Upload className="h-3.5 w-3.5" /> {t("auto.import")}
               </button>
               <button
                 onClick={() => setShowTemplates(true)}
                 className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
               >
-                <Sparkles className="h-3.5 w-3.5" /> Templates
+                <Sparkles className="h-3.5 w-3.5" /> {t("auto.templates")}
               </button>
               <button
                 onClick={() => openEditor()}
                 className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                <Plus className="h-3.5 w-3.5" /> Nova Automação
+                <Plus className="h-3.5 w-3.5" /> {t("auto.new")}
               </button>
             </div>
           </div>
@@ -854,7 +856,7 @@ export default function Automations() {
                 </div>
                 <div>
                   <p className="font-display text-xl font-bold">{activeCount}</p>
-                  <p className="text-[11px] text-muted-foreground">Ativas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("auto.active")}</p>
                 </div>
               </div>
             </div>
@@ -865,7 +867,7 @@ export default function Automations() {
                 </div>
                 <div>
                   <p className="font-display text-xl font-bold">{totalDisparos}</p>
-                  <p className="text-[11px] text-muted-foreground">Disparos hoje</p>
+                  <p className="text-[11px] text-muted-foreground">{t("auto.disparos")}</p>
                 </div>
               </div>
             </div>
@@ -965,7 +967,7 @@ export default function Automations() {
 
           {/* Disparos recentes */}
           <div className="space-y-3">
-            <h3 className="font-display text-sm font-semibold text-muted-foreground">Disparos recentes</h3>
+            <h3 className="font-display text-sm font-semibold text-muted-foreground">{t("auto.disparos")}</h3>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <table className="w-full">
                 <thead>

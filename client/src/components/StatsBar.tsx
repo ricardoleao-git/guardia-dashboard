@@ -7,12 +7,14 @@
 import { Activity, Users, UserX, Camera, AlertTriangle } from "lucide-react";
 import { CameraEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface StatsBarProps {
   events: CameraEvent[];
 }
 
 export default function StatsBar({ events }: StatsBarProps) {
+  const { t } = useI18n();
   const faceReco = events.filter(e => e.operator === "FaceReco");
   const recognized = faceReco.filter(e => e.payload?.data?.matchScore && e.payload.data.matchScore >= 50).length;
   const strangers = faceReco.filter(e => !e.payload?.data?.matchScore || e.payload.data.matchScore < 50).length;
@@ -21,7 +23,7 @@ export default function StatsBar({ events }: StatsBarProps) {
 
   const stats = [
     {
-      label: "Eventos Hoje",
+      label: t("stats.events_today"),
       value: events.length,
       icon: Activity,
       color: "text-blue-400",
@@ -29,7 +31,7 @@ export default function StatsBar({ events }: StatsBarProps) {
       ring: "ring-blue-500/20",
     },
     {
-      label: "Reconhecidas",
+      label: t("stats.recognized"),
       value: recognized,
       icon: Users,
       color: "text-green-400",
@@ -37,7 +39,7 @@ export default function StatsBar({ events }: StatsBarProps) {
       ring: "ring-green-500/20",
     },
     {
-      label: "Estranhos",
+      label: t("stats.strangers"),
       value: strangers,
       icon: UserX,
       color: "text-amber-400",
@@ -45,7 +47,7 @@ export default function StatsBar({ events }: StatsBarProps) {
       ring: "ring-amber-500/20",
     },
     {
-      label: "Câmeras Online",
+      label: t("stats.cameras_online"),
       value: camerasOnline,
       icon: Camera,
       color: "text-cyan-400",
@@ -53,7 +55,7 @@ export default function StatsBar({ events }: StatsBarProps) {
       ring: "ring-cyan-500/20",
     },
     {
-      label: "Alertas",
+      label: t("stats.alerts"),
       value: alerts,
       icon: AlertTriangle,
       color: "text-red-400",

@@ -14,6 +14,7 @@ import {
   Video, Image, AlertCircle, CheckCircle2, XCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 // ===== Types =====
 interface Appearance {
@@ -70,6 +71,7 @@ const cameras = ["all", "D1", "D2", "D3", "D4", "D5", "D6"];
 const lists = ["all", "branca", "negra", "estranho"];
 
 export default function PersonTimeline() {
+  const { t } = useI18n();
   const [selectedPerson, setSelectedPerson] = useState<string>("p1");
   const [cameraFilter, setCameraFilter] = useState("all");
   const [listFilter, setListFilter] = useState("all");
@@ -144,7 +146,7 @@ export default function PersonTimeline() {
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="font-display text-2xl font-bold tracking-tight">Timeline de Pessoa</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">{t("timeline.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">Histórico de aparições e correlação de identidade entre câmeras</p>
           </div>
 

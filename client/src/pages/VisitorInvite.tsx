@@ -17,6 +17,7 @@ import {
   ChevronDown, ChevronUp, User, MapPin, Shield, Trash2, Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 // ===== Types =====
 interface VisitorInvite {
@@ -56,6 +57,7 @@ const statusConfig = {
 };
 
 export default function VisitorInvite() {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -121,7 +123,7 @@ export default function VisitorInvite() {
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Convite de Visitante</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight">{t("visitor.title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">Pré-cadastro facial temporário + QR Code + notificação de chegada</p>
             </div>
             <button
@@ -387,7 +389,7 @@ export default function VisitorInvite() {
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                       <UserPlus className="h-4.5 w-4.5 text-primary" />
                     </div>
-                    <h2 className="font-display text-base font-semibold">Novo Convite de Visitante</h2>
+                    <h2 className="font-display text-base font-semibold">{t("visitor.new")}</h2>
                   </div>
                   <button onClick={() => setShowNewInvite(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                     <XCircle className="h-5 w-5" />

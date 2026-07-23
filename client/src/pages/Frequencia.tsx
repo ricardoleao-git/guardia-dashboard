@@ -11,6 +11,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import { CalendarCheck, Clock, UserCheck, UserX, TrendingUp, TrendingDown, Download, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface Person {
   id: string;
@@ -45,6 +46,7 @@ const statusConfig = {
 };
 
 export default function Frequencia() {
+  const { t } = useI18n();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "presente" | "ausente" | "atrasado">("all");
@@ -80,12 +82,12 @@ export default function Frequencia() {
             <div>
               <h2 className="font-display text-lg font-semibold flex items-center gap-2">
                 <CalendarCheck className="h-5 w-5 text-green-400" />
-                Frequência
+                {t("freq.title")}
               </h2>
-              <p className="text-xs text-muted-foreground">Controle de presença por reconhecimento facial</p>
+              <p className="text-xs text-muted-foreground">{t("freq.subtitle")}</p>
             </div>
             <button className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
-              <Download className="h-3.5 w-3.5" /> Exportar PDF
+              <Download className="h-3.5 w-3.5" /> {t("common.export_pdf")}
             </button>
           </div>
         </div>
@@ -100,7 +102,7 @@ export default function Frequencia() {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold">{presentes}</p>
-                  <p className="text-[11px] text-muted-foreground">Presentes</p>
+                  <p className="text-[11px] text-muted-foreground">{t("freq.present")}</p>
                 </div>
               </div>
             </div>
@@ -111,7 +113,7 @@ export default function Frequencia() {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold">{ausentes}</p>
-                  <p className="text-[11px] text-muted-foreground">Ausentes</p>
+                  <p className="text-[11px] text-muted-foreground">{t("freq.absent")}</p>
                 </div>
               </div>
             </div>
@@ -122,7 +124,7 @@ export default function Frequencia() {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold">{atrasados}</p>
-                  <p className="text-[11px] text-muted-foreground">Atrasados</p>
+                  <p className="text-[11px] text-muted-foreground">{t("freq.late")}</p>
                 </div>
               </div>
             </div>
@@ -133,7 +135,7 @@ export default function Frequencia() {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold">{taxaPresenca}%</p>
-                  <p className="text-[11px] text-muted-foreground">Taxa de presença</p>
+                  <p className="text-[11px] text-muted-foreground">{t("freq.rate")}</p>
                 </div>
               </div>
             </div>
@@ -145,7 +147,7 @@ export default function Frequencia() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar por nome..."
+                placeholder={t("freq.search_placeholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2 text-sm"
@@ -163,7 +165,7 @@ export default function Frequencia() {
                       : "bg-muted text-muted-foreground hover:bg-accent"
                   )}
                 >
-                  {f === "all" ? "Todos" : statusConfig[f].label}
+                  {f === "all" ? t("common.all") : statusConfig[f].label}
                 </button>
               ))}
             </div>
@@ -175,10 +177,10 @@ export default function Frequencia() {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Pessoa</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Turno</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">1ª Entrada</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Últ. Saída</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Permanência</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.shift")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.first_entry")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.last_exit")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.duration")}</th>
                   <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">Status</th>
                 </tr>
               </thead>
@@ -257,7 +259,7 @@ export default function Frequencia() {
                     />
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-2">
-                    {turnoPresentes}/{turnoPessoas.length} presentes
+                    {turnoPresentes}/{turnoPessoas.length} {t("freq.present_lower")}
                   </p>
                 </div>
               );

@@ -2,10 +2,14 @@
  * RealtimeNotifications — Pop-ups de alerta em tempo real com ações rápidas.
  * Monitora novos eventos e exibe toasts animados por severidade.
  * Ações: Reconhecer, Ignorar, Escalar.
+ * 
+ * Features: som de alerta para críticos, favicon badge com contador,
+ * toggle de som, i18n para labels.
  */
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, CheckCircle2, AlertTriangle, ShieldAlert, Info, Eye, EyeOff, ArrowUpCircle } from "lucide-react";
+import { X, CheckCircle2, AlertTriangle, ShieldAlert, Info, Eye, EyeOff, ArrowUpCircle, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 export type NotifSeverity = "critical" | "warning" | "info" | "success";
 
@@ -20,10 +24,103 @@ export interface PushNotification {
 }
 
 interface RealtimeNotificationsProps {
-  /** External feed of new events to trigger notifications */
   newEventCount?: number;
-  /** Callback when an action is taken on a notification */
   onAction?: (notifId: string, action: string) => void;
+}
+
+// ===== Alert Sound (Web Audio API — no external file needed) =====
+function playAlertSound(severity: NotifSeverity) {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    // Different tones per severity
+    if (severity === "critical") {
+      // Urgent double-beep: 880Hz then 660Hz
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.4);
+    } else if (severity === "warning") {
+      // Single medium beep: 660Hz
+      oscillator.frequency.setValueAtTime(660, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.25);
+    } else {
+      // Soft chime: 523Hz (C5)
+      oscillator.frequency.setValueAtTime(523, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.15);
+    }
+  } catch (e) {
+    // AudioContext not available (e.g., before user interaction)
+  }
+}
+
+// ===== Favicon Badge =====
+function updateFaviconBadge(count: number) {
+  const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+  if (!favicon) return;
+
+  // Create canvas badge
+  const canvas = document.createElement("canvas");
+  const size = 64;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // Draw base icon (dark rounded square)
+  ctx.fillStyle = "#0f172a";
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, 12);
+  ctx.fill();
+
+  // Draw shield icon (simplified)
+  ctx.fillStyle = "#3b82f6";
+  ctx.font = "bold 36px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("G", size / 2, size / 2 - 2);
+
+  // Draw badge if count > 0
+  if (count > 0) {
+    const badgeRadius = 14;
+    const badgeX = size - badgeRadius - 2;
+    const badgeY = badgeRadius + 2;
+
+    // Red circle
+    ctx.fillStyle = count > 0 ? "#ef4444" : "#22c55e";
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // White border
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Count text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const text = count > 99 ? "99+" : String(count);
+    ctx.fillText(text, badgeX, badgeY);
+  }
+
+  // Update favicon
+  favicon.href = canvas.toDataURL("image/png");
 }
 
 // Simulated notification generator for demo mode
@@ -72,16 +169,16 @@ const generateDemoNotification = (): PushNotification => {
       actions: ["recognize", "escalate"] as const,
     },
   ];
-    const s = scenarios[Math.floor(Math.random() * scenarios.length)];
-    return {
-      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      severity: s.severity,
-      title: s.title,
-      message: s.message,
-      camera: s.camera,
-      actions: [...s.actions],
-      timestamp: new Date(),
-    };
+  const s = scenarios[Math.floor(Math.random() * scenarios.length)];
+  return {
+    id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    severity: s.severity,
+    title: s.title,
+    message: s.message,
+    camera: s.camera,
+    actions: [...s.actions],
+    timestamp: new Date(),
+  };
 };
 
 const severityConfig = {
@@ -123,19 +220,22 @@ const severityConfig = {
   },
 };
 
-const actionConfig = {
-  recognize: { icon: Eye, label: "Reconhecer", color: "text-blue-400 hover:bg-blue-500/15" },
-  ignore: { icon: EyeOff, label: "Ignorar", color: "text-muted-foreground hover:bg-muted" },
-  escalate: { icon: ArrowUpCircle, label: "Escalar", color: "text-red-400 hover:bg-red-500/15" },
-};
-
 export default function RealtimeNotifications({ newEventCount, onAction }: RealtimeNotificationsProps) {
+  const { t } = useI18n();
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   const lastEventCountRef = useRef(newEventCount || 0);
+
+  const actionConfig = {
+    recognize: { icon: Eye, label: t("notif.recognize"), color: "text-blue-400 hover:bg-blue-500/15" },
+    ignore: { icon: EyeOff, label: t("notif.ignore"), color: "text-muted-foreground hover:bg-muted" },
+    escalate: { icon: ArrowUpCircle, label: t("notif.escalate"), color: "text-red-400 hover:bg-red-500/15" },
+  };
 
   const dismissNotif = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+    setUnreadCount(prev => Math.max(0, prev - 1));
   }, []);
 
   const handleAction = useCallback((notifId: string, action: string) => {
@@ -143,10 +243,23 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
     dismissNotif(notifId);
   }, [onAction, dismissNotif]);
 
+  // Play sound + update favicon when new notification arrives
+  const addNotification = useCallback((notif: PushNotification) => {
+    setNotifications(prev => [notif, ...prev].slice(0, 5));
+    setUnreadCount(prev => {
+      const newCount = prev + 1;
+      updateFaviconBadge(newCount);
+      return newCount;
+    });
+    if (soundEnabled) {
+      playAlertSound(notif.severity);
+    }
+  }, [soundEnabled]);
+
   // Auto-dismiss after 10 seconds for non-critical
   useEffect(() => {
     const timers = notifications.map(n => {
-      if (n.severity === "critical") return null; // Critical stays until dismissed
+      if (n.severity === "critical") return null;
       return setTimeout(() => dismissNotif(n.id), 10000);
     });
     return () => timers.forEach(t => t && clearTimeout(t));
@@ -154,15 +267,13 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
 
   // Generate demo notifications periodically
   useEffect(() => {
-    // Initial notification after 3s
     const initialTimer = setTimeout(() => {
-      setNotifications(prev => [generateDemoNotification(), ...prev].slice(0, 5));
+      addNotification(generateDemoNotification());
     }, 3000);
 
-    // Periodic notifications every 15-30s
     const interval = setInterval(() => {
       if (Math.random() > 0.5) {
-        setNotifications(prev => [generateDemoNotification(), ...prev].slice(0, 5));
+        addNotification(generateDemoNotification());
       }
     }, 15000 + Math.random() * 15000);
 
@@ -170,88 +281,117 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
       clearTimeout(initialTimer);
       clearInterval(interval);
     };
-  }, []);
+  }, [addNotification]);
 
   // React to external event count changes
   useEffect(() => {
     if (newEventCount && newEventCount > lastEventCountRef.current) {
       const diff = newEventCount - lastEventCountRef.current;
       if (diff > 0 && Math.random() > 0.3) {
-        setNotifications(prev => [generateDemoNotification(), ...prev].slice(0, 5));
+        addNotification(generateDemoNotification());
       }
     }
     lastEventCountRef.current = newEventCount || 0;
-  }, [newEventCount]);
+  }, [newEventCount, addNotification]);
 
-  if (notifications.length === 0) return null;
+  // Reset favicon when all notifications dismissed
+  useEffect(() => {
+    if (notifications.length === 0 && unreadCount === 0) {
+      updateFaviconBadge(0);
+    }
+  }, [notifications, unreadCount]);
+
+  // Cleanup favicon on unmount
+  useEffect(() => {
+    return () => updateFaviconBadge(0);
+  }, []);
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-      {notifications.map((notif) => {
-        const cfg = severityConfig[notif.severity];
-        const Icon = cfg.icon;
-        return (
-          <div
-            key={notif.id}
-            className={cn(
-              "pointer-events-auto rounded-lg border bg-card/95 backdrop-blur-xl shadow-2xl",
-              "animate-in slide-in-from-right-full duration-300 ease-out",
-              cfg.border, cfg.glow
-            )}
-            style={{ animation: "slideInRight 0.3s cubic-bezier(0.23, 1, 0.32, 1)" }}
-          >
-            {/* Header */}
-            <div className={cn("flex items-start gap-3 p-3.5", cfg.bg)}>
-              <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", cfg.bg, "ring-1", cfg.ring)}>
-                <Icon className={cn("h-5 w-5", cfg.color)} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={cn("text-[9px] font-bold tracking-wider", cfg.color)}>{cfg.label}</span>
-                  <span className="text-[9px] text-muted-foreground font-mono-tech">
-                    {notif.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                  </span>
+    <>
+      {/* Sound toggle button (fixed top-right area, below header) */}
+      <button
+        onClick={() => setSoundEnabled(prev => !prev)}
+        className={cn(
+          "fixed top-16 right-4 z-[99] flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-150 active:scale-95",
+          soundEnabled
+            ? "border-green-500/30 bg-green-500/10 text-green-400"
+            : "border-border bg-card text-muted-foreground"
+        )}
+        title={soundEnabled ? t("notif.sound_on") : t("notif.sound_off")}
+        aria-label="Toggle alert sound"
+      >
+        {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+      </button>
+
+      {/* Notifications stack */}
+      {notifications.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+          {notifications.map((notif) => {
+            const cfg = severityConfig[notif.severity];
+            const Icon = cfg.icon;
+            return (
+              <div
+                key={notif.id}
+                className={cn(
+                  "pointer-events-auto rounded-lg border bg-card/95 backdrop-blur-xl shadow-2xl",
+                  cfg.border, cfg.glow
+                )}
+                style={{ animation: "slideInRight 0.3s cubic-bezier(0.23, 1, 0.32, 1)" }}
+              >
+                {/* Header */}
+                <div className={cn("flex items-start gap-3 p-3.5", cfg.bg)}>
+                  <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", cfg.bg, "ring-1", cfg.ring)}>
+                    <Icon className={cn("h-5 w-5", cfg.color)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-[9px] font-bold tracking-wider", cfg.color)}>{cfg.label}</span>
+                      <span className="text-[9px] text-muted-foreground font-mono-tech">
+                        {notif.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-foreground mt-0.5 truncate">{notif.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.message}</p>
+                    {notif.camera && (
+                      <p className="text-[10px] text-muted-foreground/70 font-mono-tech mt-1">{notif.camera}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => dismissNotif(notif.id)}
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <p className="text-sm font-semibold text-foreground mt-0.5 truncate">{notif.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.message}</p>
-                {notif.camera && (
-                  <p className="text-[10px] text-muted-foreground/70 font-mono-tech mt-1">{notif.camera}</p>
+
+                {/* Actions */}
+                {notif.actions && notif.actions.length > 0 && (
+                  <div className="flex items-center gap-1 px-3.5 py-2 border-t border-border/50">
+                    {notif.actions.map((actionKey) => {
+                      const acfg = actionConfig[actionKey];
+                      const AIcon = acfg.icon;
+                      return (
+                        <button
+                          key={actionKey}
+                          onClick={() => handleAction(notif.id, actionKey)}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all duration-150 active:scale-95",
+                            acfg.color
+                          )}
+                        >
+                          <AIcon className="h-3 w-3" />
+                          {acfg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-              <button
-                onClick={() => dismissNotif(notif.id)}
-                className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label="Dismiss"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-
-            {/* Actions */}
-            {notif.actions && notif.actions.length > 0 && (
-              <div className="flex items-center gap-1 px-3.5 py-2 border-t border-border/50">
-                {notif.actions.map((actionKey) => {
-                  const acfg = actionConfig[actionKey];
-                  const AIcon = acfg.icon;
-                  return (
-                    <button
-                      key={actionKey}
-                      onClick={() => handleAction(notif.id, actionKey)}
-                      className={cn(
-                        "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all duration-150 active:scale-95",
-                        acfg.color
-                      )}
-                    >
-                      <AIcon className="h-3 w-3" />
-                      {acfg.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }

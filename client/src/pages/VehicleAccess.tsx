@@ -18,6 +18,7 @@ import {
   ChevronUp, Shield, ShieldAlert, ShieldCheck, Plus, Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 // ===== Types =====
 interface VehicleEvent {
@@ -63,6 +64,7 @@ const statusConfig = {
 };
 
 export default function VehicleAccess() {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [directionFilter, setDirectionFilter] = useState("all");
@@ -106,7 +108,7 @@ export default function VehicleAccess() {
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Clausura Veicular</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight">{t("vehicle.title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">LPR + UHF + Facial — correlação de entrada/saída de veículos</p>
             </div>
             <button className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -295,7 +297,7 @@ export default function VehicleAccess() {
                             <td colSpan={9} className="px-6 py-4">
                               {/* Clausura flow */}
                               <div className="mb-4">
-                                <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Fluxo de Clausura</h4>
+                                <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("vehicle.flow")}</h4>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {/* Step 1: LPR */}
                                   <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
