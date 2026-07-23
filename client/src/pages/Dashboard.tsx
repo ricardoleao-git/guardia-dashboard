@@ -23,6 +23,7 @@ import UserAdmin from "@/pages/UserAdmin";
 import AuditLog from "@/pages/AuditLog";
 import Automations from "@/pages/Automations";
 import Frequencia from "@/pages/Frequencia";
+import AbsenceAlerts from "@/pages/AbsenceAlerts";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -310,13 +311,7 @@ export default function Dashboard() {
           )}
 
           {activeView === "alerts" && (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 mb-4">
-                <Bell className="h-8 w-8 text-amber-400" />
-              </div>
-              <h3 className="font-display text-base font-semibold mb-1">Nenhum alerta ativo</h3>
-              <p className="text-sm text-muted-foreground">Alertas de segurança aparecerão aqui quando detectados.</p>
-            </div>
+            <AbsenceAlerts />
           )}
 
           {activeView === "settings" && (
