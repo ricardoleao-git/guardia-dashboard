@@ -23,6 +23,9 @@ import UserAdmin from "@/pages/UserAdmin";
 import AuditLog from "@/pages/AuditLog";
 import Automations from "@/pages/Automations";
 import Frequencia from "@/pages/Frequencia";
+import PersonTimeline from "@/pages/PersonTimeline";
+import VehicleAccess from "@/pages/VehicleAccess";
+import VisitorInvite from "@/pages/VisitorInvite";
 import AbsenceAlerts from "@/pages/AbsenceAlerts";
 
 const emptyFilters: FilterState = {
@@ -336,6 +339,18 @@ export default function Dashboard() {
 
           {activeView === "frequencia" && (
             <Frequencia />
+          )}
+
+          {activeView === "person-timeline" && (
+            <PersonTimeline />
+          )}
+
+          {activeView === "vehicle-access" && (
+            <VehicleAccess />
+          )}
+
+          {activeView === "visitor-invite" && (
+            <VisitorInvite />
           )}
         </main>
       </div>
