@@ -124,48 +124,48 @@ function updateFaviconBadge(count: number) {
 }
 
 // Simulated notification generator for demo mode
-const generateDemoNotification = (): PushNotification => {
+const generateDemoNotification = (t: (key: string) => string): PushNotification => {
   const scenarios = [
     {
       severity: "critical" as const,
-      title: "Rosto não reconhecido",
-      message: "Pessoa não identificada detectada",
-      camera: "D2 — Corredor",
+      title: t("notif.scenario.unknown_face"),
+      message: t("notif.scenario.unknown_face_msg"),
+      camera: t("camera.d2"),
       actions: ["recognize", "ignore", "escalate"] as const,
     },
     {
       severity: "warning" as const,
-      title: "Match facial baixo (45%)",
-      message: "Score abaixo do threshold configurado",
-      camera: "D3 — Recepção",
+      title: t("notif.scenario.low_match"),
+      message: t("notif.scenario.low_match_msg"),
+      camera: t("camera.d3"),
       actions: ["recognize", "ignore"] as const,
     },
     {
       severity: "critical" as const,
-      title: "Movimento fora de horário",
-      message: "Detecção após horário permitido",
-      camera: "D5 — Portão",
+      title: t("notif.scenario.after_hours"),
+      message: t("notif.scenario.after_hours_msg"),
+      camera: t("camera.d5"),
       actions: ["recognize", "ignore", "escalate"] as const,
     },
     {
       severity: "info" as const,
-      title: "Veículo autorizado entrou",
-      message: "Placa ABC1D23 — Lista Branca",
-      camera: "D1 — Portaria",
+      title: t("notif.scenario.vehicle_in"),
+      message: t("notif.scenario.vehicle_in_msg"),
+      camera: t("camera.d1"),
       actions: ["ignore"] as const,
     },
     {
       severity: "success" as const,
-      title: "Pessoa reconhecida",
-      message: "João Silva — Lista Branca (98%)",
-      camera: "D2 — Corredor",
+      title: t("notif.scenario.recognized"),
+      message: t("notif.scenario.recognized_msg"),
+      camera: t("camera.d2"),
       actions: ["ignore"] as const,
     },
     {
       severity: "warning" as const,
-      title: "Lista Negra detectada",
-      message: "Match 92% com cadastro de alerta",
-      camera: "D4 — AI IPC",
+      title: t("notif.scenario.blacklist"),
+      message: t("notif.scenario.blacklist_msg"),
+      camera: t("camera.d4"),
       actions: ["recognize", "escalate"] as const,
     },
   ];
@@ -189,7 +189,7 @@ const severityConfig = {
     border: "border-red-500/40",
     ring: "ring-red-500/20",
     glow: "shadow-red-500/20",
-    label: "CRÍTICO",
+    label: "CRITICAL",
   },
   warning: {
     icon: AlertTriangle,
@@ -198,7 +198,7 @@ const severityConfig = {
     border: "border-amber-500/40",
     ring: "ring-amber-500/20",
     glow: "shadow-amber-500/20",
-    label: "ALERTA",
+    label: "WARNING",
   },
   info: {
     icon: Info,
@@ -221,7 +221,7 @@ const severityConfig = {
 };
 
 export default function RealtimeNotifications({ newEventCount, onAction }: RealtimeNotificationsProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -268,12 +268,12 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
   // Generate demo notifications periodically
   useEffect(() => {
     const initialTimer = setTimeout(() => {
-      addNotification(generateDemoNotification());
+      addNotification(generateDemoNotification(t));
     }, 3000);
 
     const interval = setInterval(() => {
       if (Math.random() > 0.5) {
-        addNotification(generateDemoNotification());
+        addNotification(generateDemoNotification(t));
       }
     }, 15000 + Math.random() * 15000);
 
@@ -288,7 +288,7 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
     if (newEventCount && newEventCount > lastEventCountRef.current) {
       const diff = newEventCount - lastEventCountRef.current;
       if (diff > 0 && Math.random() > 0.3) {
-        addNotification(generateDemoNotification());
+        addNotification(generateDemoNotification(t));
       }
     }
     lastEventCountRef.current = newEventCount || 0;
@@ -347,7 +347,7 @@ export default function RealtimeNotifications({ newEventCount, onAction }: Realt
                     <div className="flex items-center gap-2">
                       <span className={cn("text-[9px] font-bold tracking-wider", cfg.color)}>{cfg.label}</span>
                       <span className="text-[9px] text-muted-foreground font-mono-tech">
-                        {notif.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        {notif.timestamp.toLocaleTimeString(lang === "zh" ? "zh-CN" : lang === "en" ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                       </span>
                     </div>
                     <p className="text-sm font-semibold text-foreground mt-0.5 truncate">{notif.title}</p>

@@ -16,9 +16,9 @@ import { useI18n } from "@/contexts/I18nContext";
 interface Person {
   id: string;
   nome: string;
-  lista: "Lista Branca";
+  lista: string;
   genero: "M" | "F";
-  turno: "Manhã" | "Tarde" | "Integral";
+  turno: string;
   primeiraEntrada: string | null;
   ultimaSaida: string | null;
   status: "presente" | "ausente" | "atrasado";
@@ -27,22 +27,22 @@ interface Person {
 }
 
 const mockPessoas: Person[] = [
-  { id: "p1", nome: "Ana Silva",   lista: "Lista Branca", genero: "F", turno: "Integral", primeiraEntrada: "07:12", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 28min" },
-  { id: "p2", nome: "Bruno Costa", lista: "Lista Branca", genero: "M", turno: "Manhã",    primeiraEntrada: "06:58", ultimaSaida: "12:05", status: "presente",  tempoPermanencia: "5h 07min" },
-  { id: "p3", nome: "Carla Dias",  lista: "Lista Branca", genero: "F", turno: "Tarde",    primeiraEntrada: "13:02", ultimaSaida: null,    status: "presente",  tempoPermanencia: "3h 18min" },
-  { id: "p4", nome: "Diego Lima",  lista: "Lista Branca", genero: "M", turno: "Integral", primeiraEntrada: "08:45", ultimaSaida: null,    status: "atrasado",  tempoPermanencia: "3h 55min" },
-  { id: "p5", nome: "Eva Souza",   lista: "Lista Branca", genero: "F", turno: "Manhã",    primeiraEntrada: "07:30", ultimaSaida: "12:10", status: "presente",  tempoPermanencia: "4h 40min" },
-  { id: "p6", nome: "Felipe Alves",lista: "Lista Branca", genero: "M", turno: "Tarde",    primeiraEntrada: null,    ultimaSaida: null,    status: "ausente",   tempoPermanencia: null },
-  { id: "p7", nome: "Gabi Rocha",  lista: "Lista Branca", genero: "F", turno: "Integral", primeiraEntrada: "07:05", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 35min" },
-  { id: "p8", nome: "Heitor Paz",  lista: "Lista Branca", genero: "M", turno: "Manhã",    primeiraEntrada: null,    ultimaSaida: null,    status: "ausente",   tempoPermanencia: null },
-  { id: "p9", nome: "Iris Castro", lista: "Lista Branca", genero: "F", turno: "Tarde",    primeiraEntrada: "13:15", ultimaSaida: null,    status: "presente",  tempoPermanencia: "3h 05min" },
-  { id: "p10",nome: "João Barros", lista: "Lista Branca", genero: "M", turno: "Integral", primeiraEntrada: "07:20", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 20min" },
+  { id: "p1", nome: "person.ana",    lista: "Lista Branca", genero: "F", turno: "shift.integral", primeiraEntrada: "07:12", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 28min" },
+  { id: "p2", nome: "person.bruno",  lista: "Lista Branca", genero: "M", turno: "shift.manha",    primeiraEntrada: "06:58", ultimaSaida: "12:05", status: "presente",  tempoPermanencia: "5h 07min" },
+  { id: "p3", nome: "person.carla",  lista: "Lista Branca", genero: "F", turno: "shift.tarde",    primeiraEntrada: "13:02", ultimaSaida: null,    status: "presente",  tempoPermanencia: "3h 18min" },
+  { id: "p4", nome: "person.diego",  lista: "Lista Branca", genero: "M", turno: "shift.integral", primeiraEntrada: "08:45", ultimaSaida: null,    status: "atrasado",  tempoPermanencia: "3h 55min" },
+  { id: "p5", nome: "person.eva",    lista: "Lista Branca", genero: "F", turno: "shift.manha",    primeiraEntrada: "07:30", ultimaSaida: "12:10", status: "presente",  tempoPermanencia: "4h 40min" },
+  { id: "p6", nome: "person.felipe", lista: "Lista Branca", genero: "M", turno: "shift.tarde",    primeiraEntrada: null,    ultimaSaida: null,    status: "ausente",   tempoPermanencia: null },
+  { id: "p7", nome: "person.gabi",   lista: "Lista Branca", genero: "F", turno: "shift.integral", primeiraEntrada: "07:05", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 35min" },
+  { id: "p8", nome: "person.heitor", lista: "Lista Branca", genero: "M", turno: "shift.manha",    primeiraEntrada: null,    ultimaSaida: null,    status: "ausente",   tempoPermanencia: null },
+  { id: "p9", nome: "person.iris",   lista: "Lista Branca", genero: "F", turno: "shift.tarde",    primeiraEntrada: "13:15", ultimaSaida: null,    status: "presente",  tempoPermanencia: "3h 05min" },
+  { id: "p10",nome: "person.joao",   lista: "Lista Branca", genero: "M", turno: "shift.integral", primeiraEntrada: "07:20", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 20min" },
 ];
 
 const statusConfig = {
-  presente:  { bg: "bg-green-500/15",  text: "text-green-400",  label: "Presente",  dot: "bg-green-400"  },
-  ausente:   { bg: "bg-red-500/15",    text: "text-red-400",    label: "Ausente",   dot: "bg-red-400"    },
-  atrasado:  { bg: "bg-amber-500/15",  text: "text-amber-400",  label: "Atrasado",  dot: "bg-amber-400"  },
+  presente:  { bg: "bg-green-500/15",  text: "text-green-400",  label: "status.presente",  dot: "bg-green-400"  },
+  ausente:   { bg: "bg-red-500/15",    text: "text-red-400",    label: "status.ausente",   dot: "bg-red-400"    },
+  atrasado:  { bg: "bg-amber-500/15",  text: "text-amber-400",  label: "status.atrasado",  dot: "bg-amber-400"  },
 };
 
 export default function Frequencia() {
@@ -165,7 +165,7 @@ export default function Frequencia() {
                       : "bg-muted text-muted-foreground hover:bg-accent"
                   )}
                 >
-                  {f === "all" ? t("common.all") : statusConfig[f].label}
+                  {f === "all" ? t("common.all") : t(statusConfig[f].label)}
                 </button>
               ))}
             </div>
@@ -176,12 +176,12 @@ export default function Frequencia() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">Pessoa</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.person")}</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.shift")}</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.first_entry")}</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.last_exit")}</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground">{t("freq.duration")}</th>
-                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">Status</th>
+                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-muted-foreground">{t("common.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,12 +195,12 @@ export default function Frequencia() {
                             "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
                             p.genero === "F" ? "bg-pink-500/15 text-pink-400" : "bg-blue-500/15 text-blue-400"
                           )}>
-                            {p.nome.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                            {t(p.nome).split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
                           </div>
-                          <span className="text-xs font-medium">{p.nome}</span>
+                          <span className="text-xs font-medium">{t(p.nome)}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-muted-foreground">{p.turno}</td>
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground">{t(p.turno)}</td>
                       <td className="px-3 py-2.5 text-xs font-mono-tech">
                         {p.primeiraEntrada ? (
                           <span className={p.primeiraEntrada > "08:00" ? "text-amber-400" : "text-green-400"}>
@@ -222,7 +222,7 @@ export default function Frequencia() {
                           sc.bg, sc.text
                         )}>
                           <div className={cn("h-1.5 w-1.5 rounded-full", sc.dot)} />
-                          {sc.label}
+                          {t(sc.label)}
                         </span>
                       </td>
                     </tr>
@@ -234,14 +234,14 @@ export default function Frequencia() {
 
           {/* Turno breakdown */}
           <div className="grid grid-cols-3 gap-3">
-            {(["Manhã", "Tarde", "Integral"] as const).map((turno) => {
-              const turnoPessoas = mockPessoas.filter(p => p.turno === turno);
+            {(["shift.manha", "shift.tarde", "shift.integral"] as const).map((turnoKey) => {
+              const turnoPessoas = mockPessoas.filter(p => p.turno === turnoKey);
               const turnoPresentes = turnoPessoas.filter(p => p.status === "presente").length;
               const turnoTaxa = Math.round((turnoPresentes / turnoPessoas.length) * 100);
               return (
-                <div key={turno} className="rounded-xl border border-border bg-card p-4">
+                <div key={turnoKey} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold">{turno}</span>
+                    <span className="text-xs font-semibold">{t(turnoKey)}</span>
                     <span className={cn(
                       "text-xs font-bold",
                       turnoTaxa >= 70 ? "text-green-400" : turnoTaxa >= 50 ? "text-amber-400" : "text-red-400"

@@ -32,6 +32,7 @@ import AISummary from "@/pages/AISummary";
 import ElevatorControl from "@/pages/ElevatorControl";
 import AIBox from "@/pages/AIBox";
 import RealtimeNotifications from "@/components/RealtimeNotifications";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const emptyFilters: FilterState = {
   cameraSerial: null,
@@ -377,6 +378,7 @@ export default function Dashboard() {
       </div>
 
       <RealtimeNotifications newEventCount={events.length} />
+      <LanguageSwitcher variant="floating" />
 
       <ImageViewer
         event={selectedEvent}
