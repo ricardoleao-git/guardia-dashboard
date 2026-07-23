@@ -17,8 +17,10 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInAsGuest: () => void;
   signOut: () => Promise<void>;
   isDemoMode: boolean;
+  isGuest: boolean;
   isAdmin: boolean;
 }
 
@@ -27,8 +29,10 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: false,
   signIn: async () => ({ error: "Not implemented" }),
+  signInAsGuest: () => {},
   signOut: async () => {},
   isDemoMode: true,
+  isGuest: false,
   isAdmin: false,
 });
 
@@ -37,8 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
+    // Check for guest session in localStorage
+    const guestSession = localStorage.getItem("guardia_guest");
+    if (guestSession === "true") {
+      setIsGuest(true);
+      setIsDemoMode(false);
+      setLoading(false);
+      return;
+    }
+
     if (!supabase) {
       setLoading(false);
       setIsDemoMode(true);
@@ -112,7 +126,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
+  const signInAsGuest = () => {
+    localStorage.setItem("guardia_guest", "true");
+    setIsGuest(true);
+    setIsDemoMode(false);
+    setProfile({
+      id: "guest",
+      email: "convidado@guardia.demo",
+      full_name: "Visitante (Demo)",
+      role: "viewer",
+      avatar_url: null,
+    });
+    setLoading(false);
+  };
+
   const signOut = async () => {
+    localStorage.removeItem("guardia_guest");
+    setIsGuest(false);
     if (supabase) {
       await supabase.auth.signOut();
     }
@@ -120,10 +150,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
-  const isAdmin = isDemoMode || profile?.role === "admin";
+  const isAdmin = isDemoMode || (!isGuest && profile?.role === "admin");
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, isDemoMode, isAdmin }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signInAsGuest, signOut, isDemoMode, isGuest, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

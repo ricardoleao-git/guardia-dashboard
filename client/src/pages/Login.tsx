@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Shield, Loader2, Lock, Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
-  const { signIn, isDemoMode } = useAuth();
+  const { signIn, signInAsGuest, isDemoMode } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -126,6 +126,27 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="my-5 flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[11px] text-muted-foreground font-medium">ou</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Guest demo button */}
+          <button
+            type="button"
+            onClick={() => signInAsGuest()}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <Eye className="h-4 w-4" />
+            Entrar em Modo Demonstração
+          </button>
+          <p className="text-[10px] text-muted-foreground/70 text-center mt-2">
+            Visualize o dashboard sem login. Funções administrativas bloqueadas.
+          </p>
 
           {/* Footer */}
           <div className="mt-6 pt-4 border-t border-border text-center">

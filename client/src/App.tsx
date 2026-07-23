@@ -17,7 +17,7 @@ import Login from "@/pages/Login";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading, isDemoMode } = useAuth();
+  const { user, loading, isDemoMode, isGuest } = useAuth();
 
   if (loading) {
     return (
@@ -27,8 +27,8 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     );
   }
 
-  // In demo mode, skip auth and show the dashboard directly
-  if (isDemoMode || user) {
+  // In demo mode, guest mode, or authenticated — show the dashboard
+  if (isDemoMode || isGuest || user) {
     return <Component />;
   }
 
@@ -36,13 +36,13 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function Router() {
-  const { isDemoMode, user } = useAuth();
+  const { isDemoMode, user, isGuest } = useAuth();
 
   return (
     <Switch>
       {/* Login route — redirect to / if already authenticated */}
       <Route path="/login">
-        {isDemoMode || user ? <Redirect to="/" /> : <Login />}
+        {isDemoMode || isGuest || user ? <Redirect to="/" /> : <Login />}
       </Route>
 
       {/* Protected routes */}

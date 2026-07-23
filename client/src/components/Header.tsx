@@ -201,7 +201,7 @@ export default function Header({ title, subtitle, filters, onFiltersChange, onRe
 }
 
 function UserMenu() {
-  const { user, profile, signOut, isDemoMode, isAdmin } = useAuth();
+  const { user, profile, signOut, isDemoMode, isGuest, isAdmin } = useAuth();
   const { lang } = useI18n();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -212,6 +212,43 @@ function UserMenu() {
           D
         </div>
         <span className="text-xs text-primary font-medium hidden sm:inline">Demo Admin</span>
+      </div>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 hover:bg-accent transition-colors"
+        >
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-bold">
+            V
+          </div>
+          <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Visitante Demo</span>
+        </button>
+        {showMenu && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+            <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-border">
+                <p className="text-xs font-medium">Visitante (Demo)</p>
+                <p className="text-[10px] text-muted-foreground">convidado@guardia.demo</p>
+                <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5">
+                  <span className="text-[9px] text-muted-foreground font-medium">Acesso somente leitura</span>
+                </div>
+              </div>
+              <button
+                onClick={() => { signOut(); setShowMenu(false); }}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-xs hover:bg-accent transition-colors text-left"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sair da demonstração
+              </button>
+            </div>
+          </>
+        )}
       </div>
     );
   }
