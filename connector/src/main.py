@@ -153,11 +153,11 @@ def run(config: AppConfig, dry_run: bool = False):
     logger.info("=" * 60)
 
     # Inicializar clientes
-    sink = SupabaseSink(config.supabase.url, config.supabase.service_role_key)
+    sink = SupabaseSink(config.supabase.url, config.supabase.anon_key)
     
     uploader = None
     if config.connector.image_upload:
-        uploader = ImageUploader(config.supabase.url, config.supabase.service_role_key)
+        uploader = ImageUploader(config.supabase.url, config.supabase.anon_key)
     
     # Inicializar WhatsApp alerter (opcional)
     global whatsapp_alerter

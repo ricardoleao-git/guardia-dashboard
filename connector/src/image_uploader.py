@@ -16,14 +16,14 @@ from loguru import logger
 class ImageUploader:
     """Gerencia upload de imagens para Supabase Storage."""
 
-    def __init__(self, supabase_url: str, service_role_key: str, bucket: str = "event-images"):
+    def __init__(self, supabase_url: str, anon_key: str, bucket: str = "event-images"):
         self.supabase_url = supabase_url.rstrip("/")
-        self.service_role_key = service_role_key
+        self.anon_key = anon_key
         self.bucket = bucket
         self.storage_url = f"{self.supabase_url}/storage/v1/object/{bucket}"
         self.headers = {
-            "Authorization": f"Bearer {service_role_key}",
-            "apikey": service_role_key,
+            "Authorization": f"Bearer {anon_key}",
+            "apikey": anon_key,
         }
 
     def upload_base64(

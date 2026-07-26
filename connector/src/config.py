@@ -24,7 +24,7 @@ class CameraConfig:
 @dataclass
 class SupabaseConfig:
     url: str
-    service_role_key: str
+    anon_key: str
 
 
 @dataclass
@@ -69,17 +69,17 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
     
     # Supabase — prioridade: env vars > config.yaml
     supabase_url = os.getenv("SUPABASE_URL") or raw.get("supabase", {}).get("url", "")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or raw.get("supabase", {}).get("service_role_key", "")
+    supabase_key = os.getenv("SUPABASE_ANON_KEY") or raw.get("supabase", {}).get("anon_key", "")
     
     if not supabase_url or not supabase_key:
         raise ValueError(
-            "Supabase URL e service_role_key são obrigatórios.\n"
+            "Supabase URL e anon_key são obrigatórios.\n"
             "Configure via config/config.yaml ou variáveis de ambiente:\n"
             "  SUPABASE_URL=https://xxx.supabase.co\n"
-            "  SUPABASE_SERVICE_ROLE_KEY=eyJ..."
+            "  SUPABASE_ANON_KEY=eyJ..."
         )
     
-    supabase_cfg = SupabaseConfig(url=supabase_url, service_role_key=supabase_key)
+    supabase_cfg = SupabaseConfig(url=supabase_url, anon_key=supabase_key)
     
     # Connector settings
     conn_raw = raw.get("connector", {})

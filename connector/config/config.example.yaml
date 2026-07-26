@@ -5,8 +5,9 @@
 
 supabase:
   url: "https://SEU-PROJETO.supabase.co"
-  # Use service_role key (não a anon key) para bypass de RLS
-  service_role_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  # Use a anon key (publishable key) do Supabase
+  # Disponível em: Project Settings → API → Project API keys
+  anon_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 connector:
   id: "connector-bancada-01"

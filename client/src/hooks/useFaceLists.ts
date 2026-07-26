@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { isGuestSession } from "@/lib/guest-mode";
 const supabase = supabaseClient!;
 
 export interface FaceListEntry {
@@ -24,7 +25,7 @@ export function useFaceLists() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEntries = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || isGuestSession()) {
       setLoading(false);
       return;
     }
@@ -45,7 +46,7 @@ export function useFaceLists() {
   useEffect(() => {
     fetchEntries();
 
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured || isGuestSession()) return;
 
     // Realtime subscription
     const channel = supabase
@@ -61,21 +62,21 @@ export function useFaceLists() {
   }, [fetchEntries]);
 
   const addEntry = useCallback(async (entry: Partial<FaceListEntry>) => {
-    if (!isSupabaseConfigured) return { error: "Supabase not configured" };
+    if (!isSupabaseConfigured || isGuestSession()) return { error: "Modo demonstração: não é possível cadastrar pessoas" };
     const { data, error } = await supabase.from("face_lists").insert(entry).select().single();
     if (error) return { error: error.message };
     return { data };
   }, []);
 
   const updateEntry = useCallback(async (id: string, updates: Partial<FaceListEntry>) => {
-    if (!isSupabaseConfigured) return { error: "Supabase not configured" };
+    if (!isSupabaseConfigured || isGuestSession()) return { error: "Modo demonstração: não é possível editar pessoas" };
     const { data, error } = await supabase.from("face_lists").update(updates).eq("id", id).select().single();
     if (error) return { error: error.message };
     return { data };
   }, []);
 
   const deleteEntry = useCallback(async (id: string) => {
-    if (!isSupabaseConfigured) return { error: "Supabase not configured" };
+    if (!isSupabaseConfigured || isGuestSession()) return { error: "Modo demonstração: não é possível excluir pessoas" };
     const { error } = await supabase.from("face_lists").delete().eq("id", id);
     if (error) return { error: error.message };
     return { success: true };

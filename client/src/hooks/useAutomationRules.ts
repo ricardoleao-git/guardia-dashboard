@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { isGuestSession } from "@/lib/guest-mode";
 const supabase = supabaseClient!;
 
 export interface AutomationRule {
@@ -25,7 +26,7 @@ export function useAutomationRules() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRules = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || isGuestSession()) {
       setLoading(false);
       return;
     }
@@ -45,7 +46,7 @@ export function useAutomationRules() {
 
   useEffect(() => {
     fetchRules();
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured || isGuestSession()) return;
     const channel = supabase
       .channel("automation_rules_changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "automation_rules" }, () => fetchRules())

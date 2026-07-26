@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { isGuestSession } from "@/lib/guest-mode";
 const supabase = supabaseClient!;
 
 export interface AttendanceRecord {
@@ -20,7 +21,7 @@ export function useAttendance(selectedDate?: string) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRecords = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || isGuestSession()) {
       setLoading(false);
       return;
     }
@@ -41,7 +42,7 @@ export function useAttendance(selectedDate?: string) {
 
   useEffect(() => {
     fetchRecords();
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured || isGuestSession()) return;
     const channel = supabase
       .channel("attendance_changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchRecords())

@@ -2,7 +2,7 @@
 GuardIA Connector — Envio de eventos para Supabase.
 
 Insere eventos na tabela camera_events via REST API.
-Usa service_role key para bypass de RLS.
+Usa anon key para bypass de RLS.
 """
 import json
 from datetime import datetime, timezone
@@ -15,13 +15,13 @@ from loguru import logger
 class SupabaseSink:
     """Envia eventos para o Supabase via REST API."""
 
-    def __init__(self, supabase_url: str, service_role_key: str):
+    def __init__(self, supabase_url: str, anon_key: str):
         self.supabase_url = supabase_url.rstrip("/")
-        self.service_role_key = service_role_key
+        self.anon_key = anon_key
         self.rest_url = f"{self.supabase_url}/rest/v1"
         self.headers = {
-            "Authorization": f"Bearer {service_role_key}",
-            "apikey": service_role_key,
+            "Authorization": f"Bearer {anon_key}",
+            "apikey": anon_key,
             "Content-Type": "application/json",
             "Prefer": "return=minimal",
         }
