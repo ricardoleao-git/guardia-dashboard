@@ -102,15 +102,17 @@ export default function Dashboard() {
     setActiveViewState(urlView);
   }, [urlView]);
 
-  // Navigate to URL when view changes
+  // Navigate to URL when view changes — always trigger loading + remount
+  const [viewKey, setViewKey] = useState(0);
   const setActiveView = (view: string) => {
     setActiveViewState(view);
+    setViewKey(k => k + 1);
     const path = viewToPath[view] || "/";
+    setPageLoading(true);
     if (path !== location) {
-      setPageLoading(true);
       navigate(path);
-      setTimeout(() => setPageLoading(false), 300);
     }
+    setTimeout(() => setPageLoading(false), 350);
   };
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("all");
@@ -290,7 +292,7 @@ export default function Dashboard() {
           pageLoading={pageLoading}
         />
 
-        <main className="p-6">
+        <main className="p-6" key={viewKey}>
           {activeView === "dashboard" && (
             <div className="space-y-5">
               {/* Stats */}

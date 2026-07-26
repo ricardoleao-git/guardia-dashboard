@@ -140,6 +140,15 @@
   --sidebar-ring: oklch(0.55 0.22 255);
 }
 
+/* Page transition fade-in */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main[key] {
+  animation: pageFadeIn 0.25s ease-out;
+}
+
 @layer base {
   /* When a standalone page is embedded inside the Dashboard layout,
      hide its internal sidebar, mobile header, and outer layout wrapper */
