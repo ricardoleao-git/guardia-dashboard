@@ -12,6 +12,8 @@ import AIConfig from "@/pages/AIConfig";
 import FaceLibrary from "@/pages/FaceLibrary";
 import Custodia from "@/pages/Custodia";
 import Consentimento from "@/pages/Consentimento";
+import Encomendas from "@/pages/Encomendas";
+import PainelAdministradora from "@/pages/PainelAdministradora";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
 import Login from "@/pages/Login";
@@ -114,6 +116,12 @@ function Router() {
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/consentimento">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/encomendas">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/painel-administradora">
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/settings">

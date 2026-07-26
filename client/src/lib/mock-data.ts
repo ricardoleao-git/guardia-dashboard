@@ -2,6 +2,8 @@ import {
   CameraEvent, ConnectorStatus, CameraInfo,
   CustodyStudent, CustodyAlert, CustodyMetrics,
   ConsentRecord, ConsentMetrics,
+  PackageRecord, PackageMetrics,
+  SiteSummary, OrgMetrics,
 } from "./types";
 
 // Mock data para desenvolvimento do frontend sem Supabase configurado
@@ -245,4 +247,54 @@ export const mockConsentMetrics: ConsentMetrics = {
   pendentes: 2,
   revogados: 2,
   expirados: 1,
+};
+
+// ============ T1 — ENCOMENDAS (mock sintético) ============
+export const mockPackages: PackageRecord[] = [
+  { id: "pkg-001", trackingCode: "BR123456789", recipientName: "Ana Costa", recipientUnit: "Bloco A · Apt 101", carrier: "Correios", category: "ecommerce", status: "received", receivedAt: "2026-07-26T08:30:00-03:00", notifiedAt: "2026-07-26T08:35:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Caixa média — correios", expiresAt: "2026-07-29T08:30:00-03:00" },
+  { id: "pkg-002", trackingCode: "AMZ987654321", recipientName: "Bruno Lima", recipientUnit: "Bloco A · Apt 302", carrier: "Amazon Logistics", category: "ecommerce", status: "notified", receivedAt: "2026-07-26T09:15:00-03:00", notifiedAt: "2026-07-26T09:20:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "2 pacotes — envelope + caixa", expiresAt: "2026-07-29T09:15:00-03:00" },
+  { id: "pkg-003", trackingCode: "MLP456789012", recipientName: "Carla Dias", recipientUnit: "Bloco B · Apt 201", carrier: "Mercado Livre", category: "ecommerce", status: "picked_up", receivedAt: "2026-07-25T14:00:00-03:00", notifiedAt: "2026-07-25T14:05:00-03:00", pickedUpAt: "2026-07-25T18:30:00-03:00", pickedUpBy: "Carla Dias", pickupMethod: "qr", photoUrl: null, notes: "Retirada via QR Code", expiresAt: "2026-07-28T14:00:00-03:00" },
+  { id: "pkg-004", trackingCode: "DOC111222333", recipientName: "Diego Alves", recipientUnit: "Bloco B · Apt 501", carrier: "Sedex", category: "document", status: "picked_up", receivedAt: "2026-07-25T10:00:00-03:00", notifiedAt: "2026-07-25T10:10:00-03:00", pickedUpAt: "2026-07-25T12:00:00-03:00", pickedUpBy: "Diego Alves", pickupMethod: "biometric", photoUrl: null, notes: "Documento sigiloso — retirada biométrica", expiresAt: "2026-07-28T10:00:00-03:00" },
+  { id: "pkg-005", trackingCode: "IFF777888999", recipientName: "Elaine Souza", recipientUnit: "Bloco C · Apt 102", carrier: "iFood", category: "food", status: "picked_up", receivedAt: "2026-07-26T12:00:00-03:00", notifiedAt: "2026-07-26T12:00:00-03:00", pickedUpAt: "2026-07-26T12:15:00-03:00", pickedUpBy: "Elaine Souza", pickupMethod: "signature", photoUrl: null, notes: "Refeição — retirada imediata", expiresAt: "2026-07-26T18:00:00-03:00" },
+  { id: "pkg-006", trackingCode: "PHM444555666", recipientName: "Felipe Rocha", recipientUnit: "Bloco C · Apt 303", carrier: "Pharmacy Delivery", category: "medication", status: "received", receivedAt: "2026-07-26T11:00:00-03:00", notifiedAt: null, pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Medicação — necessita refrigeração", expiresAt: "2026-07-27T11:00:00-03:00" },
+  { id: "pkg-007", trackingCode: "BR222333444", recipientName: "Gabriela Nunes", recipientUnit: "Bloco A · Apt 401", carrier: "Correios", category: "ecommerce", status: "notified", receivedAt: "2026-07-26T07:45:00-03:00", notifiedAt: "2026-07-26T07:50:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Caixa grande — correios", expiresAt: "2026-07-29T07:45:00-03:00" },
+  { id: "pkg-008", trackingCode: "LOG555666777", recipientName: "Heitor Pinto", recipientUnit: "Bloco B · Apt 102", carrier: "Loggi", category: "ecommerce", status: "returned", receivedAt: "2026-07-20T09:00:00-03:00", notifiedAt: "2026-07-20T09:05:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Devolvida — morador não retirou em 7 dias", expiresAt: "2026-07-27T09:00:00-03:00" },
+  { id: "pkg-009", trackingCode: "EXP888999000", recipientName: "Igor Martins", recipientUnit: "Bloco C · Apt 201", carrier: "JadLog", category: "ecommerce", status: "expired", receivedAt: "2026-07-18T15:00:00-03:00", notifiedAt: "2026-07-18T15:10:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Prazo expirado — aguardando devolução", expiresAt: "2026-07-25T15:00:00-03:00" },
+  { id: "pkg-010", trackingCode: "AMZ111222333", recipientName: "Juliana Reis", recipientUnit: "Bloco A · Apt 502", carrier: "Amazon Logistics", category: "ecommerce", status: "received", receivedAt: "2026-07-26T10:30:00-03:00", notifiedAt: "2026-07-26T10:35:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Envelope — amazon", expiresAt: "2026-07-29T10:30:00-03:00" },
+  { id: "pkg-011", trackingCode: "MLP999888777", recipientName: "Lucas Almeida", recipientUnit: "Bloco B · Apt 402", carrier: "Mercado Livre", category: "ecommerce", status: "picked_up", receivedAt: "2026-07-26T08:00:00-03:00", notifiedAt: "2026-07-26T08:05:00-03:00", pickedUpAt: "2026-07-26T09:00:00-03:00", pickedUpBy: "Lucas Almeida", pickupMethod: "qr", photoUrl: null, notes: "Retirada via QR Code", expiresAt: "2026-07-29T08:00:00-03:00" },
+  { id: "pkg-012", trackingCode: "DOC444555666", recipientName: "Marina Castro", recipientUnit: "Bloco C · Apt 501", carrier: "Sedex", category: "document", status: "notified", receivedAt: "2026-07-26T11:45:00-03:00", notifiedAt: "2026-07-26T11:50:00-03:00", pickedUpAt: null, pickedUpBy: null, pickupMethod: null, photoUrl: null, notes: "Contrato — sedex", expiresAt: "2026-07-29T11:45:00-03:00" },
+];
+
+export const mockPackageMetrics: PackageMetrics = {
+  pending: 5,
+  notified: 4,
+  pickedUpToday: 3,
+  returned: 1,
+  expired: 1,
+  totalThisMonth: 87,
+};
+
+// ============ T4 — PAINEL DA ADMINISTRADORA (mock sintético) ============
+export const mockSites: SiteSummary[] = [
+  { id: "site-001", name: "Residencial Parque das Flores", vertical: "condominio", status: "online", devicesOnline: 2, devicesTotal: 2, camerasOnline: 8, camerasTotal: 8, eventsToday: 142, alertsToday: 3, personsRegistered: 186, lastSeenAt: "2026-07-26T23:25:00-03:00", connectorVersion: "0.4.2", storageUsedPct: 34 },
+  { id: "site-002", name: "Condomínio Vista Verde", vertical: "condominio", status: "online", devicesOnline: 1, devicesTotal: 1, camerasOnline: 6, camerasTotal: 6, eventsToday: 89, alertsToday: 1, personsRegistered: 124, lastSeenAt: "2026-07-26T23:28:00-03:00", connectorVersion: "0.4.2", storageUsedPct: 28 },
+  { id: "site-003", name: "Escola Monteiro Lobato", vertical: "escola", status: "online", devicesOnline: 2, devicesTotal: 2, camerasOnline: 6, camerasTotal: 6, eventsToday: 215, alertsToday: 5, personsRegistered: 340, lastSeenAt: "2026-07-26T23:29:00-03:00", connectorVersion: "0.4.2", storageUsedPct: 52 },
+  { id: "site-004", name: "Colégio Aurora", vertical: "escola", status: "degraded", devicesOnline: 1, devicesTotal: 2, camerasOnline: 4, camerasTotal: 6, eventsToday: 78, alertsToday: 2, personsRegistered: 210, lastSeenAt: "2026-07-26T22:15:00-03:00", connectorVersion: "0.4.1", storageUsedPct: 61 },
+  { id: "site-005", name: "Residencial Costa Azul", vertical: "condominio", status: "online", devicesOnline: 1, devicesTotal: 1, camerasOnline: 4, camerasTotal: 4, eventsToday: 56, alertsToday: 0, personsRegistered: 92, lastSeenAt: "2026-07-26T23:27:00-03:00", connectorVersion: "0.4.2", storageUsedPct: 19 },
+  { id: "site-006", name: "Condomínio Centro Médico", vertical: "misto", status: "offline", devicesOnline: 0, devicesTotal: 1, camerasOnline: 0, camerasTotal: 4, eventsToday: 0, alertsToday: 0, personsRegistered: 45, lastSeenAt: "2026-07-25T18:30:00-03:00", connectorVersion: "0.3.8", storageUsedPct: 73 },
+  { id: "site-007", name: "Escola Recanto do Saber", vertical: "escola", status: "online", devicesOnline: 2, devicesTotal: 2, camerasOnline: 8, camerasTotal: 8, eventsToday: 198, alertsToday: 4, personsRegistered: 285, lastSeenAt: "2026-07-26T23:30:00-03:00", connectorVersion: "0.4.2", storageUsedPct: 44 },
+  { id: "site-008", name: "Condomínio Jardim Primavera", vertical: "condominio", status: "degraded", devicesOnline: 1, devicesTotal: 2, camerasOnline: 5, camerasTotal: 8, eventsToday: 34, alertsToday: 1, personsRegistered: 156, lastSeenAt: "2026-07-26T21:45:00-03:00", connectorVersion: "0.4.0", storageUsedPct: 38 },
+];
+
+export const mockOrgMetrics: OrgMetrics = {
+  totalSites: 8,
+  totalDevices: 12,
+  totalCameras: 50,
+  totalPersons: 1438,
+  eventsToday: 812,
+  alertsToday: 16,
+  onlineSites: 5,
+  degradedSites: 2,
+  offlineSites: 1,
+  storageAvgPct: 44,
 };

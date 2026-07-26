@@ -38,6 +38,8 @@ import AIConfig from "@/pages/AIConfig";
 import FaceLibrary from "@/pages/FaceLibrary";
 import Custodia from "@/pages/Custodia";
 import Consentimento from "@/pages/Consentimento";
+import Encomendas from "@/pages/Encomendas";
+import PainelAdministradora from "@/pages/PainelAdministradora";
 import RealtimeNotifications from "@/components/RealtimeNotifications";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -88,6 +90,8 @@ const viewToPath: Record<string, string> = {
   settings: "/settings",
   custodia: "/custodia",
   consentimento: "/consentimento",
+  encomendas: "/encomendas",
+  "painel-administradora": "/painel-administradora",
 };
 
 const pathToView: Record<string, string> = Object.entries(viewToPath).reduce(
@@ -241,6 +245,8 @@ export default function Dashboard() {
     "face-library": { title: "Biblioteca Facial", subtitle: "Cadastro e gestão de faces" },
     custodia: { title: "Custódia de Aluno", subtitle: "Monitoramento de presença e saída por turma" },
     consentimento: { title: "Consentimento e Conformidade", subtitle: "Gestão LGPD: consentimento, revogação e expurgo propagado" },
+    encomendas: { title: "Encomendas", subtitle: "Registro de pacotes com foto e retirada por QR Code" },
+    "painel-administradora": { title: "Painel da Administradora", subtitle: "Gestão multi-tenant de todas as unidades" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -260,6 +266,8 @@ export default function Dashboard() {
     settings: t("nav.administracao"),
     custodia: t("nav.pessoas-acesso"),
     consentimento: t("nav.administracao"),
+    encomendas: t("nav.pessoas-acesso"),
+    "painel-administradora": t("nav.administracao"),
   };
   const breadcrumbLabels: Record<string, string> = {
     dashboard: t("nav.dashboard"), events: t("nav.events"), cameras: t("nav.cameras"),
@@ -273,6 +281,7 @@ export default function Dashboard() {
     "system-config": t("nav.system-config"), "user-admin": t("nav.user-admin"),
     "audit-log": t("nav.audit-log"), settings: t("nav.settings"),
     custodia: t("nav.custodia"), consentimento: t("nav.consentimento"),
+    encomendas: t("nav.encomendas"), "painel-administradora": t("nav.painel-administradora"),
   };
   const breadcrumb = activeView !== "dashboard" ? {
     section: breadcrumbSections[activeView] || "",
@@ -506,6 +515,14 @@ export default function Dashboard() {
 
           {activeView === "consentimento" && (
             <div className="embedded-page"><Consentimento /></div>
+          )}
+
+          {activeView === "encomendas" && (
+            <div className="embedded-page"><Encomendas /></div>
+          )}
+
+          {activeView === "painel-administradora" && (
+            <div className="embedded-page"><PainelAdministradora /></div>
           )}
         </main>
       </div>

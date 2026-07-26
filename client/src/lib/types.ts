@@ -139,3 +139,78 @@ export interface ConsentMetrics {
   revogados: number;
   expirados: number;
 }
+
+// ============ T1 — ENCOMENDAS ============
+export type PackageStatus =
+  | "received"      // recebida na portaria
+  | "notified"      // morador notificado
+  | "picked_up"     // retirada por morador/autorizado
+  | "returned"      // devolvida ao transportador
+  | "expired";      // prazo de retirada expirado
+
+export type PackageCategory =
+  | "ecommerce"
+  | "document"
+  | "food"
+  | "medication"
+  | "other";
+
+export interface PackageRecord {
+  id: string;
+  trackingCode: string;          // código de rastreio do transportador
+  recipientName: string;         // nome do morador (sintético)
+  recipientUnit: string;         // bloco/apartamento
+  carrier: string;               // transportadora
+  category: PackageCategory;
+  status: PackageStatus;
+  receivedAt: string;            // ISO timestamp
+  notifiedAt: string | null;
+  pickedUpAt: string | null;
+  pickedUpBy: string | null;     // nome de quem retirou
+  pickupMethod: "qr" | "signature" | "biometric" | null;
+  photoUrl: string | null;       // foto do pacote na chegada
+  notes: string;
+  expiresAt: string;             // prazo de retirada
+}
+
+export interface PackageMetrics {
+  pending: number;               // recebidas + não retiradas
+  notified: number;
+  pickedUpToday: number;
+  returned: number;
+  expired: number;
+  totalThisMonth: number;
+}
+
+// ============ T4 — PAINEL DA ADMINISTRADORA ============
+export type SiteStatus = "online" | "degraded" | "offline";
+
+export interface SiteSummary {
+  id: string;
+  name: string;                  // nome do condomínio/escola
+  vertical: "condominio" | "escola" | "camara_fria" | "misto";
+  status: SiteStatus;
+  devicesOnline: number;
+  devicesTotal: number;
+  camerasOnline: number;
+  camerasTotal: number;
+  eventsToday: number;
+  alertsToday: number;
+  personsRegistered: number;
+  lastSeenAt: string | null;
+  connectorVersion: string | null;
+  storageUsedPct: number;        // % disco usado
+}
+
+export interface OrgMetrics {
+  totalSites: number;
+  totalDevices: number;
+  totalCameras: number;
+  totalPersons: number;
+  eventsToday: number;
+  alertsToday: number;
+  onlineSites: number;
+  degradedSites: number;
+  offlineSites: number;
+  storageAvgPct: number;
+}
