@@ -86,6 +86,8 @@ const viewToPath: Record<string, string> = {
   "user-admin": "/user-admin",
   "audit-log": "/audit-log",
   settings: "/settings",
+  custodia: "/custodia",
+  consentimento: "/consentimento",
 };
 
 const pathToView: Record<string, string> = Object.entries(viewToPath).reduce(
