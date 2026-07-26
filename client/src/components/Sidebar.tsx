@@ -6,6 +6,7 @@ import {
   ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database,
   X, Cpu, Users, HardDrive, Play, Car, Server, ScrollText, UserCog,
   CalendarCheck, ScanFace, UserPlus, Search, FileText, Building, Boxes,
+  Baby, FileCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -51,6 +52,7 @@ const navSections = [
       { id: "visitor-invite", labelKey: "nav.visitor-invite", icon: UserPlus },
       { id: "vehicle-access", labelKey: "nav.vehicle-access", icon: Car },
       { id: "elevator", labelKey: "nav.elevator", icon: Building },
+      { id: "custodia", labelKey: "nav.custodia", icon: Baby },
     ],
   },
   {
@@ -69,6 +71,7 @@ const navSections = [
       { id: "user-admin", labelKey: "nav.user-admin", icon: UserCog },
       { id: "audit-log", labelKey: "nav.audit-log", icon: ScrollText },
       { id: "settings", labelKey: "nav.settings", icon: Settings },
+      { id: "consentimento", labelKey: "nav.consentimento", icon: FileCheck },
     ],
   },
 ];
@@ -101,14 +104,12 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
         {/* Logo + close button */}
         <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 ring-1 ring-primary/30">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-            </div>
+            <img src="/manus-storage/guardia-percebe-logo_8dc22718.png" alt="GuardIA Percebe" className="h-9 w-9 rounded-lg" />
             <div>
               <h1 className="font-display text-base font-bold tracking-tight text-white leading-none">
                 Guard<span className="text-primary">IA</span>
               </h1>
-              <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 font-mono-tech">NVR 5.0 AI</p>
+              <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 font-mono-tech">Percebe · NVR 5.0 AI</p>
             </div>
           </div>
           <button

@@ -36,6 +36,8 @@ import AIBox from "@/pages/AIBox";
 import DeviceManagement from "@/pages/DeviceManagement";
 import AIConfig from "@/pages/AIConfig";
 import FaceLibrary from "@/pages/FaceLibrary";
+import Custodia from "@/pages/Custodia";
+import Consentimento from "@/pages/Consentimento";
 import RealtimeNotifications from "@/components/RealtimeNotifications";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -235,6 +237,8 @@ export default function Dashboard() {
     devices: { title: "Dispositivos", subtitle: "Gestão de dispositivos conectados" },
     "ai-config": { title: "Config. IA", subtitle: "Configuração de IA por câmera" },
     "face-library": { title: "Biblioteca Facial", subtitle: "Cadastro e gestão de faces" },
+    custodia: { title: "Custódia de Aluno", subtitle: "Monitoramento de presença e saída por turma" },
+    consentimento: { title: "Consentimento e Conformidade", subtitle: "Gestão LGPD: consentimento, revogação e expurgo propagado" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -252,6 +256,8 @@ export default function Dashboard() {
     vehicles: t("nav.gestao"), "system-config": t("nav.gestao"),
     "user-admin": t("nav.administracao"), "audit-log": t("nav.administracao"),
     settings: t("nav.administracao"),
+    custodia: t("nav.pessoas-acesso"),
+    consentimento: t("nav.administracao"),
   };
   const breadcrumbLabels: Record<string, string> = {
     dashboard: t("nav.dashboard"), events: t("nav.events"), cameras: t("nav.cameras"),
@@ -264,6 +270,7 @@ export default function Dashboard() {
     "face-library": t("nav.face-library"), vehicles: t("nav.vehicles"),
     "system-config": t("nav.system-config"), "user-admin": t("nav.user-admin"),
     "audit-log": t("nav.audit-log"), settings: t("nav.settings"),
+    custodia: t("nav.custodia"), consentimento: t("nav.consentimento"),
   };
   const breadcrumb = activeView !== "dashboard" ? {
     section: breadcrumbSections[activeView] || "",
@@ -489,6 +496,14 @@ export default function Dashboard() {
 
           {activeView === "face-library" && (
             <div className="embedded-page"><FaceLibrary /></div>
+          )}
+
+          {activeView === "custodia" && (
+            <div className="embedded-page"><Custodia /></div>
+          )}
+
+          {activeView === "consentimento" && (
+            <div className="embedded-page"><Consentimento /></div>
           )}
         </main>
       </div>

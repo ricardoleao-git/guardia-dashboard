@@ -1,4 +1,4 @@
-import { Menu, ShieldCheck } from "lucide-react";
+import { Menu } from "lucide-react";
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -12,9 +12,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-sidebar text-white lg:hidden sticky top-0 z-30">
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-        </div>
+        <img src="/manus-storage/guardia-percebe-logo_8dc22718.png" alt="GuardIA Percebe" className="h-8 w-8 rounded-lg" />
         <h1 className="font-display text-base font-bold tracking-tight">
           Guard<span className="text-primary">IA</span>
         </h1>

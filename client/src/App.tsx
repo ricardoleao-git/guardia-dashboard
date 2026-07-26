@@ -10,7 +10,8 @@ import Dashboard from "@/pages/Dashboard";
 import DeviceManagement from "@/pages/DeviceManagement";
 import AIConfig from "@/pages/AIConfig";
 import FaceLibrary from "@/pages/FaceLibrary";
-import Playback from "@/pages/Playback";
+import Custodia from "@/pages/Custodia";
+import Consentimento from "@/pages/Consentimento";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
 import Login from "@/pages/Login";
@@ -107,6 +108,12 @@ function Router() {
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/audit-log">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/custodia">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/consentimento">
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/settings">
