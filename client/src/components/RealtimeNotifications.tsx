@@ -6,7 +6,7 @@
  * Features: som de alerta para críticos, favicon badge com contador,
  * toggle de som, i18n para labels.
  */
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { X, CheckCircle2, AlertTriangle, ShieldAlert, Info, Eye, EyeOff, ArrowUpCircle, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
@@ -227,14 +227,18 @@ export default function RealtimeNotifications({ newEventCount, onAction, events 
   const { t, lang } = useI18n();
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const soundEnabledRef = useRef(soundEnabled);
   const [unreadCount, setUnreadCount] = useState(0);
   const lastEventCountRef = useRef(newEventCount || 0);
 
-  const actionConfig = {
+  // Keep ref in sync with state so addNotification callback stays stable
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
+  const actionConfig = useMemo(() => ({
     recognize: { icon: Eye, label: t("notif.recognize"), color: "text-blue-400 hover:bg-blue-500/15" },
     ignore: { icon: EyeOff, label: t("notif.ignore"), color: "text-muted-foreground hover:bg-muted" },
     escalate: { icon: ArrowUpCircle, label: t("notif.escalate"), color: "text-red-400 hover:bg-red-500/15" },
-  };
+  }), [t]);
 
   const dismissNotif = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
@@ -254,10 +258,10 @@ export default function RealtimeNotifications({ newEventCount, onAction, events 
       updateFaviconBadge(newCount);
       return newCount;
     });
-    if (soundEnabled) {
+    if (soundEnabledRef.current) {
       playAlertSound(notif.severity);
     }
-  }, [soundEnabled]);
+  }, []);
 
   // Auto-dismiss after 10 seconds for non-critical
   useEffect(() => {

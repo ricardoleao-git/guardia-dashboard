@@ -4,7 +4,7 @@
  * Permite alternar idioma em tempo real via LanguageSwitcher no Header.
  * Persiste escolha em localStorage.
  */
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 
 export type Language = "pt" | "en" | "zh";
 
@@ -1227,12 +1227,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
   }, [lang]);
 
-  const t = (key: string): string => {
+  const t = useCallback((key: string): string => {
     return translations[lang]?.[key] || translations.pt[key] || key;
-  };
+  }, [lang]);
+
+  const contextValue = useMemo(() => ({ lang, setLang, t }), [lang, t]);
 
   return (
-    <I18nContext.Provider value={{ lang, setLang, t }}>
+    <I18nContext.Provider value={contextValue}>
       {children}
     </I18nContext.Provider>
   );
