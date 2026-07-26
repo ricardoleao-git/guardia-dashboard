@@ -115,7 +115,6 @@ client/public/__manus__/
 template.json
 **/__pycache__/
 *.pyc
-patches/
 server/
 shared/
 
