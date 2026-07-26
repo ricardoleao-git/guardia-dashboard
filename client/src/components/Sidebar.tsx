@@ -4,9 +4,9 @@
  */
 import {
   ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database,
-  X, Cpu, Users, HardDrive, Play, Car, Server, ScrollText, UserCog,
+  X, Cpu, Users, HardDrive, Play, Car, Server, UserCog,
   CalendarCheck, ScanFace, UserPlus, Search, FileText, Building, Boxes,
-  Baby, FileCheck, Package, Building2,
+  Baby, FileCheck, Package, Building2, CalendarDays, ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -54,6 +54,8 @@ const navSections = [
       { id: "elevator", labelKey: "nav.elevator", icon: Building },
       { id: "custodia", labelKey: "nav.custodia", icon: Baby },
       { id: "encomendas", labelKey: "nav.encomendas", icon: Package },
+      { id: "reservas", labelKey: "nav.reservas", icon: CalendarDays },
+      { id: "livro-ocorrencias", labelKey: "nav.livro-ocorrencias", icon: ScrollText },
     ],
   },
   {

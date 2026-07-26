@@ -214,3 +214,101 @@ export interface OrgMetrics {
   offlineSites: number;
   storageAvgPct: number;
 }
+
+// ===== T2: Reservas de Áreas Comuns =====
+
+export type AreaType = "salao" | "churrasqueira" | "academia" | "quadra" | "piscina" | "sauna";
+export type ReservationStatus = "pendente" | "aprovada" | "rejeitada" | "cancelada" | "concluida";
+export type RecurrenceType = "unica" | "semanal" | "mensal";
+
+export interface CommonArea {
+  id: string;
+  name: string;
+  type: AreaType;
+  capacity: number;
+  rules: string[];
+  operatingHours: { start: string; end: string };
+  fee: number;           // taxa de reserva em R$
+  feeRequired: boolean;
+  advanceDays: number;   // dias de antecedência mínima
+  maxDurationHours: number;
+  active: boolean;
+}
+
+export interface Reservation {
+  id: string;
+  areaId: string;
+  areaName: string;
+  areaType: AreaType;
+  unitNumber: string;     // ex: "Bloco A - Apt 302"
+  residentName: string;   // sintético
+  date: string;           // dd/mm/yyyy
+  startTime: string;      // HH:mm
+  endTime: string;        // HH:mm
+  status: ReservationStatus;
+  recurrence: RecurrenceType;
+  fee: number;
+  feePaid: boolean;
+  attendees: number;
+  notes: string;
+  createdAt: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  rejectedReason: string | null;
+}
+
+export interface ReservationMetrics {
+  total: number;
+  pendentes: number;
+  aprovadas: number;
+  rejeitadas: number;
+  canceladas: number;
+  concluidas: number;
+  receitaMes: number;
+  taxaAprovacao: number;
+}
+
+// ===== T6: Livro de Ocorrências =====
+
+export type OccurrenceType =
+  | "invasao" | "roubo" | "vandalismo" | "incendio"
+  | "enchente" | "acidente" | "conflito" | "manutencao"
+  | "animal_solto" | "veiculo_irregular" | "ruido" | "outro";
+
+export type OccurrenceSeverity = "baixa" | "media" | "alta" | "critica";
+export type OccurrenceStatus = "aberta" | "em_andamento" | "resolvida" | "arquivada";
+
+export interface Occurrence {
+  id: string;
+  protocol: string;        // ex: "OC-2026-0042"
+  type: OccurrenceType;
+  severity: OccurrenceSeverity;
+  status: OccurrenceStatus;
+  title: string;
+  description: string;
+  location: string;        // ex: "Estacionamento - Bloco B"
+  unitNumber: string | null;
+  reportedBy: string;      // nome sintético do operador
+  reportedAt: string;      // ISO datetime
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  resolution: string | null;
+  attachments: { name: string; type: string; url: string }[];
+  linkedEvents: string[];  // event_ids do Percebe
+  linkedCameras: string[]; // camera_serials
+  witnesses: string[];
+  policeReport: boolean;
+  policeReportNumber: string | null;
+  notified: string[];      // quem foi notificado (síndico, admin, bombeiros)
+}
+
+export interface OccurrenceMetrics {
+  total: number;
+  abertas: number;
+  emAndamento: number;
+  resolvidas: number;
+  arquivadas: number;
+  criticas: number;
+  tempoMedioResolucao: string;
+  comBoletim: number;
+}
