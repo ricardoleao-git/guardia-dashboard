@@ -108,7 +108,17 @@ temp/
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 
+# Fase A' — segredos, dados e lixo versionado
+connector/config/config.yaml
+backups/
+client/public/__manus__/
+template.json
+**/__pycache__/
+*.pyc
+patches/
+server/
+shared/
+
 # Manus / WebDev artifacts
 .project-config.json
 .manus-logs/
-client/public/__manus__/
