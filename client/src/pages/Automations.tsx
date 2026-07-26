@@ -8,7 +8,7 @@
  * - Preview do fluxo em tempo real com indicadores visuais de drop
  * - Validação e salvamento
  */
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import {
@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAutomationRules } from "@/hooks/useAutomationRules";
+import { toast } from "sonner";
 
 // ===== Types =====
 interface Automation {
@@ -37,6 +39,29 @@ interface Automation {
   ativa: boolean;
   disparos: number;
   ultimoDisparo: string | null;
+}
+
+// Map trigger_type to icon
+const triggerIconMap: Record<string, typeof UserX> = {
+  facial: UserX,
+  "off-duty": Clock,
+  ausencia_facial: AlertTriangle,
+  alarm: Siren,
+};
+
+function mapRuleToAutomation(rule: any): Automation {
+  return {
+    id: rule.id,
+    nome: rule.name,
+    gatilho: rule.trigger_type,
+    gatilhoIcon: triggerIconMap[rule.trigger_type] || UserX,
+    condicao: rule.condition || "—",
+    acao: rule.action_type,
+    acaoIcon: getAcaoIcon(rule.action_type),
+    ativa: rule.enabled,
+    disparos: rule.trigger_count_today || 0,
+    ultimoDisparo: rule.last_triggered_at ? new Date(rule.last_triggered_at).toLocaleString("pt-BR") : null,
+  };
 }
 
 type FlowItemType = "trigger" | "condition" | "action";
@@ -285,8 +310,16 @@ function actionToFlowItem(optionId: string): FlowItem | null {
 export default function Automations() {
   const { t } = useI18n();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [automations, setAutomations] = useState(mockAutomations);
+  const { rules, loading: rulesLoading, addRule, updateRule, deleteRule } = useAutomationRules();
+  const [automations, setAutomations] = useState<Automation[]>([]);
   const [showEditor, setShowEditor] = useState(false);
+
+  // Sync real rules to local state
+  useEffect(() => {
+    if (rules.length > 0) {
+      setAutomations(rules.map(mapRuleToAutomation));
+    }
+  }, [rules]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Editor state

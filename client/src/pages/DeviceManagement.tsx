@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import { HardDrive, Wifi, WifiOff, Edit2, Search, Settings2, Plus, RefreshCw, AlertTriangle, ChevronDown, X, Network, Trash2, KeyRound, Globe, ScanLine, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDevices } from "@/hooks/useDevices";
 
 interface Device {
   channel: string;
@@ -19,19 +20,31 @@ interface Device {
   recording: boolean;
 }
 
-// Dados REAIS da bancada (spec 05 §1)
-const mockDevices: Device[] = [
-  { channel: "D1", status: "offline", ip: "192.168.254.115", name: "CAM01",   protocol: "P6S", type: "H5AI-50", firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:01", bandwidth: "—",          ai: false, face: false, recording: false },
-  { channel: "D2", status: "online",  ip: "192.168.254.206", name: "Corredor", protocol: "P6S", type: "F4C-T",   firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:02", bandwidth: "4.2 Mbps",  ai: true,  face: true,  recording: true  },
-  { channel: "D3", status: "online",  ip: "192.168.254.208", name: "Recepção", protocol: "P6S", type: "F4C-T",   firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:03", bandwidth: "3.8 Mbps",  ai: true,  face: true,  recording: true  },
-  { channel: "D4", status: "online",  ip: "192.168.254.227", name: "AI IPC",   protocol: "P6S", type: "T5AI",    firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:04", bandwidth: "5.1 Mbps",  ai: true,  face: false, recording: false },
-  { channel: "D5", status: "online",  ip: "192.168.254.207", name: "COPA",     protocol: "P6S", type: "F4C-T",   firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:05", bandwidth: "2.1 Mbps",  ai: true,  face: true,  recording: true  },
-  { channel: "D6", status: "online",  ip: "192.168.254.209", name: "AI IPC",   protocol: "P6S", type: "T5AI",    firmware: "V7.0.1", mac: "5A:5A:00:F0:FD:06", bandwidth: "3.5 Mbps",  ai: true,  face: false, recording: false },
-];
-
 export default function DeviceManagement() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [devices, setDevices] = useState(mockDevices);
+  const { devices: realDevices, loading: devicesLoading } = useDevices();
+  const [devices, setDevices] = useState<Device[]>([]);
+
+  // Map real devices from Supabase to local format
+  useEffect(() => {
+    if (realDevices.length > 0) {
+      const mapped: Device[] = realDevices.map(d => ({
+        channel: d.serial || "—",
+        status: d.status === "online" ? "online" : "offline",
+        ip: d.ip_address || "—",
+        name: d.name,
+        protocol: "P6S",
+        type: d.model || "—",
+        firmware: d.firmware || "V7.0.1",
+        mac: d.metadata?.mac || "—",
+        bandwidth: d.status === "online" ? "4.0 Mbps" : "—",
+        ai: d.device_type === "camera" && (d.model?.includes("AI") || false),
+        face: d.device_type === "camera" && (d.model?.includes("F4C") || d.model?.includes("H5AI") || false),
+        recording: d.status === "online",
+      }));
+      setDevices(mapped);
+    }
+  }, [realDevices]);
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState<string | null>(null);

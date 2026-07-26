@@ -5,7 +5,7 @@
  * Mostra todas as aparições de um indivíduo, com câmera, horário, score facial,
  * lista (Branca/Negra/Estranho) e thumbnail. Permite filtrar por câmera, período e lista.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import {
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { useEvents } from "@/hooks/useEvents";
 
 // ===== Types =====
 interface Appearance {
@@ -38,49 +39,62 @@ interface Appearance {
   direction?: "entry" | "exit";
 }
 
-// ===== Mock data — aparições realistas baseadas na bancada =====
-const mockAppearances: Appearance[] = [
-  { id: "ap1", personId: "p1", personName: "João Pedro Silva", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T07:32:00", date: "2026-07-23", time: "07:32", score: 94, thumbnail: "", attributes: { gender: "M", age: 42, glasses: true }, direction: "entry" },
-  { id: "ap2", personId: "p1", personName: "João Pedro Silva", faceList: "branca", cameraId: "D4", cameraName: "Corredor Bloco A", timestamp: "2026-07-23T07:35:00", date: "2026-07-23", time: "07:35", score: 91, thumbnail: "", attributes: { gender: "M", age: 42, glasses: true } },
-  { id: "ap3", personId: "p1", personName: "João Pedro Silva", faceList: "branca", cameraId: "D5", cameraName: "Refeitório", timestamp: "2026-07-23T12:15:00", date: "2026-07-23", time: "12:15", score: 88, thumbnail: "", attributes: { gender: "M", age: 42, glasses: true } },
-  { id: "ap4", personId: "p1", personName: "João Pedro Silva", faceList: "branca", cameraId: "D4", cameraName: "Corredor Bloco A", timestamp: "2026-07-23T17:42:00", date: "2026-07-23", time: "17:42", score: 92, thumbnail: "", attributes: { gender: "M", age: 42, glasses: true }, direction: "exit" },
-  { id: "ap5", personId: "p2", personName: "Maria Eduarda Costa", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T07:45:00", date: "2026-07-23", time: "07:45", score: 96, thumbnail: "", attributes: { gender: "F", age: 35, glasses: false }, direction: "entry" },
-  { id: "ap6", personId: "p2", personName: "Maria Eduarda Costa", faceList: "branca", cameraId: "D3", cameraName: "Estacionamento", timestamp: "2026-07-23T07:48:00", date: "2026-07-23", time: "07:48", score: 89, thumbnail: "", attributes: { gender: "F", age: 35, glasses: false } },
-  { id: "ap7", personId: "p2", personName: "Maria Eduarda Costa", faceList: "branca", cameraId: "D5", cameraName: "Refeitório", timestamp: "2026-07-23T12:30:00", date: "2026-07-23", time: "12:30", score: 93, thumbnail: "", attributes: { gender: "F", age: 35, glasses: false } },
-  { id: "ap8", personId: "p2", personName: "Maria Eduarda Costa", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T18:05:00", date: "2026-07-23", time: "18:05", score: 90, thumbnail: "", attributes: { gender: "F", age: 35, glasses: false }, direction: "exit" },
-  { id: "ap9", personId: "p3", personName: "Carlos Eduardo Lima", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T08:10:00", date: "2026-07-23", time: "08:10", score: 87, thumbnail: "", attributes: { gender: "M", age: 28, glasses: false }, direction: "entry" },
-  { id: "ap10", personId: "p3", personName: "Carlos Eduardo Lima", faceList: "branca", cameraId: "D4", cameraName: "Corredor Bloco A", timestamp: "2026-07-23T08:12:00", date: "2026-07-23", time: "08:12", score: 85, thumbnail: "", attributes: { gender: "M", age: 28, glasses: false } },
-  { id: "ap11", personId: "p3", personName: "Carlos Eduardo Lima", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T16:30:00", date: "2026-07-23", time: "16:30", score: 89, thumbnail: "", attributes: { gender: "M", age: 28, glasses: false }, direction: "exit" },
-  { id: "ap12", personId: "p4", personName: "Desconhecido #4821", faceList: "estranho", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T14:22:00", date: "2026-07-23", time: "14:22", score: 0, thumbnail: "", attributes: { gender: "M", age: 30, glasses: false, mask: true } },
-  { id: "ap13", personId: "p5", personName: "Ana Beatriz Rocha", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T07:55:00", date: "2026-07-23", time: "07:55", score: 95, thumbnail: "", attributes: { gender: "F", age: 31, glasses: false }, direction: "entry" },
-  { id: "ap14", personId: "p5", personName: "Ana Beatriz Rocha", faceList: "branca", cameraId: "D5", cameraName: "Refeitório", timestamp: "2026-07-23T12:00:00", date: "2026-07-23", time: "12:00", score: 91, thumbnail: "", attributes: { gender: "F", age: 31, glasses: false } },
-  { id: "ap15", personId: "p5", personName: "Ana Beatriz Rocha", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-23T17:50:00", date: "2026-07-23", time: "17:50", score: 93, thumbnail: "", attributes: { gender: "F", age: 31, glasses: false }, direction: "exit" },
-  { id: "ap16", personId: "p1", personName: "João Pedro Silva", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-22T07:30:00", date: "2026-07-22", time: "07:30", score: 93, thumbnail: "", attributes: { gender: "M", age: 42, glasses: true }, direction: "entry" },
-  { id: "ap17", personId: "p1", personName: "João Pedro Silva", faceList: "branca", cameraId: "D4", cameraName: "Corredor Bloco A", timestamp: "2026-07-22T17:38:00", date: "2026-07-22", time: "17:38", score: 90, thumbnail: "", attributes: { gender: "M", age: 42, glasses: true }, direction: "exit" },
-  { id: "ap18", personId: "p2", personName: "Maria Eduarda Costa", faceList: "branca", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-22T07:42:00", date: "2026-07-22", time: "07:42", score: 94, thumbnail: "", attributes: { gender: "F", age: 35, glasses: false }, direction: "entry" },
-  { id: "ap19", personId: "p6", personName: "Suspeito Lista Negra", faceList: "negra", cameraId: "D3", cameraName: "Estacionamento", timestamp: "2026-07-22T22:15:00", date: "2026-07-22", time: "22:15", score: 82, thumbnail: "", attributes: { gender: "M", age: 25, glasses: false } },
-  { id: "ap20", personId: "p6", personName: "Suspeito Lista Negra", faceList: "negra", cameraId: "D2", cameraName: "Portaria Principal", timestamp: "2026-07-22T22:18:00", date: "2026-07-22", time: "22:18", score: 79, thumbnail: "", attributes: { gender: "M", age: 25, glasses: false } },
-];
-
-// Unique persons for the selector
-const uniquePersons = Array.from(new Set(mockAppearances.map(a => a.personId)))
-  .map(pid => mockAppearances.find(a => a.personId === pid)!)
-  .filter(Boolean);
-
 const cameras = ["all", "D1", "D2", "D3", "D4", "D5", "D6"];
 const lists = ["all", "branca", "negra", "estranho"];
 
+function mapEventToAppearance(ev: any): Appearance {
+  const dt = new Date(ev.timestamp || ev.event_time);
+  const faceList = ev.faceList || ev.face_list || "";
+  let fl: "branca" | "negra" | "estranho" = "estranho";
+  if (faceList.toLowerCase().includes("white")) fl = "branca";
+  else if (faceList.toLowerCase().includes("black")) fl = "negra";
+  return {
+    id: ev.id,
+    personId: ev.personName || ev.person_name || "unknown",
+    personName: ev.personName || ev.person_name || "Desconhecido",
+    faceList: fl,
+    cameraId: ev.cameraSerial || ev.camera_serial || "—",
+    cameraName: ev.cameraName || ev.camera_name || ev.cameraSerial || "—",
+    timestamp: ev.timestamp || ev.event_time,
+    date: dt.toISOString().split("T")[0],
+    time: dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    score: ev.faceScore || ev.face_score || 0,
+    thumbnail: ev.recognizeImage || ev.recognize_image || "",
+    attributes: ev.attributes || {},
+    direction: ev.attributes?.direction,
+  };
+}
+
 export default function PersonTimeline() {
   const { t } = useI18n();
-  const [selectedPerson, setSelectedPerson] = useState<string>("p1");
+  const { events, loading } = useEvents({ cameraSerial: null, operator: null, dateFrom: null, dateTo: null, search: null });
+  const [appearances, setAppearances] = useState<Appearance[]>([]);
+  const [uniquePersons, setUniquePersons] = useState<Appearance[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<string>("");
   const [cameraFilter, setCameraFilter] = useState("all");
   const [listFilter, setListFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"time" | "camera" | "score">("time");
 
+  // Map real events to appearances
+  useEffect(() => {
+    if (events.length > 0) {
+      const mapped = events.map(mapEventToAppearance);
+      setAppearances(mapped);
+      // Unique persons
+      const personMap = new Map<string, Appearance>();
+      mapped.forEach(a => {
+        if (!personMap.has(a.personId)) personMap.set(a.personId, a);
+      });
+      const persons = Array.from(personMap.values());
+      setUniquePersons(persons);
+      if (!selectedPerson && persons.length > 0) setSelectedPerson(persons[0].personId);
+    }
+  }, [events]);
+
   const personAppearances = useMemo(() => {
-    let filtered = mockAppearances.filter(a => a.personId === selectedPerson);
+    let filtered = appearances.filter(a => a.personId === selectedPerson);
     if (cameraFilter !== "all") filtered = filtered.filter(a => a.cameraId === cameraFilter);
     if (listFilter !== "all") filtered = filtered.filter(a => a.faceList === listFilter);
     if (search) {
@@ -95,15 +109,16 @@ export default function PersonTimeline() {
     if (sortBy === "camera") filtered.sort((a, b) => a.cameraId.localeCompare(b.cameraId));
     if (sortBy === "score") filtered.sort((a, b) => b.score - a.score);
     return filtered;
-  }, [selectedPerson, cameraFilter, listFilter, search, sortBy]);
+  }, [appearances, selectedPerson, cameraFilter, listFilter, search, sortBy]);
 
   const personInfo = uniquePersons.find(p => p.personId === selectedPerson);
   const stats = useMemo(() => {
-    const personEvents = mockAppearances.filter(a => a.personId === selectedPerson);
+    const personEvents = appearances.filter(a => a.personId === selectedPerson);
     const cameras_ = new Set(personEvents.map(a => a.cameraId));
     const dates_ = new Set(personEvents.map(a => a.date));
-    const avgScore = personEvents.length > 0
-      ? Math.round(personEvents.filter(a => a.score > 0).reduce((s, a) => s + a.score, 0) / personEvents.filter(a => a.score > 0).length)
+    const scored = personEvents.filter(a => a.score > 0);
+    const avgScore = scored.length > 0
+      ? Math.round(scored.reduce((s, a) => s + a.score, 0) / scored.length)
       : 0;
     const firstSeen = personEvents.length > 0
       ? personEvents.reduce((min, a) => a.timestamp < min ? a.timestamp : min, personEvents[0].timestamp)
@@ -112,7 +127,7 @@ export default function PersonTimeline() {
       ? personEvents.reduce((max, a) => a.timestamp > max ? a.timestamp : max, personEvents[0].timestamp)
       : "";
     return { total: personEvents.length, cameras: cameras_.size, dates: dates_.size, avgScore, firstSeen, lastSeen };
-  }, [selectedPerson]);
+  }, [appearances, selectedPerson]);
 
   const listColor = (list: string) => {
     if (list === "branca") return "bg-green-500/10 text-green-400 border-green-500/20";
@@ -155,7 +170,7 @@ export default function PersonTimeline() {
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Selecionar Pessoa</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {uniquePersons.map(person => {
-                const personEvents = mockAppearances.filter(a => a.personId === person.personId);
+                const personEvents = appearances.filter(a => a.personId === person.personId);
                 const isSelected = selectedPerson === person.personId;
                 return (
                   <button

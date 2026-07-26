@@ -6,12 +6,14 @@
  *
  * Dados mock da bancada (spec 05): pessoas cadastradas + eventos faciais.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import { CalendarCheck, Clock, UserCheck, UserX, TrendingUp, TrendingDown, Download, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { useAttendance } from "@/hooks/useAttendance";
+import { useFaceLists } from "@/hooks/useFaceLists";
 
 interface Person {
   id: string;
@@ -26,19 +28,6 @@ interface Person {
   fotoUrl?: string;
 }
 
-const mockPessoas: Person[] = [
-  { id: "p1", nome: "person.ana",    lista: "Lista Branca", genero: "F", turno: "shift.integral", primeiraEntrada: "07:12", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 28min" },
-  { id: "p2", nome: "person.bruno",  lista: "Lista Branca", genero: "M", turno: "shift.manha",    primeiraEntrada: "06:58", ultimaSaida: "12:05", status: "presente",  tempoPermanencia: "5h 07min" },
-  { id: "p3", nome: "person.carla",  lista: "Lista Branca", genero: "F", turno: "shift.tarde",    primeiraEntrada: "13:02", ultimaSaida: null,    status: "presente",  tempoPermanencia: "3h 18min" },
-  { id: "p4", nome: "person.diego",  lista: "Lista Branca", genero: "M", turno: "shift.integral", primeiraEntrada: "08:45", ultimaSaida: null,    status: "atrasado",  tempoPermanencia: "3h 55min" },
-  { id: "p5", nome: "person.eva",    lista: "Lista Branca", genero: "F", turno: "shift.manha",    primeiraEntrada: "07:30", ultimaSaida: "12:10", status: "presente",  tempoPermanencia: "4h 40min" },
-  { id: "p6", nome: "person.felipe", lista: "Lista Branca", genero: "M", turno: "shift.tarde",    primeiraEntrada: null,    ultimaSaida: null,    status: "ausente",   tempoPermanencia: null },
-  { id: "p7", nome: "person.gabi",   lista: "Lista Branca", genero: "F", turno: "shift.integral", primeiraEntrada: "07:05", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 35min" },
-  { id: "p8", nome: "person.heitor", lista: "Lista Branca", genero: "M", turno: "shift.manha",    primeiraEntrada: null,    ultimaSaida: null,    status: "ausente",   tempoPermanencia: null },
-  { id: "p9", nome: "person.iris",   lista: "Lista Branca", genero: "F", turno: "shift.tarde",    primeiraEntrada: "13:15", ultimaSaida: null,    status: "presente",  tempoPermanencia: "3h 05min" },
-  { id: "p10",nome: "person.joao",   lista: "Lista Branca", genero: "M", turno: "shift.integral", primeiraEntrada: "07:20", ultimaSaida: null,    status: "presente",  tempoPermanencia: "5h 20min" },
-];
-
 const statusConfig = {
   presente:  { bg: "bg-green-500/15",  text: "text-green-400",  label: "status.presente",  dot: "bg-green-400"  },
   ausente:   { bg: "bg-red-500/15",    text: "text-red-400",    label: "status.ausente",   dot: "bg-red-400"    },
@@ -50,19 +39,76 @@ export default function Frequencia() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "presente" | "ausente" | "atrasado">("all");
+  const { records, loading } = useAttendance();
+  const { entries } = useFaceLists();
+  const [pessoas, setPessoas] = useState<Person[]>([]);
+
+  // Build presence data from attendance records + face_lists
+  useEffect(() => {
+    if (!loading && entries.length > 0) {
+      const today = new Date().toISOString().split("T")[0];
+      const todayRecords = records.filter(r => r.date === today || new Date(r.event_time).toISOString().split("T")[0] === today);
+      
+      const personMap = new Map<string, Person>();
+      
+      // Initialize from face_lists (WhiteList only)
+      entries.filter(e => e.face_list === "WhiteList" && e.status === "active").forEach(entry => {
+        const entryRecords = todayRecords.filter(r => r.person_name === entry.person_name);
+        const firstEntry = entryRecords.find(r => r.direction === "entry");
+        const lastExit = entryRecords.find(r => r.direction === "exit");
+        
+        const hasEntry = !!firstEntry;
+        const entryTime = firstEntry ? new Date(firstEntry.event_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null;
+        const exitTime = lastExit ? new Date(lastExit.event_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null;
+        
+        let status: "presente" | "ausente" | "atrasado" = "ausente";
+        if (hasEntry) {
+          const hour = firstEntry ? new Date(firstEntry.event_time).getHours() : 0;
+          status = hour >= 8 ? "atrasado" : "presente";
+        }
+        
+        let tempoPermanencia: string | null = null;
+        if (firstEntry && !lastExit) {
+          const diff = Date.now() - new Date(firstEntry.event_time).getTime();
+          const hours = Math.floor(diff / 3600000);
+          const mins = Math.floor((diff % 3600000) / 60000);
+          tempoPermanencia = `${hours}h ${mins}min`;
+        } else if (firstEntry && lastExit) {
+          const diff = new Date(lastExit.event_time).getTime() - new Date(firstEntry.event_time).getTime();
+          const hours = Math.floor(diff / 3600000);
+          const mins = Math.floor((diff % 3600000) / 60000);
+          tempoPermanencia = `${hours}h ${mins}min`;
+        }
+        
+        personMap.set(entry.person_name, {
+          id: entry.id,
+          nome: entry.person_name,
+          lista: entry.face_list,
+          genero: "M",
+          turno: "shift.integral",
+          primeiraEntrada: entryTime,
+          ultimaSaida: exitTime,
+          status,
+          tempoPermanencia,
+        });
+      });
+      
+      setPessoas(Array.from(personMap.values()));
+    }
+  }, [records, entries, loading]);
 
   const filtered = useMemo(() => {
-    return mockPessoas.filter(p => {
+    return pessoas.filter(p => {
       if (filterStatus !== "all" && p.status !== filterStatus) return false;
       if (search && !p.nome.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [search, filterStatus]);
+  }, [search, filterStatus, pessoas]);
 
-  const presentes = mockPessoas.filter(p => p.status === "presente").length;
-  const ausentes = mockPessoas.filter(p => p.status === "ausente").length;
-  const atrasados = mockPessoas.filter(p => p.status === "atrasado").length;
-  const taxaPresenca = Math.round((presentes / mockPessoas.length) * 100);
+  const presentes = pessoas.filter(p => p.status === "presente").length;
+  const ausentes = pessoas.filter(p => p.status === "ausente").length;
+  const atrasados = pessoas.filter(p => p.status === "atrasado").length;
+  const taxaPresenca = pessoas.length > 0 ? Math.round((presentes / pessoas.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -235,9 +281,9 @@ export default function Frequencia() {
           {/* Turno breakdown */}
           <div className="grid grid-cols-3 gap-3">
             {(["shift.manha", "shift.tarde", "shift.integral"] as const).map((turnoKey) => {
-              const turnoPessoas = mockPessoas.filter(p => p.turno === turnoKey);
+              const turnoPessoas = pessoas.filter(p => p.turno === turnoKey);
               const turnoPresentes = turnoPessoas.filter(p => p.status === "presente").length;
-              const turnoTaxa = Math.round((turnoPresentes / turnoPessoas.length) * 100);
+              const turnoTaxa = turnoPessoas.length > 0 ? Math.round((turnoPresentes / turnoPessoas.length) * 100) : 0;
               return (
                 <div key={turnoKey} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between mb-2">
