@@ -19,6 +19,7 @@ import LivroOcorrencias from "@/pages/LivroOcorrencias";
 import RelatorioValor from "@/pages/RelatorioValor";
 import Comunicados from "@/pages/Comunicados";
 import PortariaRemota from "@/pages/PortariaRemota";
+import WhiteLabel from "@/pages/WhiteLabel";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
 import Login from "@/pages/Login";
@@ -142,6 +143,9 @@ function Router() {
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/portaria-remota">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/white-label">
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/settings">

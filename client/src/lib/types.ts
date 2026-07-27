@@ -436,3 +436,43 @@ export interface PortaoStatus {
   status: "fechado" | "aberto" | "bloqueado";
   ultimaOperacao?: string;
 }
+
+// ============================================================
+// T10 — White Label (Onda 3)
+// ============================================================
+
+export interface WhiteLabelConfig {
+  id: string;
+  clienteNome: string;
+  clienteTipo: "condominio" | "escola" | "empresa";
+  dominio: string;
+  status: "ativo" | "pendente" | "suspenso";
+  branding: {
+    marcaNome: string;
+    logoUrl: string;
+    corPrimaria: string;
+    corSecundaria: string;
+    corAcento: string;
+    fontFamily: string;
+  };
+  personalizacoes: {
+    exibirGuardIA: boolean;
+    exibirPercebe: boolean;
+    exibirZenite: boolean;
+    customDomain: boolean;
+    customEmail: boolean;
+    customWhatsApp: boolean;
+  };
+  dominioStatus: "propagado" | "propagando" | "pendente";
+  sslStatus: "ativo" | "pendente" | "expirado";
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface WhiteLabelPreview {
+  corPrimaria: string;
+  corSecundaria: string;
+  corAcento: string;
+  fontFamily: string;
+  marcaNome: string;
+}

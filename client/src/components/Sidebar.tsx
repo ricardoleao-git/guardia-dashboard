@@ -7,7 +7,7 @@ import {
   X, Cpu, Users, HardDrive, Play, Car, Server, UserCog,
   CalendarCheck, ScanFace, UserPlus, Search, FileText, Building, Boxes,
   Baby, FileCheck, Package, Building2, CalendarDays, ScrollText, BarChart3,
-  Megaphone, Headphones,
+  Megaphone, Headphones, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -80,6 +80,7 @@ const navSections = [
       { id: "consentimento", labelKey: "nav.consentimento", icon: FileCheck },
       { id: "painel-administradora", labelKey: "nav.painel-administradora", icon: Building2 },
       { id: "relatorio-valor", labelKey: "nav.relatorio-valor", icon: BarChart3 },
+      { id: "white-label", labelKey: "nav.white-label", icon: Palette },
     ],
   },
 ];

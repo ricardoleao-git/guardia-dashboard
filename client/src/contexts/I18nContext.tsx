@@ -57,6 +57,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.relatorio-valor": "Relatório de Valor",
     "nav.comunicados": "Comunicados",
     "nav.portaria-remota": "Portaria Remota",
+    "nav.white-label": "White Label",
     // Header
     "header.refresh": "Atualizar",
     "header.filters": "Filtros",
@@ -466,6 +467,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.relatorio-valor": "Value Report",
     "nav.comunicados": "Announcements",
     "nav.portaria-remota": "Remote Front Desk",
+    "nav.white-label": "White Label",
     "header.refresh": "Refresh",
     "header.filters": "Filters",
     "header.search": "Search",
@@ -867,6 +869,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.relatorio-valor": "价值报告",
     "nav.comunicados": "公告",
     "nav.portaria-remota": "远程前台",
+    "nav.white-label": "白标",
     "header.refresh": "刷新",
     "header.filters": "筛选",
     "header.search": "搜索",

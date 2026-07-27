@@ -45,6 +45,7 @@ import LivroOcorrencias from "@/pages/LivroOcorrencias";
 import RelatorioValor from "@/pages/RelatorioValor";
 import Comunicados from "@/pages/Comunicados";
 import PortariaRemota from "@/pages/PortariaRemota";
+import WhiteLabel from "@/pages/WhiteLabel";
 import RealtimeNotifications from "@/components/RealtimeNotifications";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -102,6 +103,7 @@ const viewToPath: Record<string, string> = {
   "relatorio-valor": "/relatorio-valor",
   comunicados: "/comunicados",
   "portaria-remota": "/portaria-remota",
+  "white-label": "/white-label",
 };
 
 const pathToView: Record<string, string> = Object.entries(viewToPath).reduce(
@@ -262,6 +264,7 @@ export default function Dashboard() {
     "relatorio-valor": { title: "Relatório de Valor", subtitle: "Documento para assembleia com métricas de segurança e conformidade" },
     comunicados: { title: "Comunicados", subtitle: "Mural digital + notificação em massa para moradores" },
     "portaria-remota": { title: "Portaria Remota", subtitle: "Um operador atende N portarias em tempo real" },
+    "white-label": { title: "White Label", subtitle: "Marca, cores, logo e domínio personalizado por cliente" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -288,6 +291,7 @@ export default function Dashboard() {
     "relatorio-valor": t("nav.administracao"),
     comunicados: t("nav.pessoas-acesso"),
     "portaria-remota": t("nav.operacao"),
+    "white-label": t("nav.administracao"),
   };
   const breadcrumbLabels: Record<string, string> = {
     dashboard: t("nav.dashboard"), events: t("nav.events"), cameras: t("nav.cameras"),
@@ -306,6 +310,7 @@ export default function Dashboard() {
     "relatorio-valor": t("nav.relatorio-valor"),
     comunicados: t("nav.comunicados"),
     "portaria-remota": t("nav.portaria-remota"),
+    "white-label": t("nav.white-label"),
   };
   const breadcrumb = activeView !== "dashboard" ? {
     section: breadcrumbSections[activeView] || "",
@@ -567,6 +572,10 @@ export default function Dashboard() {
 
           {activeView === "portaria-remota" && (
             <div className="embedded-page"><PortariaRemota /></div>
+          )}
+
+          {activeView === "white-label" && (
+            <div className="embedded-page"><WhiteLabel /></div>
           )}
         </main>
       </div>
