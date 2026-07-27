@@ -1,6 +1,4 @@
 import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import { Users, Plus, Search, Upload, Edit2, Trash2, ScanFace, X, Check, User, Phone, IdCard, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFaceLists } from "@/hooks/useFaceLists";
@@ -62,15 +60,7 @@ export default function FaceLibrary() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar
-        activeView="face-library"
-        onNavigate={() => {}}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-      />
 
-      <div className="lg:ml-60">
-        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
 
         <div className="border-b border-border bg-card/50 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -209,7 +199,6 @@ export default function FaceLibrary() {
             </div>
           )}
         </main>
-      </div>
 
       {/* Add face modal — detailed registration */}
       {showAddModal && (

@@ -225,9 +225,9 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 ---
 
-# §14. Estado real medido — HEAD `7929b21`, 27/07/2026 15:11
+# §14. Estado real medido — HEAD `5bdfc1a2` + uncommitted, 27/07/2026 17:00
 
-Medido em clone limpo, não declarado. 59 commits, 32 páginas em `client/src/pages/`.
+Medido em clone limpo, não declarado. 62 commits, 32 páginas em `client/src/pages/`.
 
 **A Fase A′ (§12.1) foi executada e validada.** O que resta na coluna vermelha não é do Manus: é decisão humana, bancada ou painel do Supabase.
 
@@ -272,6 +272,8 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | Logo local | `client/public/guardia-percebe-logo.png`, 7 refs trocadas, plugin de proxy removido |
 | Build de clone limpo | `tsc` 0 erros, `vite build` 8.52s (antes: quebrava por `@shared` ausente) |
 | `allowedHosts` | `[".manus.computer"]` em vez de `true` — resíduo de ambiente Manus, **não** vetor de exposição pública |
+| **`signIn` limpa modo demo** | `localStorage.removeItem("guardia_guest")` + `setIsGuest(false)` chamados **antes** de `signInWithPassword` — usuário que vem do demo faz login real sem ficar preso em mock. Verificado em `AuthContext.tsx` linhas 129–130 |
+| **Sidebar freeze corrigido** | 5 causas raiz eliminadas: (1) `LiveStream.tsx` — WebSocket sem cleanup → `wsRef` + `ws.close()` + `abortedRef`; (2) `Dashboard.tsx` — `key={viewKey}` forçava remount em toda navegação → removido; (3) `useEvents.ts` — mock interval rodava em todas as páginas → gate `shouldPoll`; (4) `App.tsx` — 35 rotas separadas faziam o wouter tratar Dashboard como componente novo a cada clique → consolidado em rota única `/*`; (5) 16 sub-páginas tinham `Sidebar`/`MobileHeader` embutidos → todos removidos. Testado: 5+ navegações sem freeze, DOM com 1 sidebar, 0 erros TypeScript |
 
 ## 14.3 🔴 Abertos — nenhum é tarefa do Manus
 
@@ -284,7 +286,6 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | **PND-17** | decisão + porte | 32 telas aqui × 12 no monorepo = **20 a portar**. Custo cresce a cada checkpoint. Ver §16.1 |
 | Domínio "vms" | DNS + Manus | `guardia-vms.zenitetech.com` no ar, contra o §2. Trocar antes de demo a cliente (§16.2) |
 | `camera_events` insert exige `service_role` | decisão de arquitetura | `WITH CHECK (auth.role() = 'service_role')`. O connector usa anon key — **quebra quando rodar**. Escolher: service_role no connector, ou o connector para de falar Supabase direto e passa pelo endpoint de ingestão (§3) |
-| `signIn` não sai do modo demo | `AuthContext.tsx` | `signIn` **não** limpa `localStorage.guardia_guest` (0 ocorrências no corpo da função); só o `signOut` limpa. Quem testa o demo e depois faz login fica **preso em mock**. Correção de 2 linhas. **Enquanto não corrigir, qualquer teste de "modo logado" dá falso resultado** — usar aba anônima |
 
 ## 14.4 ⚠️ Consequência da chave legada ainda ativa
 

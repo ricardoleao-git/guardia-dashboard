@@ -11,8 +11,6 @@
  * Dados mock da bancada (spec 05): pessoas cadastradas + eventos faciais.
  */
 import { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import { useI18n } from "@/contexts/I18nContext";
 import {
   AlertTriangle, Bell, MessageSquare, Mail, Smartphone,
@@ -167,28 +165,19 @@ export default function AbsenceAlerts() {
   // CORE-03 §7: 5 estados obrigatórios
   if (pageState === "loading") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Carregando alertas de ausência...</p>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   if (pageState === "error") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <AlertTriangle className="h-12 w-12 text-red-400" />
               <div className="text-center">
@@ -198,18 +187,13 @@ export default function AbsenceAlerts() {
               <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   if (pageState === "offline") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <WifiOff className="h-12 w-12 text-zinc-400" />
               <div className="text-center">
@@ -219,18 +203,13 @@ export default function AbsenceAlerts() {
               <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   if (pageState === "empty") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Inbox className="h-12 w-12 text-zinc-400" />
               <div className="text-center">
@@ -239,22 +218,13 @@ export default function AbsenceAlerts() {
               </div>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar
-        activeView="alerts"
-        onNavigate={() => {}}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-      />
 
-      <div className="lg:ml-60">
-        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
 
         {/* Page header */}
         <div className="border-b border-border bg-card/50 px-6 py-4">
@@ -684,6 +654,5 @@ export default function AbsenceAlerts() {
           )}
         </main>
       </div>
-    </div>
   );
 }

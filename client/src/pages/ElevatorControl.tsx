@@ -11,8 +11,6 @@
  * CORE-03 §7: 5 estados obrigatórios (loading, empty, error, offline, partial)
  */
 import { useState, useMemo, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import {
   Building, ArrowUp, ArrowDown, Minus, Users, ScanFace,
   CheckCircle2, XCircle, Clock, ChevronRight, Download,
@@ -73,19 +71,6 @@ const groupColors: Record<string, string> = {
 
 type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-screen bg-background">
-      <Sidebar activeView="elevator" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-        <MobileHeader onMenuClick={() => {}} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-}
 
 export default function ElevatorControl() {
   const { t } = useI18n();
@@ -113,18 +98,18 @@ export default function ElevatorControl() {
   // CORE-03 §7: 5 estados obrigatórios
   if (pageState === "loading") {
     return (
-      <Shell>
+      <>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Carregando controle de elevador...</p>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (pageState === "error") {
     return (
-      <Shell>
+      <>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <AlertTriangle className="h-12 w-12 text-red-400" />
           <div className="text-center">
@@ -133,13 +118,13 @@ export default function ElevatorControl() {
           </div>
           <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (pageState === "offline") {
     return (
-      <Shell>
+      <>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <WifiOff className="h-12 w-12 text-zinc-400" />
           <div className="text-center">
@@ -148,13 +133,13 @@ export default function ElevatorControl() {
           </div>
           <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (pageState === "empty") {
     return (
-      <Shell>
+      <>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Inbox className="h-12 w-12 text-zinc-400" />
           <div className="text-center">
@@ -162,12 +147,12 @@ export default function ElevatorControl() {
             <p className="text-sm text-muted-foreground mt-1">Não há logs de elevador para o período selecionado.</p>
           </div>
         </div>
-      </Shell>
+      </>
     );
   }
 
   return (
-    <Shell>
+    <>
       {pageState === "partial" && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400 mb-4">
           <AlertTriangle className="h-4 w-4" />
@@ -393,6 +378,6 @@ export default function ElevatorControl() {
           </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

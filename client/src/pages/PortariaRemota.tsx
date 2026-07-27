@@ -8,8 +8,6 @@
  * - CORE-03 §7: 5 estados obrigatórios
  */
 import { useState, useMemo, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import {
   Building2, Video, PhoneCall, DoorOpen, Users, Activity,
   AlertCircle, CheckCircle2, XCircle, Clock, Radio,
@@ -68,28 +66,19 @@ export default function PortariaRemotaPage() {
   // CORE-03 §7: 5 estados obrigatórios
   if (pageState === "loading") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="portaria-remota" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Carregando portarias...</p>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   if (pageState === "error") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="portaria-remota" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <AlertCircle className="h-12 w-12 text-red-400" />
               <div className="text-center">
@@ -99,18 +88,13 @@ export default function PortariaRemotaPage() {
               <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   if (pageState === "offline") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="portaria-remota" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <WifiOff className="h-12 w-12 text-zinc-400" />
               <div className="text-center">
@@ -120,18 +104,13 @@ export default function PortariaRemotaPage() {
               <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   if (pageState === "empty") {
     return (
-      <div className="flex h-screen bg-background">
-        <Sidebar activeView="portaria-remota" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Inbox className="h-12 w-12 text-zinc-400" />
               <div className="text-center">
@@ -140,17 +119,12 @@ export default function PortariaRemotaPage() {
               </div>
             </div>
           </main>
-        </div>
-      </div>
+
     );
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar activeView="portaria-remota" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-        <MobileHeader onMenuClick={() => {}} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {/* Header */}
           <div className="mb-6">
             <h1 className="font-display text-2xl font-bold tracking-tight">Portaria Remota</h1>
@@ -344,7 +318,6 @@ export default function PortariaRemotaPage() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
+
   );
 }

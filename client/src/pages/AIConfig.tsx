@@ -10,8 +10,6 @@
  * - Status de processamento (on-camera vs connector)
  */
 import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import {
   Cpu, ScanFace, Car, DoorOpen, PersonStanding, Bell,
   ChevronDown, ChevronRight, Fence, MoveRight, Users2,
@@ -133,15 +131,7 @@ export default function AIConfig() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar
-        activeView="ai-config"
-        onNavigate={() => {}}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-      />
 
-      <div className="lg:ml-60">
-        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
 
         {/* Page header */}
         <div className="border-b border-border bg-card/50 px-6 py-4">
@@ -481,6 +471,5 @@ export default function AIConfig() {
           </div>
         </main>
       </div>
-    </div>
   );
 }

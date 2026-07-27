@@ -1,6 +1,4 @@
 import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import {
   Network, Server, HardDrive, Wifi, Scan, RefreshCw,
   Save, AlertTriangle, CheckCircle2, Cpu, MemoryStick,
@@ -78,9 +76,7 @@ export default function SystemConfig() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar activeView="config" onNavigate={() => {}} mobileOpen={mobileSidebarOpen} onMobileClose={() => setMobileSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
-        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Header */}

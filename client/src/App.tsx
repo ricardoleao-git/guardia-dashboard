@@ -7,21 +7,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { I18nProvider } from "@/contexts/I18nContext";
 import Dashboard from "@/pages/Dashboard";
-import DeviceManagement from "@/pages/DeviceManagement";
-import AIConfig from "@/pages/AIConfig";
-import FaceLibrary from "@/pages/FaceLibrary";
-import Custodia from "@/pages/Custodia";
-import Consentimento from "@/pages/Consentimento";
-import Encomendas from "@/pages/Encomendas";
-import PainelAdministradora from "@/pages/PainelAdministradora";
-import Reservas from "@/pages/Reservas";
-import LivroOcorrencias from "@/pages/LivroOcorrencias";
-import RelatorioValor from "@/pages/RelatorioValor";
-import Comunicados from "@/pages/Comunicados";
-import PortariaRemota from "@/pages/PortariaRemota";
-import WhiteLabel from "@/pages/WhiteLabel";
-import VehicleManagement from "@/pages/VehicleManagement";
-import SystemConfig from "@/pages/SystemConfig";
 import Login from "@/pages/Login";
 import { Loader2 } from "lucide-react";
 
@@ -46,114 +31,16 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
 function Router() {
   const { isDemoMode, user, isGuest } = useAuth();
-
   return (
     <Switch>
       {/* Login route — redirect to / if already authenticated */}
       <Route path="/login">
         {isDemoMode || isGuest || user ? <Redirect to="/" /> : <Login />}
       </Route>
-
-      {/* Protected routes — all views rendered inside Dashboard layout */}
-      <Route path="/" >
+      {/* Single catch-all — wouter 3.x wildcard: /* matches / and any sub-path */}
+      <Route path="/*">
         <ProtectedRoute component={Dashboard} />
       </Route>
-      <Route path="/events">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/cameras">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/playback">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/alerts">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/automations">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/ai-config">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/semantic-search">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/ai-summary">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/frequencia">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/person-timeline">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/visitor-invite">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/vehicle-access">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/elevator">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/devices">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/ai-box">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/face-library">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/vehicles">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/system-config">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/user-admin">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/audit-log">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/custodia">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/consentimento">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/encomendas">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/painel-administradora">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/reservas">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/livro-ocorrencias">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/relatorio-valor">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/comunicados">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/portaria-remota">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/white-label">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/settings">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
     </Switch>
   );
 }

@@ -61,15 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsDemoMode(false);
 
-    // Get initial session
+    // Safety timeout — if getSession hangs, unblock the UI after 5s
+    const sessionTimeout = setTimeout(() => setLoading(false), 5000);
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(sessionTimeout);
       setUser(session?.user ?? null);
       if (session?.user) {
         loadProfile(session.user.id, session.user.email || "");
       } else {
         setLoading(false);
       }
-    });
+    }).catch(() => { clearTimeout(sessionTimeout); setLoading(false); });
 
     // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {

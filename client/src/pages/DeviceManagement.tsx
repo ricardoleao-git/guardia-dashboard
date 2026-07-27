@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import { HardDrive, Wifi, WifiOff, Edit2, Search, Settings2, Plus, RefreshCw, AlertTriangle, ChevronDown, X, Network, Trash2, KeyRound, Globe, ScanLine, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDevices } from "@/hooks/useDevices";
@@ -171,15 +169,7 @@ export default function DeviceManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar
-        activeView="devices"
-        onNavigate={() => {}}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-      />
 
-      <div className="lg:ml-60">
-        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
 
         {/* Page header */}
         <div className="border-b border-border bg-card/50 px-6 py-4">
@@ -464,7 +454,6 @@ export default function DeviceManagement() {
             </div>
           )}
         </main>
-      </div>
 
       {/* Add Channel IP Modal */}
       {showAddModal && (

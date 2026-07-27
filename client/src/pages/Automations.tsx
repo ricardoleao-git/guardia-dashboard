@@ -9,8 +9,6 @@
  * - Validação e salvamento
  */
 import { useState, useRef, useCallback, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import MobileHeader from "@/components/MobileHeader";
 import {
   Zap, Plus, Bell, MessageSquare, Siren, DoorOpen, Volume2,
   Clock, Camera, UserX, AlertTriangle, Activity, Power,
@@ -827,24 +825,17 @@ export default function Automations() {
   if (pageState === "loading") {
     return (
       <div className="min-h-screen bg-background">
-        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Carregando automações...</p>
           </div>
         </div>
-      </div>
     );
   }
 
   if (pageState === "error") {
     return (
       <div className="min-h-screen bg-background">
-        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <AlertCircle className="h-12 w-12 text-red-400" />
             <div className="text-center">
@@ -854,16 +845,12 @@ export default function Automations() {
             <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
           </div>
         </div>
-      </div>
     );
   }
 
   if (pageState === "offline") {
     return (
       <div className="min-h-screen bg-background">
-        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <WifiOff className="h-12 w-12 text-zinc-400" />
             <div className="text-center">
@@ -873,16 +860,12 @@ export default function Automations() {
             <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
           </div>
         </div>
-      </div>
     );
   }
 
   if (pageState === "empty") {
     return (
       <div className="min-h-screen bg-background">
-        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-        <div className="lg:ml-60">
-          <MobileHeader onMenuClick={() => {}} />
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Inbox className="h-12 w-12 text-zinc-400" />
             <div className="text-center">
@@ -891,21 +874,12 @@ export default function Automations() {
             </div>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar
-        activeView="automations"
-        onNavigate={() => {}}
-        mobileOpen={mobileSidebarOpen}
-        onMobileClose={() => setMobileSidebarOpen(false)}
-      />
 
-      <div className="lg:ml-60">
-        <MobileHeader onMenuClick={() => setMobileSidebarOpen(true)} />
 
         {/* Page header */}
         <div className="border-b border-border bg-card/50 px-6 py-4">
@@ -1723,7 +1697,6 @@ export default function Automations() {
             </div>
           )}
         </main>
-      </div>
 
       {/* Hidden file input for import */}
       <input
