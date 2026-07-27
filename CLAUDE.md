@@ -44,7 +44,7 @@ Verticais de largada: **condomínio** e **escolas**. Roadmap: câmaras frias, co
 
 Schema completo, RLS e ordem das migrations: `CORE-01_MODELO-DE-DADOS-CORE.md`. O nome da coluna (`org_id` + `site_id`, como está no DDL, ou `tenant_id`) e o nome da tabela de eventos (`events` × `camera_events` × `p6s_events`) são **PND-16** — decidir com o Tiago **antes da migration 001**, junto com PND-02 (chaves `FaceUUID`/`GroupID2`).
 
-> 🚫 **Não criar tabela nova neste repositório até PND-16 e PND-02 estarem decididas.** Ver §14.3.
+> 🚫 **Não criar tabela nova neste repositório até PND-16 e PND-02 estarem decididas.** Ver §14.4.
 
 ## 4. Protocolo P6S (driver `p6s`) — contratos exatos
 
@@ -164,7 +164,7 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 10. **Fornecedor Ruision** tem risco reputacional (acionista Megvii; Entity List BIS / NS-CMIC OFAC) — qualquer material voltado a órgão público passa pelo jurídico antes.
 11. **Não afirmar conformidade sem medir.** Antes de escrever "RLS está fechada", "sem credenciais no código" ou "todas as telas têm X", rodar o comando correspondente do §14.1 e colar o número.
 12. **RLS na mesma transação da tabela.** Nenhuma `CREATE TABLE` sem `ENABLE ROW LEVEL SECURITY` e policies no mesmo arquivo SQL. Toda policy nova vem precedida de `DROP POLICY IF EXISTS` — policies permissivas se combinam com **OR**, então adicionar uma restritiva ao lado de uma permissiva **não fecha nada**. Motivo: há uma chave válida do projeto em repositório público (§14.4).
-13. **Nenhuma credencial em mensagem de commit**, de nenhuma classe. Referenciar por nome (`VITE_SUPABASE_ANON_KEY atualizada`), nunca por valor. O commit `5f31f3c` violou isto com a publishable key nova; a classe da chave perdoou, a próxima pode não perdoar.
+13. **Nenhuma credencial em mensagem de commit**, de nenhuma classe. Referenciar por nome (`VITE_SUPABASE_ANON_KEY atualizada`), nunca por valor. O commit `7929b21` violou isto com a publishable key nova; a classe da chave perdoou, a próxima pode não perdoar.
 
 ## 11. Equipe e fluxo
 
@@ -273,18 +273,20 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | Build de clone limpo | `tsc` 0 erros, `vite build` 6.41s, 1786 módulos (antes: quebrava por `@shared` ausente) |
 | `allowedHosts` | `[".manus.computer"]` em vez de `true` — resíduo de ambiente Manus, **não** vetor de exposição pública |
 | **`signIn` limpa modo demo** | `localStorage.removeItem("guardia_guest")` + `setIsGuest(false)` chamados **antes** de `signInWithPassword` — usuário que vem do demo faz login real sem ficar preso em mock. Verificado em `AuthContext.tsx` linhas 129–130 |
-| **Sidebar freeze corrigido** | 5 causas raiz eliminadas: (1) `LiveStream.tsx` — WebSocket sem cleanup → `wsRef` + `ws.close()` + `abortedRef`; (2) `Dashboard.tsx` — `key={viewKey}` forçava remount em toda navegação → removido; (3) `useEvents.ts` — mock interval rodava em todas as páginas → gate `shouldPoll`; (4) `App.tsx` — 35 rotas separadas faziam o wouter tratar Dashboard como componente novo a cada clique → consolidado em rota única `/*`; (5) 16 sub-páginas tinham `Sidebar`/`MobileHeader` embutidos → todos removidos. Testado: 5+ navegações sem freeze, DOM com 1 sidebar, 0 erros TypeScript |
+| **Sidebar freeze corrigido** | causas 2–5 eliminadas, causa 1 CONTIDA: (1) `LiveStream.tsx` — WebSocket sem cleanup → `wsRef` + `ws.close()` + `abortedRef`; (2) `Dashboard.tsx` — `key={viewKey}` forçava remount em toda navegação → removido; (3) `useEvents.ts` — mock interval rodava em todas as páginas → gate `shouldPoll`; (4) `App.tsx` — 35 rotas separadas faziam o wouter tratar Dashboard como componente novo a cada clique → consolidado em rota única `/*`; (5) 16 sub-páginas tinham `Sidebar`/`MobileHeader` embutidos → todos removidos. Testado: 5+ navegações sem freeze, DOM com 1 sidebar, 0 erros TypeScript. Causa 1: LiveStream/CameraMosaic sem diff desde 5bdfc1a — o loop tryFallback e o default streamMode='live' persistem; o freeze parou porque o remount parou. Clicar no toggle 'Live' em mock ainda abre 6 RTCPeerConnection+WebSocket contra hosts inexistentes. Conserto definitivo (guarda de reentrada + default snapshot em mock) → §14.6, junto da PND-18 |
 
 ## 14.3 🔴 Abertos — nenhum é tarefa do Manus
 
 | Item | Onde / custo | Observação |
 |---|---|---|
 | **Chave `anon` JWT legada ativa** | painel do Supabase | A `sb_publishable_*` nova foi criada e configurada, mas **criar publishable não revoga a JWT legada** — são ações separadas. A chave antiga é extraível de **5 commits públicos**. Ver §14.4 |
-| Credenciais no histórico do git | `git filter-repo` | `connector/config/config.yaml` (senhas de câmera em texto claro) e 24 arquivos de `backups/` nos commits até `72f1cbd`. **Limpar as mensagens de commit no mesmo passe** — o `5f31f3c` traz a publishable key nova no corpo da mensagem |
+| Credenciais no histórico do git | `git filter-repo` | `connector/config/config.yaml` (senhas de câmera em texto claro) e 24 arquivos de `backups/` nos commits até `72f1cbd`. **Limpar as mensagens de commit no mesmo passe** — o `7929b21` traz a publishable key nova no corpo da mensagem |
 | **PND-01** — safety code | **10 min de bancada** | 🔴 Bloqueia a **Fase 2 inteira**. Maior retorno por minuto do projeto |
 | **PND-16 / PND-02** | conversa com o Tiago | **0** ocorrências de `org_id`/`tenant_id` nas 12 tabelas. Bloqueia o §12.4. Nenhuma `CREATE TABLE` até decidir |
 | **PND-17** | decisão + porte | 32 telas aqui × 12 no monorepo = **20 a portar**. Custo cresce a cada checkpoint. Ver §16.1 |
 | Domínio "vms" | DNS + Manus | `guardia-vms.zenitetech.com` no ar, contra o §2. Trocar antes de demo a cliente (§16.2) |
+| Publishable key em código desde 23/07 | verificar painel | Commits `4e2efb8` e `ab239e6` têm `sb_publishable_` hardcoded (supabase.ts e config.yaml). **Conferir se a chave configurada hoje é a mesma** (`git show 4e2efb8:client/src/lib/supabase.ts`); se for, a rotação não ocorreu — gerar publishable nova |
+| Resíduos de layout | próximo checkpoint de código | `SystemConfig.tsx:78` mantém wrapper `flex h-screen`; `.embedded-page` morto em `Dashboard.tsx:464,468` + `index.css` |
 | `camera_events` insert exige `service_role` | decisão de arquitetura | `WITH CHECK (auth.role() = 'service_role')`. O connector usa anon key — **quebra quando rodar**. Escolher: service_role no connector, ou o connector para de falar Supabase direto e passa pelo endpoint de ingestão (§3) |
 
 ## 14.4 ⚠️ Consequência da chave legada ainda ativa
