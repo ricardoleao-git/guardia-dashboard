@@ -12,10 +12,11 @@ export function isGuestSession(): boolean {
 /**
  * Returns true if the current session should use mock data
  * (guest mode OR Supabase not configured).
+ *
+ * §12.0: The fallback must be OUTSIDE Boolean(). Previously the `||` was
+ * inside Boolean(...), making the Supabase-not-configured branch dead code
+ * because a non-empty string literal is always truthy.
  */
 export function shouldUseMockData(): boolean {
-  return isGuestSession() || !Boolean(
-    import.meta.env.VITE_SUPABASE_URL ||
-    "https://ycqrgrczrunvyivxfnch.supabase.co"
-  );
+  return isGuestSession() || !import.meta.env.VITE_SUPABASE_URL;
 }

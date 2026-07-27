@@ -42,14 +42,8 @@ CREATE POLICY "audit_logs_read_all" ON public.audit_logs
 CREATE POLICY "audit_logs_insert_own" ON public.audit_logs
   FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
--- Only admins can delete audit logs
-CREATE POLICY "audit_logs_delete_admin" ON public.audit_logs
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role = 'admin'
-    )
-  );
+-- §7: Log de auditoria é append-only. Nenhum DELETE, mesmo admin.
+-- Policy de DELETE removida em 27/07/2026 (Fase A' §12.1.4).
 
 -- ============================================================
 -- 4. Auto-cleanup: keep last 90 days

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { isGuestSession } from "@/lib/guest-mode";
 
 export interface SearchPreset {
   id: string;
@@ -22,7 +23,7 @@ export function useSearchPresets() {
     async function loadPresets() {
       setLoading(true);
 
-      if (isSupabaseConfigured && supabase) {
+      if (isSupabaseConfigured && supabase && !isGuestSession()) {
         try {
           const { data, error } = await supabase
             .from("search_presets")
@@ -75,7 +76,7 @@ export function useSearchPresets() {
 
   // Subscribe to realtime changes when Supabase is configured
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabase || isGuestSession()) return;
 
     const channel = supabase
       .channel("search_presets_changes")
@@ -137,7 +138,7 @@ export function useSearchPresets() {
         createdAt: new Date().toISOString(),
       };
 
-      if (isSupabaseConfigured && supabase) {
+      if (isSupabaseConfigured && supabase && !isGuestSession()) {
         try {
           const { error } = await supabase.from("search_presets").insert({
             id: preset.id,
@@ -162,7 +163,7 @@ export function useSearchPresets() {
 
   const deletePreset = useCallback(
     async (id: string) => {
-      if (isSupabaseConfigured && supabase) {
+      if (isSupabaseConfigured && supabase && !isGuestSession()) {
         try {
           const { error } = await supabase.from("search_presets").delete().eq("id", id);
           if (error) throw error;
@@ -182,7 +183,7 @@ export function useSearchPresets() {
     async (id: string, name: string, filters: Record<string, any>) => {
       const updatedPreset = { name, filters, createdAt: new Date().toISOString() };
 
-      if (isSupabaseConfigured && supabase) {
+      if (isSupabaseConfigured && supabase && !isGuestSession()) {
         try {
           const { error } = await supabase
             .from("search_presets")

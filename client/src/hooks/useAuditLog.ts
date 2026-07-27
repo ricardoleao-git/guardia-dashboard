@@ -14,6 +14,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { isGuestSession } from "@/lib/guest-mode";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type AuditAction =
@@ -185,7 +186,7 @@ export function useAuditLog() {
 
   // Load audit logs
   useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && supabase && !isGuestSession()) {
       supabase
         .from("audit_logs")
         .select("*")
@@ -230,7 +231,7 @@ export function useAuditLog() {
       setLogs((prev) => [entry, ...prev]);
 
       // Persist
-      if (isSupabaseConfigured && supabase) {
+      if (isSupabaseConfigured && supabase && !isGuestSession()) {
         try {
           await supabase.from("audit_logs").insert({
             user_id: entry.user_id,

@@ -36,7 +36,7 @@ ALTER TABLE public.camera_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "camera_events_read_authenticated" ON public.camera_events
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "camera_events_insert_service" ON public.camera_events
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "camera_events_update_authenticated" ON public.camera_events
   FOR UPDATE USING (auth.role() = 'authenticated');
 
@@ -77,7 +77,7 @@ CREATE TRIGGER on_auth_user_created
 
 -- RLS profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "profiles_read_all" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "profiles_read_authenticated" ON public.profiles FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "profiles_delete_admin" ON public.profiles
   FOR DELETE USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
@@ -106,10 +106,10 @@ CREATE TABLE IF NOT EXISTS public.search_presets (
 CREATE INDEX IF NOT EXISTS idx_search_presets_name ON public.search_presets (name);
 
 ALTER TABLE public.search_presets ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "search_presets_read_all" ON public.search_presets FOR SELECT USING (true);
-CREATE POLICY "search_presets_insert_all" ON public.search_presets FOR INSERT WITH CHECK (true);
-CREATE POLICY "search_presets_update_all" ON public.search_presets FOR UPDATE USING (true);
-CREATE POLICY "search_presets_delete_all" ON public.search_presets FOR DELETE USING (true);
+CREATE POLICY "search_presets_read_authenticated" ON public.search_presets FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "search_presets_insert_authenticated" ON public.search_presets FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "search_presets_update_authenticated" ON public.search_presets FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "search_presets_delete_authenticated" ON public.search_presets FOR DELETE USING (auth.role() = 'authenticated');
 
 DROP TRIGGER IF EXISTS search_presets_updated_at ON public.search_presets;
 CREATE TRIGGER search_presets_updated_at
@@ -144,8 +144,8 @@ CREATE POLICY "audit_logs_read_all" ON public.audit_logs
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "audit_logs_insert_own" ON public.audit_logs
   FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
-CREATE POLICY "audit_logs_delete_admin" ON public.audit_logs
-  FOR DELETE USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
+-- §7: Log de auditoria é append-only. Nenhum DELETE, mesmo admin.
+-- Policy de DELETE removida em 27/07/2026 (Fase A' §12.1.4).
 
 -- Auto-cleanup: manter últimos 90 dias
 CREATE OR REPLACE FUNCTION public.cleanup_old_audit_logs()
@@ -164,11 +164,11 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Policy: operadores autenticados podem ler imagens
 CREATE POLICY "event_images_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'event-images');
+  FOR SELECT USING (bucket_id = 'event-images' AND auth.role() = 'authenticated');
 
 -- Policy: connector (service_role) pode inserir imagens
 CREATE POLICY "event_images_insert" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'event-images');
+  FOR INSERT WITH CHECK (bucket_id = 'event-images' AND auth.role() = 'service_role');
 
 -- ============================================================
 -- PRONTO! O banco está configurado.

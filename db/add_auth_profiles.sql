@@ -44,8 +44,8 @@ CREATE TRIGGER on_auth_user_created
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Operators can read all profiles (to see who made annotations etc.)
-CREATE POLICY "profiles_read_all" ON public.profiles
-  FOR SELECT USING (true);
+CREATE POLICY "profiles_read_authenticated" ON public.profiles
+  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Operators can update only their own profile
 CREATE POLICY "profiles_update_own" ON public.profiles

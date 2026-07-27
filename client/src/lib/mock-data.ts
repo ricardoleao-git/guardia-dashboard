@@ -33,27 +33,27 @@ const locations = ["Corredor", "Recepção", "COPA", "AI IPC"];
 // Imagens de captura por contexto (CCTV realista)
 const captureImages = {
   FaceReco: [
-    "/manus-storage/cam-facereco-school_915af75d.jpg",
-    "/manus-storage/cam-facereco-student_01a30f6c.jpg",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D1",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D2",
   ],
   VehicleReco: [
-    "/manus-storage/cam-vehicle-gate_4e64e4ad.jpg",
-    "/manus-storage/cam-vehicle-night_cdaabcc9.jpg",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D3",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D4",
   ],
   AccessControl: [
-    "/manus-storage/cam-access-door_c36513ed.jpg",
-    "/manus-storage/cam-access-reception_c10934f4.jpg",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D5",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D6",
   ],
   MotionDetection: [
-    "/manus-storage/cam-motion-hallway_b9f5c52a.jpg",
-    "/manus-storage/cam-motion-parking_a592b70f.jpg",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D7",
+    "https://placehold.co/640x360/1a1a2e/6366f1?text=Camera+D8",
   ],
 };
 
 // Fotos cadastradas (database de reconhecimento facial)
 const recognizeImages = [
-  "/manus-storage/cam-facereco-reco1_e2b66a4d.jpg",
-  "/manus-storage/cam-facereco-reco2_f80bd372.jpg",
+  "https://placehold.co/320x320/1a1a2e/6366f1?text=Face+Reco",
+  "https://placehold.co/320x320/1a1a2e/6366f1?text=Face+Reco",
 ];
 
 function randomFrom<T>(arr: T[]): T {
@@ -536,7 +536,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "Aurura Security",
-      logoUrl: "/manus-storage/guardia-percebe-logo_8dc22718.png",
+      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
       corPrimaria: "#1B4D3E",
       corSecundaria: "#2D7A5F",
       corAcento: "#A8E6CF",
@@ -563,7 +563,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "Serrat Protect",
-      logoUrl: "/manus-storage/guardia-percebe-logo_8dc22718.png",
+      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
       corPrimaria: "#2C3E7B",
       corSecundaria: "#4A6FA5",
       corAcento: "#FFD93D",
@@ -617,7 +617,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "TechPark Access",
-      logoUrl: "/manus-storage/guardia-percebe-logo_8dc22718.png",
+      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
       corPrimaria: "#1A1A2E",
       corSecundaria: "#16213E",
       corAcento: "#0F3460",
@@ -671,7 +671,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "NG Campus",
-      logoUrl: "/manus-storage/guardia-percebe-logo_8dc22718.png",
+      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
       corPrimaria: "#6A1B9A",
       corSecundaria: "#8E24AA",
       corAcento: "#E1BEE7",

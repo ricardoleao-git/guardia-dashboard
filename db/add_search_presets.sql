@@ -18,20 +18,20 @@ CREATE INDEX IF NOT EXISTS idx_search_presets_name ON search_presets (name);
 ALTER TABLE search_presets ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Todos podem ler (dashboard é interno)
-CREATE POLICY "Anyone can read search presets" ON search_presets
-  FOR SELECT USING (true);
+CREATE POLICY "search_presets_read_authenticated" ON search_presets
+  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Policy: Qualquer um pode inserir (sem auth no MVP)
-CREATE POLICY "Anyone can insert search presets" ON search_presets
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "search_presets_insert_authenticated" ON search_presets
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Policy: Qualquer um pode atualizar
-CREATE POLICY "Anyone can update search presets" ON search_presets
-  FOR UPDATE USING (true);
+CREATE POLICY "search_presets_update_authenticated" ON search_presets
+  FOR UPDATE USING (auth.role() = 'authenticated');
 
 -- Policy: Qualquer um pode deletar
-CREATE POLICY "Anyone can delete search presets" ON search_presets
-  FOR DELETE USING (true);
+CREATE POLICY "search_presets_delete_authenticated" ON search_presets
+  FOR DELETE USING (auth.role() = 'authenticated');
 
 -- Trigger para updated_at
 CREATE OR REPLACE FUNCTION update_updated_at()
