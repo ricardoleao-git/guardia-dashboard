@@ -7,6 +7,8 @@ import {
   CommonArea, Reservation, ReservationMetrics,
   Occurrence, OccurrenceMetrics,
   ValueReport,
+  Comunicado, ComunicadoMetrics,
+  PortariaRemota,
 } from "./types";
 
 // Mock data para desenvolvimento do frontend sem Supabase configurado
@@ -432,3 +434,90 @@ export const mockValueReport: ValueReport = {
     "Porta/permanência aberta tem tempo de resposta de 2min — criar automação de alerta prioritário",
   ],
 };
+
+// ===== T3: Comunicados / Avisos =====
+
+export const mockComunicados: Comunicado[] = [
+  { id: "c1", titulo: "Manutenção do elevador - Bloco A", conteudo: "O elevador social do Bloco A passará por manutenção preventiva no dia 30/07 das 09h às 12h. Pedimos que usem as escadas ou o elevador do Bloco B neste período.", categoria: "manutencao", prioridade: "alta", autor: "Administração", dataPublicacao: "2026-07-25T10:00:00Z", dataExpiracao: "2026-07-30T23:59:00Z", destinatarios: "bloco_a", status: "publicado", lido: 42, total: 58, anexos: ["ordem_servico.pdf"] },
+  { id: "c2", titulo: "Assembleia geral extraordinária", conteudo: "Convocamos todos os moradores para assembleia geral extraordinária no dia 05/08 às 19h no salão de festas. Pauta: aprovação de obras no playground.", categoria: "assembleia", prioridade: "alta", autor: "Síndico", dataPublicacao: "2026-07-24T14:00:00Z", dataExpiracao: "2026-08-05T19:00:00Z", destinatarios: "todos", status: "publicado", lido: 78, total: 120, anexos: ["edital.pdf", "pauta.pdf"] },
+  { id: "c3", titulo: "Festa junina do condomínio", conteudo: "Vai ter quadrilha, comidas típicas e música ao vivo! Dia 15/08 a partir das 15h no salão de festas. Entrada franca.", categoria: "evento", prioridade: "media", autor: "Comissão de moradores", dataPublicacao: "2026-07-23T09:00:00Z", dataExpiracao: "2026-08-15T18:00:00Z", destinatarios: "todos", status: "publicado", lido: 95, total: 120 },
+  { id: "c4", titulo: "Lavagem da piscina", conteudo: "A piscina será interditada para limpeza e troca parcial de água nos dias 28 e 29/07.", categoria: "manutencao", prioridade: "media", autor: "Administração", dataPublicacao: "2026-07-22T11:00:00Z", dataExpiracao: "2026-07-29T23:59:00Z", destinatarios: "todos", status: "publicado", lido: 55, total: 120 },
+  { id: "c5", titulo: "Aviso de segurança - tentativa de invasão", conteudo: "Registramos uma tentativa de invasão pela área do muro norte na noite de 23/07. O GuardIA Percebe detectou e bloqueou. Reforçamos a recomendação de não deixar objetos próximos ao muro.", categoria: "urgente", prioridade: "alta", autor: "Segurança", dataPublicacao: "2026-07-24T08:00:00Z", destinatarios: "todos", status: "publicado", lido: 110, total: 120 },
+  { id: "c6", titulo: "Rascunho: Novo regulamento interno", conteudo: "Proposta de atualização do regulamento interno com novas regras para uso de áreas comuns.", categoria: "aviso", prioridade: "baixa", autor: "Síndico", dataPublicacao: "2026-07-20T16:00:00Z", destinatarios: "proprietarios", status: "rascunho", lido: 0, total: 80 },
+  { id: "c7", titulo: "Obra na fachada - Bloco B", conteudo: "Iniciamos a pintura da fachada do Bloco B. O trabalho levará aproximadamente 15 dias.", categoria: "manutencao", prioridade: "media", autor: "Administração", dataPublicacao: "2026-07-15T10:00:00Z", dataExpiracao: "2026-08-15T23:59:00Z", destinatarios: "bloco_b", status: "publicado", lido: 35, total: 62 },
+  { id: "c8", titulo: "Reunião de condomínio cancelada", conteudo: "A reunião informal marcada para 27/07 foi cancelada. Nova data será divulgada.", categoria: "aviso", prioridade: "baixa", autor: "Síndico", dataPublicacao: "2026-07-18T14:00:00Z", dataExpiracao: "2026-07-27T23:59:00Z", destinatarios: "todos", status: "expirado", lido: 88, total: 120 },
+];
+
+export const mockComunicadoMetrics: ComunicadoMetrics = {
+  total: 8,
+  publicados: 6,
+  rascunhos: 1,
+  expirados: 1,
+  taxaLeitura: 72,
+};
+
+// ===== T5: Portaria Remota =====
+
+export const mockPortarias: PortariaRemota[] = [
+  {
+    id: "p1",
+    unidadeNome: "Cond. Alphaville Residencial",
+    unidadeTipo: "condominio",
+    operadorOnline: true,
+    operadorNome: "Carlos Mendes",
+    camerasAtivas: 6,
+    camerasTotal: 8,
+    intercoms: [
+      { id: "i1", nome: "Portão Social", status: "online", emChamada: false },
+      { id: "i2", nome: "Portão de Serviço", status: "online", emChamada: true },
+    ],
+    portoes: [
+      { id: "g1", nome: "Portão Veicular", tipo: "veicular", status: "fechado", ultimaOperacao: "há 5 min" },
+      { id: "g2", nome: "Portão Social", tipo: "pedestre", status: "fechado", ultimaOperacao: "há 12 min" },
+      { id: "g3", nome: "Portão de Serviço", tipo: "veicular", status: "aberto", ultimaOperacao: "agora" },
+    ],
+    eventosHoje: 47,
+    aguardandoAtendimento: 1,
+    status: "online",
+    ultimoContato: "há 2 min",
+  },
+  {
+    id: "p2",
+    unidadeNome: "Escola Monte Verde",
+    unidadeTipo: "escola",
+    operadorOnline: true,
+    operadorNome: "Ana Paula Silva",
+    camerasAtivas: 4,
+    camerasTotal: 5,
+    intercoms: [
+      { id: "i3", nome: "Recepção Principal", status: "online", emChamada: false },
+      { id: "i4", nome: "Portão de Alunos", status: "offline", emChamada: false },
+    ],
+    portoes: [
+      { id: "g4", nome: "Portão Principal", tipo: "pedestre", status: "fechado", ultimaOperacao: "há 8 min" },
+      { id: "g5", nome: "Portão de Veículos", tipo: "veicular", status: "fechado", ultimaOperacao: "há 20 min" },
+    ],
+    eventosHoje: 23,
+    aguardandoAtendimento: 0,
+    status: "degradado",
+    ultimoContato: "há 4 min",
+  },
+  {
+    id: "p3",
+    unidadeNome: "Edifício Corporate Center",
+    unidadeTipo: "empresa",
+    operadorOnline: false,
+    camerasAtivas: 0,
+    camerasTotal: 4,
+    intercoms: [
+      { id: "i5", nome: "Recepção", status: "offline", emChamada: false },
+    ],
+    portoes: [
+      { id: "g6", nome: "Portão de Acesso", tipo: "veicular", status: "bloqueado" },
+    ],
+    eventosHoje: 0,
+    aguardandoAtendimento: 0,
+    status: "offline",
+    ultimoContato: "há 45 min",
+  },
+];

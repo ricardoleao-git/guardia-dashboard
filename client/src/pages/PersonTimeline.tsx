@@ -11,11 +11,15 @@ import MobileHeader from "@/components/MobileHeader";
 import {
   Search, Camera, Clock, MapPin, Filter, ChevronDown, ChevronUp,
   ScanFace, Calendar, Download, ArrowLeft, Users, TrendingUp,
-  Video, Image, AlertCircle, CheckCircle2, XCircle
+  Video, Image, AlertCircle, CheckCircle2, XCircle,
+  Loader2, WifiOff, Inbox, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
 import { useEvents } from "@/hooks/useEvents";
+import { Button } from "@/components/ui/button";
+
+type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
 
 // ===== Types =====
 interface Appearance {
@@ -152,6 +156,95 @@ export default function PersonTimeline() {
     const parts = name.split(" ");
     return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.substring(0, 2);
   };
+
+  const [pageState, setPageState] = useState<PageState>("loading");
+
+  useEffect(() => {
+    if (!loading && events.length > 0) setPageState("loaded");
+    else if (!loading && events.length === 0) setPageState("empty");
+  }, [loading, events]);
+
+  const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
+
+  // CORE-03 §7: 5 estados obrigatórios
+  if (pageState === "loading") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="person-timeline" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Carregando histórico de aparições...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "error") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="person-timeline" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <AlertCircle className="h-12 w-12 text-red-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Erro ao carregar</h3>
+                <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
+              </div>
+              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "offline") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="person-timeline" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <WifiOff className="h-12 w-12 text-zinc-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Connector offline</h3>
+                <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
+              </div>
+              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "empty") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="person-timeline" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Inbox className="h-12 w-12 text-zinc-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Nenhuma aparição registrada</h3>
+                <p className="text-sm text-muted-foreground mt-1">Não há eventos faciais para o período selecionado.</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background">

@@ -26,6 +26,10 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Loader2, WifiOff, Inbox, RefreshCw } from "lucide-react";
+
+type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
 
 // ===== Types =====
 interface Automation {
@@ -807,6 +811,89 @@ export default function Automations() {
   // Check if option is in flow
   const isInFlow = (type: FlowItemType, optionId: string) =>
     flowItems.some(i => i.type === type && i.optionId === optionId);
+
+  // CORE-03 §7: 5 estados obrigatórios
+  const [pageState, setPageState] = useState<PageState>(rulesLoading ? "loading" : "loaded");
+  useEffect(() => {
+    if (!rulesLoading && automations.length === 0 && rules.length === 0) {
+      const timer = setTimeout(() => setPageState("empty"), 300);
+      return () => clearTimeout(timer);
+    }
+    if (!rulesLoading) setPageState("loaded");
+  }, [rulesLoading, automations, rules]);
+
+  const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
+
+  if (pageState === "loading") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Carregando automações...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "error") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <AlertCircle className="h-12 w-12 text-red-400" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold">Erro ao carregar</h3>
+              <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
+            </div>
+            <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "offline") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <WifiOff className="h-12 w-12 text-zinc-400" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold">Connector offline</h3>
+              <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
+            </div>
+            <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "empty") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar activeView="automations" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <Inbox className="h-12 w-12 text-zinc-400" />
+            <div className="text-center">
+              <h3 className="text-lg font-semibold">Nenhuma automação configurada</h3>
+              <p className="text-sm text-muted-foreground mt-1">Crie sua primeira regra de automação para começar.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

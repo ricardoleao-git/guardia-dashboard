@@ -8,16 +8,20 @@
  * - Notificação ao chegar (match facial na portaria)
  * - Pré-cadastro na lista branca temporária do P6S
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import {
   UserPlus, Search, Filter, Download, QrCode, Clock, CheckCircle2,
   XCircle, AlertCircle, Calendar, Mail, Phone, Send, Copy,
-  ChevronDown, ChevronUp, User, MapPin, Shield, Trash2, Plus
+  ChevronDown, ChevronUp, User, MapPin, Shield, Trash2, Plus,
+  Loader2, WifiOff, Inbox, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { Button } from "@/components/ui/button";
+
+type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
 
 // ===== Types =====
 interface VisitorInvite {
@@ -113,6 +117,95 @@ export default function VisitorInvite() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const [pageState, setPageState] = useState<PageState>("loading");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageState("loaded"), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
+
+  // CORE-03 §7: 5 estados obrigatórios
+  if (pageState === "loading") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="visitor-invite" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Carregando convites...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "error") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="visitor-invite" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <AlertCircle className="h-12 w-12 text-red-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Erro ao carregar</h3>
+                <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
+              </div>
+              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "offline") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="visitor-invite" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <WifiOff className="h-12 w-12 text-zinc-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Connector offline</h3>
+                <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
+              </div>
+              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "empty") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="visitor-invite" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Inbox className="h-12 w-12 text-zinc-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Nenhum convite ativo</h3>
+                <p className="text-sm text-muted-foreground mt-1">Não há convites de visitante pendentes ou ativos.</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background">

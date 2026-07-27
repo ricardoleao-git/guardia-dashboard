@@ -43,6 +43,8 @@ import PainelAdministradora from "@/pages/PainelAdministradora";
 import Reservas from "@/pages/Reservas";
 import LivroOcorrencias from "@/pages/LivroOcorrencias";
 import RelatorioValor from "@/pages/RelatorioValor";
+import Comunicados from "@/pages/Comunicados";
+import PortariaRemota from "@/pages/PortariaRemota";
 import RealtimeNotifications from "@/components/RealtimeNotifications";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -98,6 +100,8 @@ const viewToPath: Record<string, string> = {
   reservas: "/reservas",
   "livro-ocorrencias": "/livro-ocorrencias",
   "relatorio-valor": "/relatorio-valor",
+  comunicados: "/comunicados",
+  "portaria-remota": "/portaria-remota",
 };
 
 const pathToView: Record<string, string> = Object.entries(viewToPath).reduce(
@@ -256,6 +260,8 @@ export default function Dashboard() {
     reservas: { title: "Reservas de Áreas Comuns", subtitle: "Salão, churrasqueira, academia, quadra e piscina" },
     "livro-ocorrencias": { title: "Livro de Ocorrências", subtitle: "Registro de incidentes com foto, anexo e boletim" },
     "relatorio-valor": { title: "Relatório de Valor", subtitle: "Documento para assembleia com métricas de segurança e conformidade" },
+    comunicados: { title: "Comunicados", subtitle: "Mural digital + notificação em massa para moradores" },
+    "portaria-remota": { title: "Portaria Remota", subtitle: "Um operador atende N portarias em tempo real" },
   };
 
   const currentView = viewConfig[activeView as keyof typeof viewConfig] || viewConfig.dashboard;
@@ -280,6 +286,8 @@ export default function Dashboard() {
     reservas: t("nav.pessoas-acesso"),
     "livro-ocorrencias": t("nav.pessoas-acesso"),
     "relatorio-valor": t("nav.administracao"),
+    comunicados: t("nav.pessoas-acesso"),
+    "portaria-remota": t("nav.operacao"),
   };
   const breadcrumbLabels: Record<string, string> = {
     dashboard: t("nav.dashboard"), events: t("nav.events"), cameras: t("nav.cameras"),
@@ -296,6 +304,8 @@ export default function Dashboard() {
     encomendas: t("nav.encomendas"), "painel-administradora": t("nav.painel-administradora"),
     reservas: t("nav.reservas"), "livro-ocorrencias": t("nav.livro-ocorrencias"),
     "relatorio-valor": t("nav.relatorio-valor"),
+    comunicados: t("nav.comunicados"),
+    "portaria-remota": t("nav.portaria-remota"),
   };
   const breadcrumb = activeView !== "dashboard" ? {
     section: breadcrumbSections[activeView] || "",
@@ -549,6 +559,14 @@ export default function Dashboard() {
 
           {activeView === "relatorio-valor" && (
             <div className="embedded-page"><RelatorioValor /></div>
+          )}
+
+          {activeView === "comunicados" && (
+            <div className="embedded-page"><Comunicados /></div>
+          )}
+
+          {activeView === "portaria-remota" && (
+            <div className="embedded-page"><PortariaRemota /></div>
           )}
         </main>
       </div>

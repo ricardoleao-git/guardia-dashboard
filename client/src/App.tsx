@@ -17,6 +17,8 @@ import PainelAdministradora from "@/pages/PainelAdministradora";
 import Reservas from "@/pages/Reservas";
 import LivroOcorrencias from "@/pages/LivroOcorrencias";
 import RelatorioValor from "@/pages/RelatorioValor";
+import Comunicados from "@/pages/Comunicados";
+import PortariaRemota from "@/pages/PortariaRemota";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
 import Login from "@/pages/Login";
@@ -134,6 +136,12 @@ function Router() {
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/relatorio-valor">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/comunicados">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/portaria-remota">
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/settings">

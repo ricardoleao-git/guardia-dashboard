@@ -379,3 +379,60 @@ export interface ValueReport {
   highlights: string[];
   recommendations: string[];
 }
+
+// ===== T3: Comunicados / Avisos =====
+export interface Comunicado {
+  id: string;
+  titulo: string;
+  conteudo: string;
+  categoria: "urgente" | "manutencao" | "evento" | "assembleia" | "aviso";
+  prioridade: "alta" | "media" | "baixa";
+  autor: string;
+  dataPublicacao: string;
+  dataExpiracao?: string;
+  destinatarios: "todos" | "proprietarios" | "inquilinos" | "bloco_a" | "bloco_b";
+  status: "rascunho" | "publicado" | "expirado";
+  lido: number;
+  total: number;
+  anexos?: string[];
+}
+
+export interface ComunicadoMetrics {
+  total: number;
+  publicados: number;
+  rascunhos: number;
+  expirados: number;
+  taxaLeitura: number;
+}
+
+// ===== T5: Portaria Remota =====
+export interface PortariaRemota {
+  id: string;
+  unidadeNome: string;
+  unidadeTipo: "condominio" | "escola" | "empresa";
+  operadorOnline: boolean;
+  operadorNome?: string;
+  camerasAtivas: number;
+  camerasTotal: number;
+  intercoms: IntercomStatus[];
+  portoes: PortaoStatus[];
+  eventosHoje: number;
+  aguardandoAtendimento: number;
+  status: "online" | "degradado" | "offline";
+  ultimoContato: string;
+}
+
+export interface IntercomStatus {
+  id: string;
+  nome: string;
+  status: "online" | "offline";
+  emChamada: boolean;
+}
+
+export interface PortaoStatus {
+  id: string;
+  nome: string;
+  tipo: "veicular" | "pedestre" | "social";
+  status: "fechado" | "aberto" | "bloqueado";
+  ultimaOperacao?: string;
+}

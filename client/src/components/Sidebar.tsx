@@ -7,6 +7,7 @@ import {
   X, Cpu, Users, HardDrive, Play, Car, Server, UserCog,
   CalendarCheck, ScanFace, UserPlus, Search, FileText, Building, Boxes,
   Baby, FileCheck, Package, Building2, CalendarDays, ScrollText, BarChart3,
+  Megaphone, Headphones,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -33,6 +34,7 @@ const navSections = [
       { id: "cameras", labelKey: "nav.cameras", icon: Camera },
       { id: "playback", labelKey: "nav.playback", icon: Play },
       { id: "alerts", labelKey: "nav.alerts", icon: Bell },
+      { id: "portaria-remota", labelKey: "nav.portaria-remota", icon: Headphones },
     ],
   },
   {
@@ -56,6 +58,7 @@ const navSections = [
       { id: "encomendas", labelKey: "nav.encomendas", icon: Package },
       { id: "reservas", labelKey: "nav.reservas", icon: CalendarDays },
       { id: "livro-ocorrencias", labelKey: "nav.livro-ocorrencias", icon: ScrollText },
+      { id: "comunicados", labelKey: "nav.comunicados", icon: Megaphone },
     ],
   },
   {

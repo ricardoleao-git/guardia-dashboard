@@ -10,16 +10,20 @@
  *
  * Dados mock da bancada (spec 05): pessoas cadastradas + eventos faciais.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import { useI18n } from "@/contexts/I18nContext";
 import {
   AlertTriangle, Bell, MessageSquare, Mail, Smartphone,
   Clock, UserX, Plus, Trash2, Edit2, CheckCircle2, XCircle,
-  Settings2, ChevronDown, ChevronRight, Send
+  Settings2, ChevronDown, ChevronRight, Send,
+  Loader2, WifiOff, Inbox, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
 
 interface AbsenceAlert {
   id: string;
@@ -128,6 +132,7 @@ const channelConfig = {
 
 export default function AbsenceAlerts() {
   const { t } = useI18n();
+  const [pageState, setPageState] = useState<PageState>("loading");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [alerts, setAlerts] = useState(mockAlerts);
   const [rules, setRules] = useState(mockRules);
@@ -151,6 +156,93 @@ export default function AbsenceAlerts() {
 
   const activeAlerts = alerts.filter(a => a.status === "enviado" || a.status === "pendente");
   const resolvedAlerts = alerts.filter(a => a.status === "resolvido" || a.status === "ignorado");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageState("loaded"), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
+
+  // CORE-03 §7: 5 estados obrigatórios
+  if (pageState === "loading") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Carregando alertas de ausência...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "error") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <AlertTriangle className="h-12 w-12 text-red-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Erro ao carregar</h3>
+                <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
+              </div>
+              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "offline") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <WifiOff className="h-12 w-12 text-zinc-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Connector offline</h3>
+                <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
+              </div>
+              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "empty") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar activeView="alerts" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+          <MobileHeader onMenuClick={() => {}} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Inbox className="h-12 w-12 text-zinc-400" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">Nenhum alerta configurado</h3>
+                <p className="text-sm text-muted-foreground mt-1">Não há regras de ausência ativas no momento.</p>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
