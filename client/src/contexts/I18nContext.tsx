@@ -54,6 +54,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.painel-administradora": "Painel Administradora",
     "nav.reservas": "Reservas",
     "nav.livro-ocorrencias": "Ocorrências",
+    "nav.relatorio-valor": "Relatório de Valor",
     // Header
     "header.refresh": "Atualizar",
     "header.filters": "Filtros",
@@ -460,6 +461,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.painel-administradora": "Admin Panel",
     "nav.reservas": "Reservations",
     "nav.livro-ocorrencias": "Incidents",
+    "nav.relatorio-valor": "Value Report",
     "header.refresh": "Refresh",
     "header.filters": "Filters",
     "header.search": "Search",
@@ -858,6 +860,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.painel-administradora": "管理面板",
     "nav.reservas": "预约",
     "nav.livro-ocorrencias": "事件记录",
+    "nav.relatorio-valor": "价值报告",
     "header.refresh": "刷新",
     "header.filters": "筛选",
     "header.search": "搜索",

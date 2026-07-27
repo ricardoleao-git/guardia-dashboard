@@ -6,7 +6,7 @@ import {
   ShieldCheck, Activity, Camera, Settings, Bell, LayoutGrid, Zap, Database,
   X, Cpu, Users, HardDrive, Play, Car, Server, UserCog,
   CalendarCheck, ScanFace, UserPlus, Search, FileText, Building, Boxes,
-  Baby, FileCheck, Package, Building2, CalendarDays, ScrollText,
+  Baby, FileCheck, Package, Building2, CalendarDays, ScrollText, BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -76,6 +76,7 @@ const navSections = [
       { id: "settings", labelKey: "nav.settings", icon: Settings },
       { id: "consentimento", labelKey: "nav.consentimento", icon: FileCheck },
       { id: "painel-administradora", labelKey: "nav.painel-administradora", icon: Building2 },
+      { id: "relatorio-valor", labelKey: "nav.relatorio-valor", icon: BarChart3 },
     ],
   },
 ];

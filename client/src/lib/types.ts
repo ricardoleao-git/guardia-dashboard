@@ -312,3 +312,70 @@ export interface OccurrenceMetrics {
   tempoMedioResolucao: string;
   comBoletim: number;
 }
+
+// ===== T9: Relatório de Valor =====
+
+export type ReportPeriod = "mes" | "trimestre" | "semestre" | "ano";
+export type ReportSection = "seguranca" | "operacao" | "compliance" | "rondas" | "eventos";
+
+export interface SecurityMetric {
+  label: string;
+  value: number;
+  unit: string;
+  trend: number;       // % change vs período anterior
+  benchmark: string;   // referência de mercado
+}
+
+export interface PatrolRecord {
+  date: string;
+  route: string;
+  scheduled: number;
+  completed: number;
+  missed: number;
+  coveragePct: number;
+}
+
+export interface EventSummary {
+  category: string;
+  total: number;
+  blocked: number;     // tentativas bloqueadas
+  resolved: number;
+  avgResponseTime: string;
+}
+
+export interface ComplianceItem {
+  label: string;
+  status: "conforme" | "pendente" | "nao_aplicavel";
+  detail: string;
+}
+
+export interface ValueReport {
+  period: ReportPeriod;
+  periodLabel: string;     // ex: "Julho 2026"
+  generatedAt: string;
+  siteName: string;
+  siteType: string;
+
+  // Segurança
+  securityMetrics: SecurityMetric[];
+  blockedAttempts: number;
+  blockedTrend: number;
+
+  // Operação
+  patrolRecords: PatrolRecord[];
+  patrolCoverage: number;  // % média
+  patrolTrend: number;
+
+  // Eventos
+  eventSummaries: EventSummary[];
+  totalEvents: number;
+  eventsTrend: number;
+
+  // Compliance
+  complianceItems: ComplianceItem[];
+  complianceScore: number; // %
+
+  // Resumo executivo
+  highlights: string[];
+  recommendations: string[];
+}

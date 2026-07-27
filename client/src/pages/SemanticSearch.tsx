@@ -6,10 +6,14 @@
  * - Filtros visuais (atributos faciais, roupas, período, câmera)
  * - Resultados com thumbnails e score de relevância
  * - Histórico de buscas
+ *
+ * CORE-03 §7: 5 estados obrigatórios (loading, empty, error, offline, partial)
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
+import { Loader2, AlertTriangle, WifiOff, Inbox, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Search, Sparkles, Clock, Camera, ScanFace, Filter,
   ChevronDown, ChevronUp, Download, History, X, CheckCircle2,
@@ -68,8 +72,25 @@ const suggestedQueries = [
   "Criança no estacionamento",
 ];
 
+type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-screen bg-background">
+      <Sidebar activeView="semantic-search" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+        <MobileHeader onMenuClick={() => {}} />
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function SemanticSearch() {
   const { t } = useI18n();
+  const [pageState, setPageState] = useState<PageState>("loading");
   const [query, setQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -96,229 +117,318 @@ export default function SemanticSearch() {
     setHasSearched(true);
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => setPageState("loaded"), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
+
+  // CORE-03 §7: 5 estados obrigatórios
+  if (pageState === "loading") {
+    return (
+      <Shell>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando busca semântica...</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (pageState === "error") {
+    return (
+      <Shell>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <AlertTriangle className="h-12 w-12 text-red-400" />
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Erro ao carregar</h3>
+            <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
+          </div>
+          <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (pageState === "offline") {
+    return (
+      <Shell>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <WifiOff className="h-12 w-12 text-zinc-400" />
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Connector offline</h3>
+            <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
+          </div>
+          <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (pageState === "empty") {
+    return (
+      <Shell>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <Inbox className="h-12 w-12 text-zinc-400" />
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Nenhuma busca realizada</h3>
+            <p className="text-sm text-muted-foreground mt-1">Digite uma descrição para buscar pessoas.</p>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar activeView="semantic-search" onNavigate={() => {}} mobileOpen={false} onMobileClose={() => {}} />
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
-        <MobileHeader onMenuClick={() => {}} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="font-display text-2xl font-bold tracking-tight">{t("semantic.title")}</h1>
-            <p className="text-sm text-muted-foreground mt-1">Encontre pessoas por descrição em linguagem natural</p>
-          </div>
+    <Shell>
+      {/* Partial sync banner */}
+      {pageState === "partial" && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400 mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          Sincronização parcial — alguns dados podem estar incompletos.
+        </div>
+      )}
 
-          {/* Search bar */}
-          <div className="mb-4">
-            <div className="relative">
-              <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Ex: homem de óculos, camisa azul, visto ontem na recepção..."
-                className="w-full rounded-xl border border-border bg-card pl-10 pr-28 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
-              />
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold tracking-tight">{t("semantic.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">Encontre pessoas por descrição em linguagem natural</p>
+      </div>
+
+      {/* Search bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            placeholder="Ex: homem de óculos, camisa azul, ontem no corredor..."
+            className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          {query && (
+            <button
+              onClick={() => { setQuery(""); setHasSearched(false); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Suggested queries */}
+      {!hasSearched && (
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sugestões</p>
+          <div className="flex flex-wrap gap-2">
+            {suggestedQueries.map((q) => (
               <button
-                onClick={() => handleSearch()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                key={q}
+                onClick={() => handleSearch(q)}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               >
-                <Search className="h-3.5 w-3.5" /> Buscar
+                <Sparkles className="h-3 w-3 text-primary" /> {q}
               </button>
-            </div>
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* Suggested queries */}
-          {!hasSearched && (
-            <div className="mb-6">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sugestões</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestedQueries.map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => handleSearch(q)}
-                    className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                  >
-                    <Sparkles className="h-3 w-3 text-primary" /> {q}
-                  </button>
-                ))}
+      {/* Filters */}
+      {hasSearched && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Filter className="h-3.5 w-3.5" />
+            {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+          </button>
+          {showFilters && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 p-3 rounded-lg border border-border bg-card">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Gênero:</span>
+                <select
+                  value={genderFilter}
+                  onChange={(e) => setGenderFilter(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                >
+                  <option value="all">Todos</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Feminino</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Óculos:</span>
+                <select
+                  value={glassesFilter}
+                  onChange={(e) => setGlassesFilter(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                >
+                  <option value="all">Todos</option>
+                  <option value="yes">Com óculos</option>
+                  <option value="no">Sem óculos</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Câmera:</span>
+                <select
+                  value={cameraFilter}
+                  onChange={(e) => setCameraFilter(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                >
+                  <option value="all">Todas</option>
+                  <option value="D2">D2 — Corredor</option>
+                  <option value="D3">D3 — Recepção</option>
+                  <option value="D5">D5 — Estacionamento</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Período:</span>
+                <select
+                  value={periodFilter}
+                  onChange={(e) => setPeriodFilter(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                >
+                  <option value="all">Qualquer</option>
+                  <option value="today">Hoje</option>
+                  <option value="yesterday">Ontem</option>
+                  <option value="week">Última semana</option>
+                </select>
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Filters */}
-          {hasSearched && (
-            <div className="mb-4">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Filter className="h-3.5 w-3.5" /> Filtros {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </button>
-              {showFilters && (
-                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3">
-                  <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
-                    <option value="all">Todos os gêneros</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Feminino</option>
-                  </select>
-                  <select value={glassesFilter} onChange={(e) => setGlassesFilter(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
-                    <option value="all">Óculos: todos</option>
-                    <option value="yes">Com óculos</option>
-                    <option value="no">Sem óculos</option>
-                  </select>
-                  <select value={cameraFilter} onChange={(e) => setCameraFilter(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
-                    <option value="all">Todas as câmeras</option>
-                    <option value="D1">D1 — Portão</option>
-                    <option value="D2">D2 — Corredor</option>
-                    <option value="D3">D3 — Recepção</option>
-                    <option value="D5">D5 — Estacionamento</option>
-                  </select>
-                  <select value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
-                    <option value="all">Todo período</option>
-                    <option value="today">Hoje</option>
-                    <option value="yesterday">Ontem</option>
-                    <option value="week">Última semana</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
+      {/* Results */}
+      {hasSearched && (
+        <>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">{results.length}</span> resultados para "<span className="text-primary">{query}</span>"
+            </p>
+            <button className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
+              <Download className="h-3.5 w-3.5" /> Exportar
+            </button>
+          </div>
 
-          {/* Results */}
-          {hasSearched && (
-            <>
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">{results.length}</span> resultados para "<span className="text-primary">{query}</span>"
-                </p>
-                <button className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors">
-                  <Download className="h-3.5 w-3.5" /> Exportar
-                </button>
+          <div className="space-y-3 mb-6">
+            {results.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground rounded-xl border border-border bg-card">
+                <Search className="h-10 w-10 mb-3 opacity-30" />
+                <p className="text-sm">Nenhum resultado encontrado</p>
+                <p className="text-xs mt-1">Tente uma descrição diferente ou ajuste os filtros</p>
               </div>
-
-              <div className="space-y-3">
-                {results.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground rounded-xl border border-border bg-card">
-                    <Search className="h-10 w-10 mb-3 opacity-30" />
-                    <p className="text-sm">Nenhum resultado encontrado</p>
-                    <p className="text-xs mt-1">Tente uma descrição diferente ou ajuste os filtros</p>
-                  </div>
-                ) : (
-                  results.map((r) => {
-                    const isExpanded = expandedId === r.id;
-                    const faceColor = r.faceList === "branca" ? "text-green-400" : r.faceList === "negra" ? "text-red-400" : "text-amber-400";
-                    return (
-                      <div key={r.id} className="rounded-xl border border-border bg-card overflow-hidden transition-all">
-                        <div
-                          className="flex items-center gap-4 p-4 cursor-pointer hover:bg-accent/30 transition-colors"
-                          onClick={() => setExpandedId(isExpanded ? null : r.id)}
-                        >
-                          {/* Thumbnail placeholder */}
-                          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted shrink-0">
-                            <ScanFace className={cn("h-6 w-6", faceColor)} />
+            ) : (
+              results.map((r) => {
+                const isExpanded = expandedId === r.id;
+                const faceColor = r.faceList === "branca" ? "text-green-400" : r.faceList === "negra" ? "text-red-400" : "text-amber-400";
+                return (
+                  <div key={r.id} className="rounded-xl border border-border bg-card overflow-hidden transition-all">
+                    <div
+                      className="flex items-center gap-4 p-4 cursor-pointer hover:bg-accent/30 transition-colors"
+                      onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                    >
+                      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted shrink-0">
+                        <ScanFace className={cn("h-6 w-6", faceColor)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">{r.personName}</p>
+                          <span className={cn("text-[10px] font-medium", faceColor)}>
+                            {r.faceList === "branca" ? "Lista Branca" : r.faceList === "negra" ? "Lista Negra" : "Estranho"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+                          <span className="flex items-center gap-1"><Camera className="h-3 w-3" /> {r.cameraId} — {r.cameraName}</span>
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {r.date} {r.time}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={cn("h-full", r.matchScore >= 85 ? "bg-green-500" : r.matchScore >= 70 ? "bg-amber-500" : "bg-red-500")}
+                              style={{ width: `${r.matchScore}%` }}
+                            />
                           </div>
+                          <span className="text-xs font-mono font-bold">{r.matchScore}%</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground mt-0.5">relevância</span>
+                      </div>
+                      <button className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                    </div>
 
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold">{r.personName}</p>
-                              <span className={cn("text-[10px] font-medium", faceColor)}>
-                                {r.faceList === "branca" ? "Lista Branca" : r.faceList === "negra" ? "Lista Negra" : "Estranho"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                              <span className="flex items-center gap-1"><Camera className="h-3 w-3" /> {r.cameraId} — {r.cameraName}</span>
-                              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {r.date} {r.time}</span>
-                            </div>
+                    {isExpanded && (
+                      <div className="border-t border-border bg-muted/20 p-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Gênero</p>
+                            <p className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> {r.attributes.gender === "M" ? "Masculino" : "Feminino"}</p>
                           </div>
-
-                          {/* Score */}
-                          <div className="flex flex-col items-end shrink-0">
-                            <div className="flex items-center gap-1.5">
-                              <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
-                                <div
-                                  className={cn("h-full", r.matchScore >= 85 ? "bg-green-500" : r.matchScore >= 70 ? "bg-amber-500" : "bg-red-500")}
-                                  style={{ width: `${r.matchScore}%` }}
-                                />
-                              </div>
-                              <span className="text-xs font-mono font-bold">{r.matchScore}%</span>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground mt-0.5">relevância</span>
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Idade</p>
+                            <p className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> {r.attributes.age}</p>
                           </div>
-
-                          <button className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
-                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Óculos</p>
+                            <p className="text-xs flex items-center gap-1"><Glasses className="h-3 w-3" /> {r.attributes.glasses ? "Sim" : "Não"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Camisa</p>
+                            <p className="text-xs flex items-center gap-1"><Shirt className="h-3 w-3" /> {r.attributes.shirtColor}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <button className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+                            <ScanFace className="h-3.5 w-3.5" /> Ver Perfil Completo
+                          </button>
+                          <button className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+                            <Camera className="h-3.5 w-3.5" /> Ver Snapshot
+                          </button>
+                          <button className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+                            <ArrowRight className="h-3.5 w-3.5" /> Ir para Timeline
                           </button>
                         </div>
-
-                        {isExpanded && (
-                          <div className="border-t border-border bg-muted/20 p-4">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Gênero</p>
-                                <p className="text-xs flex items-center gap-1"><User className="h-3 w-3" /> {r.attributes.gender === "M" ? "Masculino" : "Feminino"}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Idade</p>
-                                <p className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> {r.attributes.age}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Óculos</p>
-                                <p className="text-xs flex items-center gap-1"><Glasses className="h-3 w-3" /> {r.attributes.glasses ? "Sim" : "Não"}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Camisa</p>
-                                <p className="text-xs flex items-center gap-1"><Shirt className="h-3 w-3" /> {r.attributes.shirtColor}</p>
-                              </div>
-                            </div>
-                            <div className="mt-3 flex items-center gap-2">
-                              <button className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                                <ScanFace className="h-3.5 w-3.5" /> Ver Perfil Completo
-                              </button>
-                              <button className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                                <Camera className="h-3.5 w-3.5" /> Ver Snapshot
-                              </button>
-                              <button className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
-                                <ArrowRight className="h-3.5 w-3.5" /> Ir para Timeline
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </>
-          )}
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
 
-          {/* Search history */}
-          {!hasSearched && (
-            <div className="mt-8">
-              <div className="flex items-center gap-2 mb-3">
-                <History className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Buscas Recentes</p>
-              </div>
-              <div className="space-y-2">
-                {mockHistory.map((h, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSearch(h.query)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 text-left hover:bg-accent/30 transition-colors"
-                  >
-                    <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs font-medium flex-1 truncate">{h.query}</span>
-                    <span className="text-[10px] text-muted-foreground">{h.results} resultados</span>
-                    <span className="text-[10px] text-muted-foreground/50">{h.timestamp.substring(11, 16)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
+      {/* Search history */}
+      {!hasSearched && (
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-3">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Buscas recentes</p>
+          </div>
+          <div className="space-y-2">
+            {mockHistory.map((h, i) => (
+              <button
+                key={i}
+                onClick={() => handleSearch(h.query)}
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 text-left hover:bg-accent/30 transition-colors"
+              >
+                <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium flex-1 truncate">{h.query}</span>
+                <span className="text-[10px] text-muted-foreground">{h.results} resultados</span>
+                <span className="text-[10px] text-muted-foreground/50">{h.timestamp.substring(11, 16)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </Shell>
   );
 }

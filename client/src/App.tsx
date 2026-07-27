@@ -16,6 +16,7 @@ import Encomendas from "@/pages/Encomendas";
 import PainelAdministradora from "@/pages/PainelAdministradora";
 import Reservas from "@/pages/Reservas";
 import LivroOcorrencias from "@/pages/LivroOcorrencias";
+import RelatorioValor from "@/pages/RelatorioValor";
 import VehicleManagement from "@/pages/VehicleManagement";
 import SystemConfig from "@/pages/SystemConfig";
 import Login from "@/pages/Login";
@@ -130,6 +131,9 @@ function Router() {
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/livro-ocorrencias">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/relatorio-valor">
         <ProtectedRoute component={Dashboard} />
       </Route>
       <Route path="/settings">

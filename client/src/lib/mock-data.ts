@@ -6,6 +6,7 @@ import {
   SiteSummary, OrgMetrics,
   CommonArea, Reservation, ReservationMetrics,
   Occurrence, OccurrenceMetrics,
+  ValueReport,
 } from "./types";
 
 // Mock data para desenvolvimento do frontend sem Supabase configurado
@@ -364,4 +365,70 @@ export const mockOccurrenceMetrics: OccurrenceMetrics = {
   criticas: 2,
   tempoMedioResolucao: "1h 42min",
   comBoletim: 3,
+};
+
+// ===== T9: Relatório de Valor =====
+
+export const mockValueReport: ValueReport = {
+  period: "mes",
+  periodLabel: "Julho 2026",
+  generatedAt: "2026-07-26T10:00:00Z",
+  siteName: "Condomínio Alphaville Residencial",
+  siteType: "Condomínio",
+
+  securityMetrics: [
+    { label: "Tentativas de invasão bloqueadas", value: 14, unit: "eventos", trend: 27, benchmark: "Média do setor: 8/mês" },
+    { label: "Tempo médio de resposta", value: 42, unit: "segundos", trend: -15, benchmark: "SLA contratado: <60s" },
+    { label: "Vandalismo detectado", value: 3, unit: "ocorrências", trend: -40, benchmark: "Média do setor: 5/mês" },
+    { label: "Furtos preventidos", value: 7, unit: "eventos", trend: 12, benchmark: "Média do setor: 3/mês" },
+    { label: "Acessos irregulares bloqueados", value: 22, unit: "eventos", trend: 8, benchmark: "Média do setor: 15/mês" },
+  ],
+  blockedAttempts: 14,
+  blockedTrend: 27,
+
+  patrolRecords: [
+    { date: "26/07", route: "Ronda Noturna - Perímetro", scheduled: 4, completed: 4, missed: 0, coveragePct: 100 },
+    { date: "25/07", route: "Ronda Diurna - Estacionamento", scheduled: 6, completed: 6, missed: 0, coveragePct: 100 },
+    { date: "24/07", route: "Ronda Noturna - Perímetro", scheduled: 4, completed: 3, missed: 1, coveragePct: 75 },
+    { date: "23/07", route: "Ronda Diurna - Áreas Comuns", scheduled: 6, completed: 6, missed: 0, coveragePct: 100 },
+    { date: "22/07", route: "Ronda Noturna - Perímetro", scheduled: 4, completed: 4, missed: 0, coveragePct: 100 },
+    { date: "21/07", route: "Ronda Diurna - Estacionamento", scheduled: 6, completed: 5, missed: 1, coveragePct: 83 },
+    { date: "20/07", route: "Ronda Noturna - Perímetro", scheduled: 4, completed: 4, missed: 0, coveragePct: 100 },
+  ],
+  patrolCoverage: 94,
+  patrolTrend: 5,
+
+  eventSummaries: [
+    { category: "Estranho em área restrita", total: 38, blocked: 38, resolved: 38, avgResponseTime: "38s" },
+    { category: "Veículo não autorizado", total: 22, blocked: 22, resolved: 22, avgResponseTime: "45s" },
+    { category: "Pessoa na lista de acesso negado", total: 8, blocked: 8, resolved: 8, avgResponseTime: "12s" },
+    { category: "Movimento fora de horário", total: 15, blocked: 0, resolved: 15, avgResponseTime: "1min 20s" },
+    { category: "Porta/permanência aberta", total: 11, blocked: 0, resolved: 11, avgResponseTime: "2min 05s" },
+  ],
+  totalEvents: 812,
+  eventsTrend: 18,
+
+  complianceItems: [
+    { label: "LGPD — Consentimento de biometria", status: "conforme", detail: "98% dos moradores com consentimento ativo" },
+    { label: "LGPD — Retenção de snapshots (24h)", status: "conforme", detail: "Política de expurgo automático configurada" },
+    { label: "LGPD — Log de acesso a dado biométrico", status: "conforme", detail: "Todas as consultas registradas com timestamp e operador" },
+    { label: "LGPD — Alternativa não-biométrica", status: "conforme", detail: "Tag RFID e QR Code disponíveis como alternativa" },
+    { label: "RIPD — Relatório de Impacto", status: "pendente", detail: "Atualização trimestral em revisão pelo DPO" },
+    { label: "ECA — Proteção de menores (escola)", status: "nao_aplicavel", detail: "Não aplicável — unidade é condomínio" },
+  ],
+  complianceScore: 83,
+
+  highlights: [
+    "14 tentativas de invasão bloqueadas pelo GuardIA Percebe — 27% acima do mês anterior",
+    "Tempo médio de resposta reduziu 15%, ficando em 42 segundos (SLA: <60s)",
+    "94% de cobertura de rondas — 5% acima do mês anterior",
+    "7 furtos preventidos pela detecção de estranhos no estacionamento",
+    "98% de conformidade LGPD com consentimento ativo",
+  ],
+  recommendations: [
+    "Revisar RIPD trimestral — vence em 15 dias",
+    "Considerar expansão de IA para câmera D6 (bike rack) — 1 furto registrado sem cobertura",
+    "Ronda noturna de 24/07 teve 1 ponto perdido — investigar causa raiz",
+    "Porta/permanência aberta tem tempo de resposta de 2min — criar automação de alerta prioritário",
+  ],
 };
