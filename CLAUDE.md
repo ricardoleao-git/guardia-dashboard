@@ -44,7 +44,7 @@ Verticais de largada: **condomínio** e **escolas**. Roadmap: câmaras frias, co
 
 Schema completo, RLS e ordem das migrations: `CORE-01_MODELO-DE-DADOS-CORE.md`. O nome da coluna (`org_id` + `site_id`, como está no DDL, ou `tenant_id`) e o nome da tabela de eventos (`events` × `camera_events` × `p6s_events`) são **PND-16** — decidir com o Tiago **antes da migration 001**, junto com PND-02 (chaves `FaceUUID`/`GroupID2`).
 
-> 🚫 **Não criar tabela nova neste repositório até PND-16 e PND-02 estarem decididas.** Ver §14.5.
+> 🚫 **Não criar tabela nova neste repositório até PND-16 e PND-02 estarem decididas.** Ver §14.3.
 
 ## 4. Protocolo P6S (driver `p6s`) — contratos exatos
 
@@ -106,7 +106,7 @@ Tipos v0: `face.recognized`, `face.unknown` ("estranho"), `fence.intrusion`, `li
 
 > 🚫 Nomes como `face_list`, `face_score`, `recognize_image`, `capture_image`, `BlackList`, `WhiteList` são vocabulário P6S. Não podem aparecer em tabela, API interna ou tipo compartilhado. Ficam confinados ao driver.
 >
-> **Hoje a tabela `camera_events` viola isto em cinco colunas** — ver §14.4.
+> **Hoje a tabela `camera_events` viola isto em cinco colunas** — ver §9 item 4.
 
 Perfis por vertical ligam/desligam eventos por device via `strategy` do heartbeat:
 - **Escolar:** facial (estranho), queda, fumaça, cerca virtual, contagem em pátio — cerca e contagem **bloqueadas até o parecer jurídico** (§7).
@@ -122,9 +122,9 @@ Não é aviso jurídico no rodapé: é código.
 
 Regras duras:
 - Dado biométrico é **dado sensível** (LGPD Art. 5º, II). O rol de bases legais do Art. 11 é **taxativo** e **não** inclui legítimo interesse.
-- **Log de auditoria é append-only.** `DELETE` em tabela de auditoria, mesmo por admin, é bug. *(Violado hoje — §14.4.)*
+- **Log de auditoria é append-only.** `DELETE` em tabela de auditoria, mesmo por admin, é bug. *(Remediado — ver §14.2)*
 - **Nenhuma tabela de biometria ou de presença escolar recebe carga real** antes de: base legal por vertical definida, política de retenção do snapshot documentada e **parecer jurídico do enquadramento escolar** (cerca virtual + contagem em pátio). Escola trata dado de menor — foco explícito de fiscalização da ANPD (NT nº 5/2025).
-- RLS `USING (true)` em tabela com dado pessoal é bug de segurança, não conveniência de desenvolvimento. *(16 ocorrências hoje — §14.2.)*
+- RLS `USING (true)` em tabela com dado pessoal é bug de segurança, não conveniência de desenvolvimento. *(Remediado — 0 ocorrências, ver §14.2)*
 
 ## 8. Bancada (referência, com conflitos abertos)
 
@@ -134,7 +134,7 @@ NVR **RS-436MLJ-L2/S8** em `192.168.254.116`. Câmeras **T5AI** (as do projeto) 
 
 ## 9. Erros conhecidos do código atual — não repetir, não imitar
 
-Este repositório foi gerado em grande parte por IA (Manus) sem acesso à documentação do protocolo. Bugs estruturais confirmados por auditoria (26/07/2026), **com status remedido em 27/07 no HEAD `7c16728`**:
+Este repositório foi gerado em grande parte por IA (Manus) sem acesso à documentação do protocolo. Bugs estruturais confirmados por auditoria (26/07/2026), **com status remedido em 27/07 no HEAD `c6d2c12`**:
 
 | # | Defeito | Status |
 |---|---|---|
@@ -144,10 +144,10 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 | 4 | `camera_events` carrega vocabulário de fabricante (§6) | 🔴 **aberto** — `face_list`, `person_name`, `face_score`, `recognize_image`, `capture_image` |
 | 5 | Correlação por `person_name`; `face_lists.face_id` guarda o ID **da câmera** em vez do `FaceUUID`; turma virou texto livre em vez de `GroupID2` | 🔴 **aberto** |
 | 6 | **Zero coluna de tenancy** nas tabelas existentes | 🔴 **aberto** — 0 ocorrências de `org_id`/`tenant_id` em `db/` |
-| 7 | RLS permissiva: `_read USING (true)`, incluindo `face_lists` e `attendance`; `camera_events` aceita insert anônimo | 🔴 **aberto** — 16 policies |
-| 8 | `audit_logs` permite `DELETE` a admin | 🔴 **aberto** — policy `audit_logs_delete_admin FOR DELETE` |
-| 9 | Segredos e dados versionados: `connector/config/config.yaml` (senhas de câmera em texto claro), pasta `backups/` | 🟡 **fora do tracking, presentes no histórico** dos 54 commits públicos. Expurgo do histórico + rotação seguem obrigatórios |
-| 10 | Telemetria Manus: `client/public/__manus__/debug-collector.js` (821 linhas) + 3 plugins no `vite.config.ts` | 🟡 **parcial** — coletor e plugins removidos. **Restam:** umami no `index.html`, `allowedHosts: true`, `ManusDialog.tsx`, `Map.tsx` (Forge), 18 refs a `/manus-storage/`, `@types/google.maps` |
+| 7 | RLS permissiva: `_read USING (true)`, incluindo `face_lists` e `attendance`; `camera_events` aceita insert anônimo | 🟢 **remediado** — 0 `USING (true)`, 0 `WITH CHECK (true)` nos SQLs; 28 policies ativas, 0 permissivas (ver §14.2) |
+| 8 | `audit_logs` permite `DELETE` a admin | 🟢 **remediado** — policy `audit_logs_delete_admin` removida; `DROP POLICY IF EXISTS` em `00_setup_complete.sql:161` e `add_audit_logs.sql:39` (ver §14.2) |
+| 9 | Segredos e dados versionados: `connector/config/config.yaml` (senhas de câmera em texto claro), pasta `backups/` | 🟡 **fora do tracking, presentes no histórico** dos 64 commits públicos. Expurgo do histórico + rotação seguem obrigatórios |
+| 10 | Telemetria Manus: `client/public/__manus__/debug-collector.js` (821 linhas) + 3 plugins no `vite.config.ts` | 🟢 **remediado** — coletor, plugins, umami, `ManusDialog.tsx`, `Map.tsx`, `/manus-storage/` refs: todos em 0. `allowedHosts` restrito a `[".manus.computer"]`. **Restam:** `@types/google.maps` em `package.json` (dep órfã) |
 | 11 | Domínio de deploy usa "vms" — contra o posicionamento (§2) | 🔴 **aberto e no ar** |
 
 ## 10. Regras para o agente
@@ -164,7 +164,7 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 10. **Fornecedor Ruision** tem risco reputacional (acionista Megvii; Entity List BIS / NS-CMIC OFAC) — qualquer material voltado a órgão público passa pelo jurídico antes.
 11. **Não afirmar conformidade sem medir.** Antes de escrever "RLS está fechada", "sem credenciais no código" ou "todas as telas têm X", rodar o comando correspondente do §14.1 e colar o número.
 12. **RLS na mesma transação da tabela.** Nenhuma `CREATE TABLE` sem `ENABLE ROW LEVEL SECURITY` e policies no mesmo arquivo SQL. Toda policy nova vem precedida de `DROP POLICY IF EXISTS` — policies permissivas se combinam com **OR**, então adicionar uma restritiva ao lado de uma permissiva **não fecha nada**. Motivo: há uma chave válida do projeto em repositório público (§14.4).
-13. **Nenhuma credencial em mensagem de commit**, de nenhuma classe. Referenciar por nome (`VITE_SUPABASE_ANON_KEY atualizada`), nunca por valor. O commit `7929b21` violou isto com a publishable key nova; a classe da chave perdoou, a próxima pode não perdoar.
+13. **Nenhuma credencial em mensagem de commit**, de nenhuma classe. Referenciar por nome (`VITE_SUPABASE_ANON_KEY atualizada`), nunca por valor. O commit `5f31f3c` violou isto com a publishable key nova; a classe da chave perdoou, a próxima pode não perdoar.
 
 ## 11. Equipe e fluxo
 
@@ -178,11 +178,11 @@ Fluxo: Ricardo especifica e prototipa → Tiago e João + Claude Code implementa
 
 `segurança → guardrails → bancada → schema → connector`
 
-### 12.0 Nota — `shouldUseMockData()` é código morto
+### 12.0 Nota — `shouldUseMockData()` era código morto (~~deletada~~)
 
 `client/src/lib/guest-mode.ts` tinha o `||` dentro do `Boolean()`, o que fazia o ramo "Supabase não configurado" nunca disparar. O bug era real e foi corrigido.
 
-**Mas a função não é chamada por ninguém** (0 callers fora da própria definição), então o bug nunca teve efeito. A degradação para mock já existia, implementada corretamente em todos os 7 hooks:
+**A função foi deletada em 27/07** — 0 ocorrências em `client/src/`. A degradação para mock já existia, implementada corretamente em todos os 7 hooks:
 
 ```ts
 if (isSupabaseConfigured && !isGuestSession()) { /* Supabase */ } else { /* mock */ }
@@ -190,16 +190,16 @@ if (isSupabaseConfigured && !isGuestSession()) { /* Supabase */ } else { /* mock
 
 E `supabase.ts` já guardava o caso: `supabase = isSupabaseConfigured ? createClient(...) : null`. Sem env vars, as 32 telas caem em mock sozinhas.
 
-> ⚠️ **`shouldUseMockData()` deve ser deletada, não mantida corrigida.** Função órfã com aparência de guarda de segurança é armadilha: o próximo leitor supõe uma proteção que ninguém invoca. Deletar junto com o comentário `§12.0` que está dentro dela.
+> ~~⚠️ **`shouldUseMockData()` deve ser deletada, não mantida corrigida.**~~ — **Deletada em 27/07.** Função órfã com aparência de guarda de segurança era armadilha: o próximo leitor suporia uma proteção que ninguém invocava.
 
 *(Registro de proveniência: este bloco era, até 27/07 15:00, um "passo zero bloqueante" que afirmava que rotacionar a chave sem corrigir a função quebraria as telas ligadas. A afirmação estava errada — o caminho de dados foi inferido em vez de rastreado. Mantido aqui como nota porque a lição é a do §14.7.3: medir, não deduzir.)*
 
 1. **Fase A′ — segurança do repo:** runbook completo em `CORE-06_FAXINA-DO-PROTOTIPO.md` — rotação de senhas, expurgo de segredos do histórico do git, telemetria removida, RLS fechada, auditoria append-only. Cobre os 11 itens do §9. Sequência mínima, nesta ordem (a ordem importa — ver §14.3):
-   1. ~~corrigir `shouldUseMockData()`~~ — **feito**; ver §12.0. Pendente: **deletar** a função e limpar `signIn` do modo demo (§14.3);
-   2. rotacionar a anon key e **remover os dois literais hardcoded** (`client/src/lib/supabase.ts:7` e `client/src/lib/guest-mode.ts:19`);
-   3. adicionar `isGuestSession()` em `useSearchPresets` e `useAuditLog`;
-   4. fechar a RLS (prioridade: `search_presets`, `face_lists`, `profiles`, insert de `camera_events`);
-   5. derrubar ou proteger o deploy público, remover umami.
+   1. ~~corrigir `shouldUseMockData()`~~ — **feito e deletado**; ver §12.0. ~~Limpar `signIn` do modo demo~~ — **feito** (§14.2 🟢);
+   2. ~~rotacionar a anon key e **remover os dois literais hardcoded** (`client/src/lib/supabase.ts:7` e `client/src/lib/guest-mode.ts:19`)~~ — **feito** (§14.2 🟢). Rotação da chave legada no painel ainda pendente (§14.3);
+   3. ~~adicionar `isGuestSession()` em `useSearchPresets` e `useAuditLog`~~ — **feito** (§14.2 🟢);
+   4. ~~fechar a RLS (prioridade: `search_presets`, `face_lists`, `profiles`, insert de `camera_events`)~~ — **feito** (§14.2 🟢);
+   5. ~~derrubar ou proteger o deploy público, remover umami~~ — **umami removido** (§14.2 🟢). Deploy público ainda ativo em `guardia-vms.zenitetech.com` (§14.3).
 2. **Este arquivo** como contrato do repositório.
 3. **Bancada** — comandos prontos em `P6S-09_ROTEIRO-DE-BANCADA.md`: probe do NVR, safety code (**PND-01**, 10 min, 🔴 bloqueia a Fase 2 inteira), criar grupo, cadastrar pessoa+foto, ver evento de reconhecimento, `HTTPEventServerConfigV2`, `RemoteOpenDoor`, repetir via MQTT, **medir tempo por cadastro**. Só foto sintética na bancada.
 4. **Catálogo canônico v0 como JSON Schema** + contrato de driver versionado + **schema multi-tenant com migrations 001–007 de `CORE-01_MODELO-DE-DADOS-CORE.md` §8**. Usar `db/01_extended_tables.sql` como **levantamento de requisitos de campos**, nunca como schema final.
@@ -225,9 +225,9 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 ---
 
-# §14. Estado real medido — HEAD `b18ed469`, 27/07/2026 17:05
+# §14. Estado real medido — HEAD `c6d2c12`, 27/07/2026 17:20
 
-Medido em clone limpo, não declarado. 63 commits, 32 páginas em `client/src/pages/`.
+Medido em clone limpo, não declarado. 64 commits, 32 páginas em `client/src/pages/`.
 
 **A Fase A′ (§12.1) foi executada e validada.** O que resta na coluna vermelha não é do Manus: é decisão humana, bancada ou painel do Supabase.
 
@@ -270,7 +270,7 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | Hooks guardados | `isGuestSession()` nos 7 hooks de dados; validado em **runtime**: modo demo faz **zero** requisição a `supabase.co`, 0 erro de console |
 | Telemetria e terceiros | umami, `manus-storage`, Forge/`butterfly`, `ManusDialog.tsx`, `Map.tsx` → todos em 0, sem imports pendurados |
 | Logo local | `client/public/guardia-percebe-logo.png`, 7 refs trocadas, plugin de proxy removido |
-| Build de clone limpo | `tsc` 0 erros, `vite build` 8.52s (antes: quebrava por `@shared` ausente) |
+| Build de clone limpo | `tsc` 0 erros, `vite build` 6.41s, 1786 módulos (antes: quebrava por `@shared` ausente) |
 | `allowedHosts` | `[".manus.computer"]` em vez de `true` — resíduo de ambiente Manus, **não** vetor de exposição pública |
 | **`signIn` limpa modo demo** | `localStorage.removeItem("guardia_guest")` + `setIsGuest(false)` chamados **antes** de `signInWithPassword` — usuário que vem do demo faz login real sem ficar preso em mock. Verificado em `AuthContext.tsx` linhas 129–130 |
 | **Sidebar freeze corrigido** | 5 causas raiz eliminadas: (1) `LiveStream.tsx` — WebSocket sem cleanup → `wsRef` + `ws.close()` + `abortedRef`; (2) `Dashboard.tsx` — `key={viewKey}` forçava remount em toda navegação → removido; (3) `useEvents.ts` — mock interval rodava em todas as páginas → gate `shouldPoll`; (4) `App.tsx` — 35 rotas separadas faziam o wouter tratar Dashboard como componente novo a cada clique → consolidado em rota única `/*`; (5) 16 sub-páginas tinham `Sidebar`/`MobileHeader` embutidos → todos removidos. Testado: 5+ navegações sem freeze, DOM com 1 sidebar, 0 erros TypeScript |
@@ -345,10 +345,10 @@ O §14 tem carimbo de HEAD. Ele **envelhece em silêncio** — nada no arquivo a
 
 Ocorreram após o último corte da base de conhecimento. Validados por auditoria remota.
 
-1. **Deploy público ativo:** `guardia-vms.zenitetech.com` no ar servindo bundle com a anon key embutida. Rotação da chave é a ação mais urgente do repositório (§12.1).
-2. **A chave era `anon`, não `service_role`** — **não houve bypass de RLS por privilégio**. ⚠️ Isto delimita a severidade, **não** dispensa a rotação: com as 16 policies `USING (true)` do §14.2, a chave `anon` lê `face_lists` (incluindo `document`, que carrega CPF/RG/matrícula), `attendance`, `profiles`, `vehicles`, `visitor_invites`, e escreve em `search_presets`. Renomear o campo para `anon_key` no `config.example.yaml`.
-3. **`allowedHosts: true`** foi setado pelo Manus em 26/07 para preview via proxy. Intencional e temporário — remover ao sair do Manus.
-4. **A faxina alcançou 22 páginas:** coletor `__manus__`, 3 plugins e deps Manus removidos do HEAD. Pendentes: anon key, umami, `@types/google.maps`, `ManusDialog.tsx`, `/manus-storage/*`, `Map.tsx`.
+1. **Deploy público ativo:** `guardia-vms.zenitetech.com` no ar. ~~Servindo bundle com a anon key embutida~~ — **anon key removida do código e do bundle** (§14.2 🟢). A chave `anon` **legada ainda está ativa no painel do Supabase** — revogar lá (§14.3).
+2. **A chave era `anon`, não `service_role`** — **não houve bypass de RLS por privilégio**. ⚠️ Isto delimita a severidade, **não** dispensa a rotação: ~~com as 16 policies `USING (true)` do §14.2~~ — **RLS fechada em 27/07** (0 `USING (true)`, ver §14.2). A chave `anon` legada ainda está ativa no painel e é extraível de 5 commits públicos (§14.3). Renomear o campo para `anon_key` no `config.example.yaml`.
+3. ~~**`allowedHosts: true`** foi setado pelo Manus em 26/07 para preview via proxy. Intencional e temporário — remover ao sair do Manus.~~ — **remediado**: `allowedHosts` agora é `[".manus.computer"]` (§14.2 🟢).
+4. **A faxina alcançou 22 páginas:** coletor `__manus__`, 3 plugins e deps Manus removidos do HEAD. ~~Pendentes: anon key, umami, `@types/google.maps`, `ManusDialog.tsx`, `/manus-storage/*`, `Map.tsx`~~ — **todos remediados** (§14.2 🟢), exceto `@types/google.maps` (dep órfã em `package.json`).
 5. **Buckets no Supabase Storage:** `event-images` (público) + `backups` (privado) — além da pasta homônima do git. Verificar visibilidade e fechar insert anônimo em `storage.objects`.
 6. **Domínio "vms" ativo:** contradiz o posicionamento (§2). Trocar **antes de qualquer demo a cliente** — e ver §16.2.
 7. **React error #310 corrigido** no checkpoint `64290b45`: memoizar `t`/context em `I18nContext`, estabilizar `addNotification` e `actionConfig` em `RealtimeNotifications`.
