@@ -225,9 +225,9 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 ---
 
-# §14. Estado real medido — HEAD `5bdfc1a2` + uncommitted, 27/07/2026 17:00
+# §14. Estado real medido — HEAD `b18ed469`, 27/07/2026 17:05
 
-Medido em clone limpo, não declarado. 62 commits, 32 páginas em `client/src/pages/`.
+Medido em clone limpo, não declarado. 63 commits, 32 páginas em `client/src/pages/`.
 
 **A Fase A′ (§12.1) foi executada e validada.** O que resta na coluna vermelha não é do Manus: é decisão humana, bancada ou painel do Supabase.
 
@@ -246,7 +246,7 @@ grep -c umami client/index.html                        # (0)
 grep -r '@shared' client/src | wc -l                   # (0) imports órfãos
 grep -ri 'org_id\|tenant_id' db/ | wc -l               # (0) 🔴 tenancy ausente
 grep -rln 'type PageState' client/src/pages | wc -l    # (13) duplicação dos 5 estados
-git log --oneline -S'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' | wc -l  # (4) 🔴 chave no histórico
+git log --oneline -S'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' | wc -l  # (5) 🔴 chave no histórico
 ```
 
 Build em clone limpo, verificado neste HEAD:
@@ -254,10 +254,10 @@ Build em clone limpo, verificado neste HEAD:
 ```
 npm install     → exit 0
 npx tsc --noEmit → exit 0, 0 erros
-npx vite build   → exit 0, 1785 módulos, 8.52s
+npx vite build   → exit 0, 1786 módulos, 6.41s
 ```
 
-Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** do ID do projeto (`ycqrgrcz`), **0** de `umami`/`manus`/`butterfly`. O `guardia-percebe-logo.png` (90 KB) é emitido corretamente. As 6 ocorrências de `supabase.co` no bundle são strings da própria lib `@supabase/supabase-js`, sem subdomínio de projeto.
+Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** do ID do projeto (`ycqrgrcz`), **0** de `umami`/`manus`/`butterfly`. O `guardia-percebe-logo.png` (90 KB) é emitido corretamente. As 6 ocorrências de `supabase.co` no bundle são strings da própria lib `@supabase/supabase-js`, sem subdomínio de projeto. **Build re-medido em `b18ed469`: 1786 módulos, 6.41s.**
 
 ## 14.2 🟢 Fechados e verificados
 
@@ -279,8 +279,8 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 
 | Item | Onde / custo | Observação |
 |---|---|---|
-| **Chave `anon` JWT legada ativa** | painel do Supabase | A `sb_publishable_*` nova foi criada e configurada, mas **criar publishable não revoga a JWT legada** — são ações separadas. A chave antiga é extraível de **4 commits públicos**. Ver §14.4 |
-| Credenciais no histórico do git | `git filter-repo` | `connector/config/config.yaml` (senhas de câmera em texto claro) e 24 arquivos de `backups/` nos commits até `72f1cbd`. **Limpar as mensagens de commit no mesmo passe** — o `7929b21` traz a publishable key nova no corpo da mensagem |
+| **Chave `anon` JWT legada ativa** | painel do Supabase | A `sb_publishable_*` nova foi criada e configurada, mas **criar publishable não revoga a JWT legada** — são ações separadas. A chave antiga é extraível de **5 commits públicos**. Ver §14.4 |
+| Credenciais no histórico do git | `git filter-repo` | `connector/config/config.yaml` (senhas de câmera em texto claro) e 24 arquivos de `backups/` nos commits até `72f1cbd`. **Limpar as mensagens de commit no mesmo passe** — o `5f31f3c` traz a publishable key nova no corpo da mensagem |
 | **PND-01** — safety code | **10 min de bancada** | 🔴 Bloqueia a **Fase 2 inteira**. Maior retorno por minuto do projeto |
 | **PND-16 / PND-02** | conversa com o Tiago | **0** ocorrências de `org_id`/`tenant_id` nas 12 tabelas. Bloqueia o §12.4. Nenhuma `CREATE TABLE` até decidir |
 | **PND-17** | decisão + porte | 32 telas aqui × 12 no monorepo = **20 a portar**. Custo cresce a cada checkpoint. Ver §16.1 |
