@@ -1,0 +1,113 @@
+"""
+GuardIA Connector — Tradutor P6S → catálogo canônico.
+
+Fronteira dura (CLAUDE.md §6): vocabulário de fabricante não passa desta
+camada. Tudo que sai daqui é CanonicalEvent — sem `face_list`, `face_score`,
+`recognize_image`, `capture_image` nem `person_name`.
+
+[LACUNA] importante: o formato exato do corpo de evento `[HTTP]`/`[MQTT]`
+(CLAUDE.md §3.2/§3.3: "mesmo corpo, envelope diferente") não está na
+documentação disponível aqui campo a campo. RAW_FIELD_* abaixo são a
+melhor hipótese hoje — herdada dos nomes que já apareciam no
+`camera_events` atual (`db/00_setup_complete.sql`), que por sua vez vieram
+de inspeção de payload real em algum momento do protótipo. Precisam ser
+confirmados contra um payload capturado na bancada (P6S-09) antes de
+qualquer cliente real depender disso. `FaceUUID`/`GroupID2` são a exceção:
+essas duas vêm direto do protocolo documentado (§3.5) e não são hipótese.
+"""
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict
+
+from loguru import logger
+
+from canonical_events import CanonicalEvent, Correlation, CanonicalEventError
+
+# Vendor face-list markers → o device manda o hint da lista batida.
+# "Stranger"/None/ausente => face.unknown; qualquer lista nomeada
+# associada a um FaceUUID conhecido => face.recognized.
+_UNKNOWN_FACE_LIST_MARKERS = {None, "", "Stranger", "BlackList"}
+
+_RAW_EVENT_FAMILY_TO_CANONICAL = {
+    "fence": "fence.intrusion",
+    "line": "line.crossed",
+    "flow": "flow.count",
+    "fall": "person.fall",
+    "smoke": "smoke.detected",
+    "door": "door.held_open",
+    "post": "post.abandoned",
+}
+
+
+class UnrecognizedRawEventType(CanonicalEventError):
+    """Tipo de evento fora do vocabulário conhecido — não inventar mapeamento."""
+
+
+def _to_iso8601(raw_time: Any) -> str:
+    if isinstance(raw_time, str) and raw_time:
+        return raw_time
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _face_or_plate_subtype(raw: Dict[str, Any], family: str) -> str:
+    list_marker = raw.get("face_list") if family == "face" else raw.get("plate_list")
+    has_correlation_id = bool(raw.get("FaceUUID"))
+    if list_marker in _UNKNOWN_FACE_LIST_MARKERS or not has_correlation_id:
+        return f"{family}.unknown"
+    return f"{family}.recognized"
+
+
+def translate_push_body(
+    raw: Dict[str, Any],
+    source_channel: str,
+    device_serial: str,
+) -> CanonicalEvent:
+    """
+    Traduz um corpo de evento P6S (push HTTP ou MQTT — mesmo shape) para
+    CanonicalEvent. Levanta UnrecognizedRawEventType se o `event_type`
+    bruto não estiver no vocabulário conhecido — silenciar isso seria
+    inventar comportamento (CLAUDE.md §10.1).
+    """
+    if raw.get("person_name"):
+        logger.warning(
+            "[translator] payload trouxe person_name — CAMPO IGNORADO. "
+            "Correlação é sempre por FaceUUID/GroupID2 (CLAUDE.md §5), nunca por nome."
+        )
+
+    raw_family = str(raw.get("event_type", "")).lower()
+
+    if raw_family in ("face", "plate"):
+        canonical_type = _face_or_plate_subtype(raw, raw_family)
+    elif raw_family in _RAW_EVENT_FAMILY_TO_CANONICAL:
+        canonical_type = _RAW_EVENT_FAMILY_TO_CANONICAL[raw_family]
+    else:
+        raise UnrecognizedRawEventType(
+            f"event_type bruto desconhecido: {raw_family!r}. "
+            "Registrar como [LACUNA] e não deduzir por analogia."
+        )
+
+    attributes: Dict[str, Any] = {}
+    if raw.get("face_score") is not None:
+        attributes["match_score"] = raw["face_score"]
+    if isinstance(raw.get("attributes"), dict):
+        attributes.update(raw["attributes"])
+
+    snapshot_ref = raw.get("capture_image") or raw.get("recognize_image")
+
+    event = CanonicalEvent(
+        event_id=str(raw.get("event_id") or f"{device_serial}-{int(time.time() * 1000)}"),
+        event_type=canonical_type,
+        device_serial=device_serial,
+        occurred_at=_to_iso8601(raw.get("event_time")),
+        received_at=datetime.now(timezone.utc).isoformat(),
+        source_channel=source_channel,
+        correlation=Correlation(
+            face_uuid=raw.get("FaceUUID"),
+            group_id2=raw.get("GroupID2") or raw.get("FaceGroupID"),
+        ),
+        attributes=attributes,
+        snapshot_ref=snapshot_ref,
+        raw_debug=raw,
+    )
+    event.validate()
+    return event

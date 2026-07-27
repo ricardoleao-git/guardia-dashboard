@@ -19,6 +19,7 @@ class CameraConfig:
     password: str = ""
     enabled: bool = True
     port: int = 80
+    vertical: str = "condominio"  # "condominio" | "escolar" — perfil de strategy.py
 
 
 @dataclass
@@ -39,6 +40,31 @@ class ConnectorConfig:
 
 
 @dataclass
+class IngestionConfig:
+    """Receptor de push HTTP (P6SHTTP) — canal primário, CLAUDE.md §3.2."""
+
+    http_host: str = "0.0.0.0"
+    http_port: int = 8443
+    http_path: str = "/p6s/events"
+    # [LACUNA] formato exato da assinatura do push — ver push_auth.py.
+    push_auth_mode: str = "log_only"  # "log_only" | "hmac_sha1" | "disabled"
+
+
+@dataclass
+class MqttConfig:
+    """Túnel MQTT (P6SEventMQTTConfig), CLAUDE.md §3.3. Broker: EMQX (nosso)."""
+
+    enabled: bool = False
+    broker_host: str = ""
+    broker_port: int = 8883
+    use_tls: bool = True
+    username: str = ""
+    password: str = ""
+    # [LACUNA] nome exato do tópico de eventos — confirmar na bancada/EMQX.
+    event_topic_pattern: str = "p6s/+/events"
+
+
+@dataclass
 class WhatsAppConfig:
     enabled: bool = False
     phone_number_id: str = ""
@@ -53,6 +79,8 @@ class AppConfig:
     connector: ConnectorConfig
     cameras: List[CameraConfig] = field(default_factory=list)
     whatsapp: Optional[WhatsAppConfig] = None
+    ingestion: IngestionConfig = field(default_factory=IngestionConfig)
+    mqtt: MqttConfig = field(default_factory=MqttConfig)
 
 
 def load_config(config_path: Optional[str] = None) -> AppConfig:
@@ -106,8 +134,30 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             password=cam.get("password", default_password),
             enabled=cam.get("enabled", True),
             port=int(cam.get("port", 80)),
+            vertical=cam.get("vertical", "condominio"),
         ))
-    
+
+    # Ingestão (receptor de push HTTP)
+    ingest_raw = raw.get("ingestion", {})
+    ingestion_cfg = IngestionConfig(
+        http_host=ingest_raw.get("http_host", "0.0.0.0"),
+        http_port=int(ingest_raw.get("http_port", 8443)),
+        http_path=ingest_raw.get("http_path", "/p6s/events"),
+        push_auth_mode=ingest_raw.get("push_auth_mode", "log_only"),
+    )
+
+    # MQTT (túnel alternativo, broker EMQX)
+    mqtt_raw = raw.get("mqtt", {})
+    mqtt_cfg = MqttConfig(
+        enabled=bool(mqtt_raw.get("enabled", False)),
+        broker_host=mqtt_raw.get("broker_host", ""),
+        broker_port=int(mqtt_raw.get("broker_port", 8883)),
+        use_tls=bool(mqtt_raw.get("use_tls", True)),
+        username=mqtt_raw.get("username", ""),
+        password=mqtt_raw.get("password", os.getenv("MQTT_PASSWORD", "")),
+        event_topic_pattern=mqtt_raw.get("event_topic_pattern", "p6s/+/events"),
+    )
+
     # WhatsApp (opcional)
     wa_raw = raw.get("whatsapp", {})
     whatsapp_cfg = None
@@ -120,4 +170,11 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             alert_types=wa_raw.get("alert_types", ["stranger", "blacklist", "access_denied", "alarm"]),
         )
     
-    return AppConfig(supabase=supabase_cfg, connector=connector_cfg, cameras=cameras, whatsapp=whatsapp_cfg)
+    return AppConfig(
+        supabase=supabase_cfg,
+        connector=connector_cfg,
+        cameras=cameras,
+        whatsapp=whatsapp_cfg,
+        ingestion=ingestion_cfg,
+        mqtt=mqtt_cfg,
+    )
