@@ -43,6 +43,12 @@ CREATE TRIGGER on_auth_user_created
 -- ============================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- DROP old permissive policies (Fase A' §12.1.4)
+DROP POLICY IF EXISTS "profiles_read_all" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_read_authenticated" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_admin" ON public.profiles;
+
 -- Operators can read all profiles (to see who made annotations etc.)
 CREATE POLICY "profiles_read_authenticated" ON public.profiles
   FOR SELECT USING (auth.role() = 'authenticated');

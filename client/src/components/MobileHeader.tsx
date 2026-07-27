@@ -12,7 +12,7 @@ export default function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-sidebar text-white lg:hidden sticky top-0 z-30">
       <div className="flex items-center gap-2">
-        <img src="/manus-storage/guardia-percebe-logo_a6ae2b35.png" alt="GuardIA Percebe" className="h-8 w-8 rounded-lg" />
+        <img src="/guardia-percebe-logo.png" alt="GuardIA Percebe" className="h-8 w-8 rounded-lg" />
         <h1 className="font-display text-base font-bold tracking-tight">
           Guard<span className="text-primary">IA</span>
         </h1>

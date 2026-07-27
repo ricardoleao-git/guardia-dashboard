@@ -113,7 +113,7 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
         {/* Logo + close button */}
         <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <img src="/manus-storage/guardia-percebe-logo_a6ae2b35.png" alt="GuardIA Percebe" className="h-9 w-9 rounded-lg" />
+            <img src="/guardia-percebe-logo.png" alt="GuardIA Percebe" className="h-9 w-9 rounded-lg" />
             <div>
               <h1 className="font-display text-base font-bold tracking-tight text-white leading-none">
                 Guard<span className="text-primary">IA</span>

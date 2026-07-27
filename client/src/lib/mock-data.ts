@@ -536,7 +536,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "Aurura Security",
-      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
+      logoUrl: "/guardia-percebe-logo.png",
       corPrimaria: "#1B4D3E",
       corSecundaria: "#2D7A5F",
       corAcento: "#A8E6CF",
@@ -563,7 +563,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "Serrat Protect",
-      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
+      logoUrl: "/guardia-percebe-logo.png",
       corPrimaria: "#2C3E7B",
       corSecundaria: "#4A6FA5",
       corAcento: "#FFD93D",
@@ -617,7 +617,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "TechPark Access",
-      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
+      logoUrl: "/guardia-percebe-logo.png",
       corPrimaria: "#1A1A2E",
       corSecundaria: "#16213E",
       corAcento: "#0F3460",
@@ -671,7 +671,7 @@ export const mockWhiteLabelConfigs: WhiteLabelConfig[] = [
     status: "ativo",
     branding: {
       marcaNome: "NG Campus",
-      logoUrl: "/manus-storage/guardia-percebe-logo_a6ae2b35.png",
+      logoUrl: "/guardia-percebe-logo.png",
       corPrimaria: "#6A1B9A",
       corSecundaria: "#8E24AA",
       corAcento: "#E1BEE7",

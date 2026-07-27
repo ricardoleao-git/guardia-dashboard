@@ -33,6 +33,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON public.audit_logs (resourc
 -- ============================================================
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- DROP old permissive policies (Fase A' §12.1.4)
+DROP POLICY IF EXISTS "audit_logs_read_all" ON public.audit_logs;
+DROP POLICY IF EXISTS "audit_logs_insert_own" ON public.audit_logs;
+DROP POLICY IF EXISTS "audit_logs_delete_admin" ON public.audit_logs;
+
 -- All authenticated users can read audit logs
 -- (operators need to see who made annotations etc.)
 CREATE POLICY "audit_logs_read_all" ON public.audit_logs

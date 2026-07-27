@@ -33,6 +33,9 @@ CREATE INDEX IF NOT EXISTS idx_camera_events_has_annotations
 
 -- RLS: operadores autenticados podem ler; inserção via service_role (connector)
 ALTER TABLE public.camera_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "camera_events_read_authenticated" ON public.camera_events;
+DROP POLICY IF EXISTS "camera_events_insert_service" ON public.camera_events;
+DROP POLICY IF EXISTS "camera_events_update_authenticated" ON public.camera_events;
 CREATE POLICY "camera_events_read_authenticated" ON public.camera_events
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "camera_events_insert_service" ON public.camera_events
@@ -77,6 +80,10 @@ CREATE TRIGGER on_auth_user_created
 
 -- RLS profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "profiles_read_all" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_read_authenticated" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_admin" ON public.profiles;
 CREATE POLICY "profiles_read_authenticated" ON public.profiles FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "profiles_delete_admin" ON public.profiles
@@ -106,6 +113,14 @@ CREATE TABLE IF NOT EXISTS public.search_presets (
 CREATE INDEX IF NOT EXISTS idx_search_presets_name ON public.search_presets (name);
 
 ALTER TABLE public.search_presets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "search_presets_read_all" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_insert_all" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_update_all" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_delete_all" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_read_authenticated" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_insert_authenticated" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_update_authenticated" ON public.search_presets;
+DROP POLICY IF EXISTS "search_presets_delete_authenticated" ON public.search_presets;
 CREATE POLICY "search_presets_read_authenticated" ON public.search_presets FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "search_presets_insert_authenticated" ON public.search_presets FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "search_presets_update_authenticated" ON public.search_presets FOR UPDATE USING (auth.role() = 'authenticated');
@@ -140,6 +155,9 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON public.audit_logs (action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON public.audit_logs (resource_type, resource_id);
 
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "audit_logs_read_all" ON public.audit_logs;
+DROP POLICY IF EXISTS "audit_logs_insert_own" ON public.audit_logs;
+DROP POLICY IF EXISTS "audit_logs_delete_admin" ON public.audit_logs;
 CREATE POLICY "audit_logs_read_all" ON public.audit_logs
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "audit_logs_insert_own" ON public.audit_logs
@@ -163,6 +181,8 @@ VALUES ('event-images', 'event-images', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Policy: operadores autenticados podem ler imagens
+DROP POLICY IF EXISTS "event_images_read" ON storage.objects;
+DROP POLICY IF EXISTS "event_images_insert" ON storage.objects;
 CREATE POLICY "event_images_read" ON storage.objects
   FOR SELECT USING (bucket_id = 'event-images' AND auth.role() = 'authenticated');
 

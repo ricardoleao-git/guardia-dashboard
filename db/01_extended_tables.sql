@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS public.automation_rules (
 );
 CREATE INDEX IF NOT EXISTS idx_automation_rules_enabled ON public.automation_rules(enabled);
 ALTER TABLE public.automation_rules ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "automation_rules_read" ON public.automation_rules;
+DROP POLICY IF EXISTS "automation_rules_write" ON public.automation_rules;
 CREATE POLICY "automation_rules_read" ON public.automation_rules FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "automation_rules_write" ON public.automation_rules FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -48,6 +50,8 @@ CREATE INDEX IF NOT EXISTS idx_face_lists_name ON public.face_lists(person_name)
 CREATE INDEX IF NOT EXISTS idx_face_lists_list ON public.face_lists(face_list);
 CREATE INDEX IF NOT EXISTS idx_face_lists_status ON public.face_lists(status);
 ALTER TABLE public.face_lists ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "face_lists_read" ON public.face_lists;
+DROP POLICY IF EXISTS "face_lists_write" ON public.face_lists;
 CREATE POLICY "face_lists_read" ON public.face_lists FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "face_lists_write" ON public.face_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -67,6 +71,8 @@ CREATE INDEX IF NOT EXISTS idx_attendance_person ON public.attendance(person_nam
 CREATE INDEX IF NOT EXISTS idx_attendance_date ON public.attendance(date);
 CREATE INDEX IF NOT EXISTS idx_attendance_person_date ON public.attendance(person_name, date);
 ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "attendance_read" ON public.attendance;
+DROP POLICY IF EXISTS "attendance_write" ON public.attendance;
 CREATE POLICY "attendance_read" ON public.attendance FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "attendance_write" ON public.attendance FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -90,6 +96,8 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
 CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON public.vehicles(plate);
 CREATE INDEX IF NOT EXISTS idx_vehicles_status ON public.vehicles(status);
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "vehicles_read" ON public.vehicles;
+DROP POLICY IF EXISTS "vehicles_write" ON public.vehicles;
 CREATE POLICY "vehicles_read" ON public.vehicles FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "vehicles_write" ON public.vehicles FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -109,6 +117,8 @@ CREATE TABLE IF NOT EXISTS public.vehicle_access (
 CREATE INDEX IF NOT EXISTS idx_vehicle_access_time ON public.vehicle_access(event_time DESC);
 CREATE INDEX IF NOT EXISTS idx_vehicle_access_plate ON public.vehicle_access(plate);
 ALTER TABLE public.vehicle_access ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "vehicle_access_read" ON public.vehicle_access;
+DROP POLICY IF EXISTS "vehicle_access_write" ON public.vehicle_access;
 CREATE POLICY "vehicle_access_read" ON public.vehicle_access FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "vehicle_access_write" ON public.vehicle_access FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -133,6 +143,8 @@ CREATE TABLE IF NOT EXISTS public.visitor_invites (
 CREATE INDEX IF NOT EXISTS idx_visitor_invites_status ON public.visitor_invites(status);
 CREATE INDEX IF NOT EXISTS idx_visitor_invites_name ON public.visitor_invites(visitor_name);
 ALTER TABLE public.visitor_invites ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "visitor_invites_read" ON public.visitor_invites;
+DROP POLICY IF EXISTS "visitor_invites_write" ON public.visitor_invites;
 CREATE POLICY "visitor_invites_read" ON public.visitor_invites FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "visitor_invites_write" ON public.visitor_invites FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -156,6 +168,8 @@ CREATE TABLE IF NOT EXISTS public.devices (
 CREATE INDEX IF NOT EXISTS idx_devices_type ON public.devices(device_type);
 CREATE INDEX IF NOT EXISTS idx_devices_status ON public.devices(status);
 ALTER TABLE public.devices ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "devices_read" ON public.devices;
+DROP POLICY IF EXISTS "devices_write" ON public.devices;
 CREATE POLICY "devices_read" ON public.devices FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "devices_write" ON public.devices FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -170,6 +184,8 @@ CREATE TABLE IF NOT EXISTS public.system_config (
   updated_at   TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE public.system_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "system_config_read" ON public.system_config;
+DROP POLICY IF EXISTS "system_config_write" ON public.system_config;
 CREATE POLICY "system_config_read" ON public.system_config FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "system_config_write" ON public.system_config FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 

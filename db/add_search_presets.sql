@@ -17,19 +17,33 @@ CREATE INDEX IF NOT EXISTS idx_search_presets_name ON search_presets (name);
 -- RLS (Row Level Security) - permite leitura para todos, escrita para autenticados
 ALTER TABLE search_presets ENABLE ROW LEVEL SECURITY;
 
--- Policy: Todos podem ler (dashboard é interno)
+-- DROP old permissive policies (Fase A' §12.1.4)
+DROP POLICY IF EXISTS "Anyone can read search presets" ON search_presets;
+DROP POLICY IF EXISTS "Anyone can insert search presets" ON search_presets;
+DROP POLICY IF EXISTS "Anyone can update search presets" ON search_presets;
+DROP POLICY IF EXISTS "Anyone can delete search presets" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_read_all" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_insert_all" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_update_all" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_delete_all" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_read_authenticated" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_insert_authenticated" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_update_authenticated" ON search_presets;
+DROP POLICY IF EXISTS "search_presets_delete_authenticated" ON search_presets;
+
+-- Policy: Operadores autenticados podem ler
 CREATE POLICY "search_presets_read_authenticated" ON search_presets
   FOR SELECT USING (auth.role() = 'authenticated');
 
--- Policy: Qualquer um pode inserir (sem auth no MVP)
+-- Policy: Operadores autenticados podem inserir
 CREATE POLICY "search_presets_insert_authenticated" ON search_presets
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
--- Policy: Qualquer um pode atualizar
+-- Policy: Operadores autenticados podem atualizar
 CREATE POLICY "search_presets_update_authenticated" ON search_presets
   FOR UPDATE USING (auth.role() = 'authenticated');
 
--- Policy: Qualquer um pode deletar
+-- Policy: Operadores autenticados podem deletar
 CREATE POLICY "search_presets_delete_authenticated" ON search_presets
   FOR DELETE USING (auth.role() = 'authenticated');
 
