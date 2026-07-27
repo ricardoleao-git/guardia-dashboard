@@ -68,6 +68,7 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
     host: true,
+    allowedHosts: true,
     fs: {
       strict: true,
       deny: ["**/.*"],
