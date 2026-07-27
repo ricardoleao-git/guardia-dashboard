@@ -122,6 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: "Supabase não configurado. Operando em modo demonstração." };
     }
 
+    // Limpar flag de guest antes do login — quem veio do modo demo
+    // ficaria preso em mock data sem isso (isGuestSession() === true)
+    localStorage.removeItem("guardia_guest");
+    setIsGuest(false);
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error?.message ?? null };
   };
