@@ -163,6 +163,8 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 9. **Idioma:** português brasileiro em documentação e mensagens; nomes de endpoint, chaves e limites técnicos preservados **exatamente** como documentados.
 10. **Fornecedor Ruision** tem risco reputacional (acionista Megvii; Entity List BIS / NS-CMIC OFAC) — qualquer material voltado a órgão público passa pelo jurídico antes.
 11. **Não afirmar conformidade sem medir.** Antes de escrever "RLS está fechada", "sem credenciais no código" ou "todas as telas têm X", rodar o comando correspondente do §14.1 e colar o número.
+12. **RLS na mesma transação da tabela.** Nenhuma `CREATE TABLE` sem `ENABLE ROW LEVEL SECURITY` e policies no mesmo arquivo SQL. Toda policy nova vem precedida de `DROP POLICY IF EXISTS` — policies permissivas se combinam com **OR**, então adicionar uma restritiva ao lado de uma permissiva **não fecha nada**. Motivo: há uma chave válida do projeto em repositório público (§14.4).
+13. **Nenhuma credencial em mensagem de commit**, de nenhuma classe. Referenciar por nome (`VITE_SUPABASE_ANON_KEY atualizada`), nunca por valor. O commit `7929b21` violou isto com a publishable key nova; a classe da chave perdoou, a próxima pode não perdoar.
 
 ## 11. Equipe e fluxo
 
@@ -176,22 +178,24 @@ Fluxo: Ricardo especifica e prototipa → Tiago e João + Claude Code implementa
 
 `segurança → guardrails → bancada → schema → connector`
 
-### 12.0 Passo zero — antes da rotação da chave
+### 12.0 Nota — `shouldUseMockData()` é código morto
 
-> 🔴 **Ler antes de rotacionar a anon key.** `client/src/lib/guest-mode.ts` tem o operador `||` **dentro** do `Boolean()`:
->
-> ```js
-> return isGuestSession() || !Boolean(
->   import.meta.env.VITE_SUPABASE_URL || "https://ycqrgrczrunvyivxfnch.supabase.co"
-> );
-> ```
->
-> String não-vazia é sempre truthy, então `!Boolean(...)` é **sempre `false`**. `shouldUseMockData()` hoje equivale a `isGuestSession()`, e o ramo "ou o Supabase não está configurado" é **código morto que nunca dispara**.
->
-> **Consequência:** rotacionar a chave sem corrigir isto **não** degrada o app para mock — quebra todas as telas ligadas com erro de auth. Corrigir primeiro, mover o fallback para fora do `Boolean()`, e só então rotacionar.
+`client/src/lib/guest-mode.ts` tinha o `||` dentro do `Boolean()`, o que fazia o ramo "Supabase não configurado" nunca disparar. O bug era real e foi corrigido.
+
+**Mas a função não é chamada por ninguém** (0 callers fora da própria definição), então o bug nunca teve efeito. A degradação para mock já existia, implementada corretamente em todos os 7 hooks:
+
+```ts
+if (isSupabaseConfigured && !isGuestSession()) { /* Supabase */ } else { /* mock */ }
+```
+
+E `supabase.ts` já guardava o caso: `supabase = isSupabaseConfigured ? createClient(...) : null`. Sem env vars, as 32 telas caem em mock sozinhas.
+
+> ⚠️ **`shouldUseMockData()` deve ser deletada, não mantida corrigida.** Função órfã com aparência de guarda de segurança é armadilha: o próximo leitor supõe uma proteção que ninguém invoca. Deletar junto com o comentário `§12.0` que está dentro dela.
+
+*(Registro de proveniência: este bloco era, até 27/07 15:00, um "passo zero bloqueante" que afirmava que rotacionar a chave sem corrigir a função quebraria as telas ligadas. A afirmação estava errada — o caminho de dados foi inferido em vez de rastreado. Mantido aqui como nota porque a lição é a do §14.7.3: medir, não deduzir.)*
 
 1. **Fase A′ — segurança do repo:** runbook completo em `CORE-06_FAXINA-DO-PROTOTIPO.md` — rotação de senhas, expurgo de segredos do histórico do git, telemetria removida, RLS fechada, auditoria append-only. Cobre os 11 itens do §9. Sequência mínima, nesta ordem (a ordem importa — ver §14.3):
-   1. corrigir `shouldUseMockData()` (§12.0);
+   1. ~~corrigir `shouldUseMockData()`~~ — **feito**; ver §12.0. Pendente: **deletar** a função e limpar `signIn` do modo demo (§14.3);
    2. rotacionar a anon key e **remover os dois literais hardcoded** (`client/src/lib/supabase.ts:7` e `client/src/lib/guest-mode.ts:19`);
    3. adicionar `isGuestSession()` em `useSearchPresets` e `useAuditLog`;
    4. fechar a RLS (prioridade: `search_presets`, `face_lists`, `profiles`, insert de `camera_events`);
@@ -221,67 +225,118 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 ---
 
-# §14. Estado real medido — HEAD `7c16728`, 27/07/2026 10:54
+# §14. Estado real medido — HEAD `7929b21`, 27/07/2026 15:11
 
-Medido no clone limpo, não declarado. 54 commits, 32 páginas em `client/src/pages/`.
+Medido em clone limpo, não declarado. 59 commits, 32 páginas em `client/src/pages/`.
+
+**A Fase A′ (§12.1) foi executada e validada.** O que resta na coluna vermelha não é do Manus: é decisão humana, bancada ou painel do Supabase.
 
 ## 14.1 Comandos de verificação
 
-Rodar antes de afirmar qualquer coisa sobre conformidade:
+Rodar antes de afirmar qualquer coisa sobre conformidade. Os valores entre parênteses são o resultado esperado hoje.
 
 ```bash
-grep -c 'eyJhbGci' client/src/lib/supabase.ts        # anon key hardcoded → esperado 0
-grep -rc 'USING (true)' db/*.sql                     # RLS aberta → esperado 0
-grep -c 'isGuestSession' client/src/hooks/*.ts       # nenhum hook com 0
-grep -rlc 'manus-storage' client/src client/index.html
-grep -c umami client/index.html                      # esperado 0
-grep -n allowedHosts vite.config.ts                  # esperado ausente
-grep -rln 'type PageState' client/src/pages | wc -l  # duplicação dos 5 estados
-git log --oneline -S'eyJhbGci' | wc -l               # commits com a chave no histórico
+grep -c 'eyJhbGci' client/src/lib/supabase.ts          # (0) anon key hardcoded
+grep -r 'USING (true)' db/ | wc -l                     # (0) RLS permissiva
+grep -r 'WITH CHECK (true)' db/ | wc -l                # (0)
+grep -r 'DROP POLICY' db/ | wc -l                      # (55) idempotência dos SQLs
+grep -ro 'manus-storage' client/src client/index.html vite.config.ts | wc -l   # (0)
+grep -rio 'forge\|butterfly' client/src vite.config.ts | wc -l                 # (0)
+grep -c umami client/index.html                        # (0)
+grep -r '@shared' client/src | wc -l                   # (0) imports órfãos
+grep -ri 'org_id\|tenant_id' db/ | wc -l               # (0) 🔴 tenancy ausente
+grep -rln 'type PageState' client/src/pages | wc -l    # (13) duplicação dos 5 estados
+git log --oneline -S'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' | wc -l  # (4) 🔴 chave no histórico
 ```
 
-## 14.2 🔴 Bloqueantes abertos
+Build em clone limpo, verificado neste HEAD:
 
-| Item | Onde | Medida |
+```
+npm install     → exit 0
+npx tsc --noEmit → exit 0, 0 erros
+npx vite build   → exit 0, 1785 módulos, 8.52s
+```
+
+Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** do ID do projeto (`ycqrgrcz`), **0** de `umami`/`manus`/`butterfly`. O `guardia-percebe-logo.png` (90 KB) é emitido corretamente. As 6 ocorrências de `supabase.co` no bundle são strings da própria lib `@supabase/supabase-js`, sem subdomínio de projeto.
+
+## 14.2 🟢 Fechados e verificados
+
+| Item | Evidência |
+|---|---|
+| Anon key fora do código e fora do bundle | 0 literais em `supabase.ts` e `guest-mode.ts`; 0 no `dist/` |
+| **RLS fechada nos arquivos e no banco** | 0 `USING (true)` / 0 `WITH CHECK (true)`; **55 `DROP POLICY IF EXISTS`** cobrindo as **40** policies que já existiram em qualquer revisão do histórico (cobertura total, teste de conjunto); 5 SQLs executados no Supabase; **28 policies ativas, 0 permissivas**, conferidas no painel |
+| 3 policies fantasma removidas | `audit_logs_read_admin`, `profiles_read_self_or_admin`, `search_presets_rw_authenticated` — criadas à mão no dashboard, **não existiam em nenhum arquivo SQL**. Só a conferência no painel as pegou |
+| `audit_logs` append-only | policy de `DELETE` removida |
+| Hooks guardados | `isGuestSession()` nos 7 hooks de dados; validado em **runtime**: modo demo faz **zero** requisição a `supabase.co`, 0 erro de console |
+| Telemetria e terceiros | umami, `manus-storage`, Forge/`butterfly`, `ManusDialog.tsx`, `Map.tsx` → todos em 0, sem imports pendurados |
+| Logo local | `client/public/guardia-percebe-logo.png`, 7 refs trocadas, plugin de proxy removido |
+| Build de clone limpo | `tsc` 0 erros, `vite build` 8.52s (antes: quebrava por `@shared` ausente) |
+| `allowedHosts` | `[".manus.computer"]` em vez de `true` — resíduo de ambiente Manus, **não** vetor de exposição pública |
+
+## 14.3 🔴 Abertos — nenhum é tarefa do Manus
+
+| Item | Onde / custo | Observação |
 |---|---|---|
-| Anon key em texto claro | `client/src/lib/supabase.ts:7` | 1 literal; URL repetida em `guest-mode.ts:19`; presente em 6 commits do histórico |
-| Fallback para mock quebrado | `client/src/lib/guest-mode.ts` | §12.0 — armadilha da rotação |
-| RLS aberta | `db/*.sql` | **16** `USING (true)` — `00_setup_complete` 4, `01_extended_tables` 8, `add_auth_profiles` 1, `add_search_presets` 3 |
-| Hooks sem guarda de guest | `useSearchPresets`, `useAuditLog` | 0 chamadas a `isGuestSession()`. `useSearchPresets` faz `insert` e `delete` em tabela com as 4 operações abertas — **write anônimo disponível hoje** |
-| Deploy público ativo | `guardia-vms.zenitetech.com` | Manus WebDev autoscale; **não cai quando o crédito acaba**; publica a cada checkpoint; serve o bundle com a chave |
-| Telemetria e resíduos de terceiro | `index.html`, `vite.config.ts`, `client/src/components/` | umami 1; `allowedHosts: true` (linha 25); `ManusDialog.tsx`; `Map.tsx` → `forge.butterfly-effect.dev` |
+| **Chave `anon` JWT legada ativa** | painel do Supabase | A `sb_publishable_*` nova foi criada e configurada, mas **criar publishable não revoga a JWT legada** — são ações separadas. A chave antiga é extraível de **4 commits públicos**. Ver §14.4 |
+| Credenciais no histórico do git | `git filter-repo` | `connector/config/config.yaml` (senhas de câmera em texto claro) e 24 arquivos de `backups/` nos commits até `72f1cbd`. **Limpar as mensagens de commit no mesmo passe** — o `7929b21` traz a publishable key nova no corpo da mensagem |
+| **PND-01** — safety code | **10 min de bancada** | 🔴 Bloqueia a **Fase 2 inteira**. Maior retorno por minuto do projeto |
+| **PND-16 / PND-02** | conversa com o Tiago | **0** ocorrências de `org_id`/`tenant_id` nas 12 tabelas. Bloqueia o §12.4. Nenhuma `CREATE TABLE` até decidir |
+| **PND-17** | decisão + porte | 32 telas aqui × 12 no monorepo = **20 a portar**. Custo cresce a cada checkpoint. Ver §16.1 |
+| Domínio "vms" | DNS + Manus | `guardia-vms.zenitetech.com` no ar, contra o §2. Trocar antes de demo a cliente (§16.2) |
+| `camera_events` insert exige `service_role` | decisão de arquitetura | `WITH CHECK (auth.role() = 'service_role')`. O connector usa anon key — **quebra quando rodar**. Escolher: service_role no connector, ou o connector para de falar Supabase direto e passa pelo endpoint de ingestão (§3) |
+| `signIn` não sai do modo demo | `AuthContext.tsx` | `signIn` **não** limpa `localStorage.guardia_guest` (0 ocorrências no corpo da função); só o `signOut` limpa. Quem testa o demo e depois faz login fica **preso em mock**. Correção de 2 linhas. **Enquanto não corrigir, qualquer teste de "modo logado" dá falso resultado** — usar aba anônima |
 
-**Consequência operacional:** enquanto estas linhas estiverem abertas, **nenhum dado real de pessoa entra no ambiente** — nem seed, nem fixture, nem foto de bancada, nem demo (§10.6). Hoje o que segura o dano é o mock ser sintético.
+## 14.4 ⚠️ Consequência da chave legada ainda ativa
 
-## 14.3 🟠 Build e integridade
+Enquanto a JWT `anon` legada não for revogada, uma chave válida do projeto está permanentemente em repositório público e **a RLS é a única barreira entre ela e os dados**.
 
-- **`/manus-storage/` — 18 referências** em `mock-data.ts` (14), `CameraMosaic.tsx` (5), `Sidebar.tsx` (1), `MobileHeader.tsx` (1), `index.html` (1). O plugin `manus-storage-proxy` **já foi removido** do `vite.config.ts` e `client/public/` está vazio: **fora do preview Manus, logo, favicon e as imagens de câmera quebram.** As referências do logo e do favicon foram adicionadas *depois* da faxina.
-- **Build quebra em clone limpo:** o alias `@shared` aponta para `shared/`, que está no `.gitignore` e ausente; `client/src/const.ts` importa `@shared/const` (arquivo órfão, ninguém o importa, mas `tsc --noEmit` e `vite build` o incluem). `@assets` → `attached_assets/` também ausente.
-- **Deps órfãs:** `express`, `esbuild`, `@types/express` (sem `server/`), `@types/google.maps`.
-- **Sem CI, sem `.github/`, zero teste de front.** Único teste do repo: `connector/tests/test_event_mapper.py`.
+Isso é o modelo de segurança normal do Supabase — a chave é publishable por classe, não é vazamento de segredo. Mas elimina a margem de erro:
 
-## 14.4 🟠 Decisões tomadas por código, sem passar pela pendência
+> 🚫 **Toda `CREATE TABLE` neste projeto nasce com RLS e policies na mesma transação.** Não "no próximo commit". Tabela sem policy = leitura pública imediata por uma chave que qualquer pessoa extrai do `git log`.
 
-- **`GroupID2` não está implementado.** Aparece **uma vez** no repositório, como comentário em `client/src/lib/types.ts:65` — `turma: string; // GroupID2 do GuardIA`. A tela de Custódia filtra por `turma` como string livre. **Comentário não decide PND-02** (§5).
-- **`connector_status` é referenciada sem existir.** Usada em `client/src/lib/supabase.ts`, `connector/src/main.py` e `connector/src/supabase_sink.py`; **nenhuma migration em `db/` a cria**. Não criar avulsa — entra no levantamento de requisitos do §12.4.
-- **`camera_events` carrega vocabulário de fabricante** em cinco colunas: `face_list`, `person_name`, `face_score`, `recognize_image`, `capture_image` (§6).
-- **`audit_logs` tem policy de `DELETE`** (`audit_logs_delete_admin`), contra §7.
+Teste para confirmar o estado da chave (não interpretar sem a guarda de tamanho):
+
+```bash
+C=$(git log -S'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' --format=%H -- client/src/lib/supabase.ts | tail -1)
+K=$(git show $C:client/src/lib/supabase.ts | grep -oE 'eyJhbGci[A-Za-z0-9._-]{50,}' | head -1)
+if [ ${#K} -lt 100 ]; then echo "ERRO: chave nao extraida — NAO interpretar"; else
+  curl -s -w "\n→ HTTP %{http_code}\n" \
+    "https://ycqrgrczrunvyivxfnch.supabase.co/rest/v1/face_lists?select=person_name,document&limit=1" \
+    -H "apikey: $K"
+fi
+```
+
+`401` = revogada (marcar 🟢). `200` + `[]` = ativa, RLS segurando (permanece 🔴 por este motivo). `200` + dados = ativa e RLS aberta na tabela (🔴 crítico, voltar ao painel).
+
+Fechamento: Supabase → Settings → API Keys → chaves legadas → desabilitar a `anon` JWT.
 
 ## 14.5 🟡 UI — 5 estados obrigatórios (`CORE-03` §7)
 
 Existe `client/src/components/PageStateWrapper.tsx` (94 linhas), correto e reutilizável, exportando `LoadState` e os 5 estados com callback de retry.
 
-**Ele tem zero importações de página.** Em vez de usá-lo, **13 das 32 páginas** declararam um `type PageState` local e recolaram os blocos de JSX à mão. Contagem de strings duplicadas: `"Connector offline"` 22×, `"Tentar novamente"` 21×, `"Carregando..."` 17×, `"Sincronização parcial"` 12×.
+**Ele tem zero importações de página.** Em vez de usá-lo, **13 das 32 páginas** declararam um `type PageState` local e recolaram os blocos de JSX à mão: `"Connector offline"` 22×, `"Tentar novamente"` 21×, `"Carregando..."` 17×, `"Sincronização parcial"` 12×.
 
 **Nenhuma dessas strings passa por `t()`** — o app declara i18n PT/EN/ZH e os 5 estados obrigatórios estão em português cravado nos 13 arquivos. As chaves de i18n adicionadas nos últimos checkpoints são todas `nav.*`.
 
-Correção pendente, mecânica: importar `PageStateWrapper`/`LoadState` nas 13, apagar o union local e os blocos, e passar as ~8 strings do componente por `t()` com as chaves nos três idiomas. **Fazer antes da próxima tela** — o padrão colado já é o default.
+Correção pendente, mecânica: importar `PageStateWrapper`/`LoadState` nas 13, apagar o union local e os blocos, passar as ~8 strings do componente por `t()` com as chaves nos três idiomas. **Fazer antes da próxima tela** — o padrão colado já é o default.
+
+Registro: os estados são hoje **decorativos** (`retry` faz `setTimeout(..., 600)` e volta para `loaded`). Correto para efeito de especificação; "5 estados ✅" significa casca visual, não comportamento ligado a fetch.
 
 ## 14.6 🔵 Connector — não tocar antes da bancada
 
 `connector/src/main.py` é um **loop de polling** (`schedule`, `poll_interval_seconds: 30`): não há receptor HTTP, Ack, buffer, dedupe nem retry. `p6s_client.py` usa `HTTPDigestAuth` e caminhos `/cgi-bin/*.cgi` — os dois padrões que o §4.1 declara inexistentes.
 
 > 🚫 **Regra dos dois connectors:** nenhum dos dois se reescreve antes do `P6S-09_ROTEIRO-DE-BANCADA` com o device respondendo `statusCode 0`. Qualquer agente que receba esta lista de defeitos vai querer "consertar" o `p6s_client.py`. **Não consertar.** Registrar e esperar a bancada — reescrever contra documentação sem device é trocar um chute por outro.
+
+Ver também o item de `camera_events`/`service_role` no §14.3: quando o connector for religado, a policy atual rejeita todo insert dele.
+
+## 14.7 Manutenção desta seção
+
+O §14 tem carimbo de HEAD. Ele **envelhece em silêncio** — nada no arquivo avisa quando os números deixam de valer.
+
+1. Todo checkpoint que mexa em `db/`, `client/src/lib/`, `client/src/hooks/`, `client/src/contexts/` ou `vite.config.ts` **re-roda os comandos do §14.1** e atualiza o carimbo.
+2. Item resolvido **vira 🟢 com a medida nova, não desaparece** — a tabela precisa mostrar o que já caiu.
+3. Distinguir sempre **arquivo** de **banco** e de **runtime**. "0 `USING (true)` nos SQLs" não é "RLS fechada": em 27/07 os arquivos zeraram enquanto o banco seguia aberto, porque faltavam os `DROP POLICY`. Policies permissivas se combinam com **OR** — uma sobrevivente reabre a tabela inteira.
 
 ---
 
