@@ -70,3 +70,28 @@ docs/             ← Documentação técnica
 2. Verificar que `config.yaml` não está sendo commitado (deve estar no `.gitignore`)
 3. Verificar que nenhuma credencial real está no código
 4. Verificar que o modo guest ainda funciona (login como visitante → dados mock, sem chamadas ao Supabase)
+
+## Atualizações Pós-Base (26/07 22h)
+
+> Bloco com fatos novos que ocorreram após o último corte da base de conhecimento.
+> Validado por auditoria remota + correção de bug no Manus.
+
+1. **DEPLOY PÚBLICO ATIVO:** `guardia-vms.zenitetech.com` está no ar servindo bundle com anon key embutida. Rotação da chave é a ação mais urgente.
+2. **CHAVE ERA ANON (não service_role):** não houve bypass de RLS. Renomear campo para `anon_key` no `config.example.yaml`.
+3. **ALLOWEDHOSTS TRUE:** setado pelo Manus em 26/07 para preview via proxy. Intencional e temporário.
+4. **FAXINA ALCANÇOU 22 PÁGINAS:** coletor, plugins e deps Manus removidos do HEAD. Pendentes: anon key, umami, `@types/google.maps`, `ManusDialog.tsx`, `/manus-storage/*`, `Map.tsx`.
+5. **BUCKETS SUPABASE STORAGE:** `event-images` + `backups`. Verificar visibilidade e fechar insert anônimo em `storage.objects`.
+6. **DOMÍNIO VMS ATIVO:** contradiz posicionamento (não é VMS). Trocar antes de demo a cliente.
+7. **REACT ERROR #310 CORRIGIDO:** checkpoint `64290b45` — memoize `t`/context em `I18nContext`, estabilizar `addNotification` e `actionConfig` em `RealtimeNotifications`.
+8. **CONNECTOR:** NÃO reescrever `p6s_client.py` antes do `P6S-09_ROTEIRO-DE-BANCADA` com device respondendo `statusCode 0`.
+
+## Estado do Protótipo (27/07)
+
+- **32 telas implementadas** no Manus (todas as table stakes T1-T6, diferenciais T7-T10, e telas operacionais)
+- **5 estados obrigatórios** do CORE-03 §7 aplicados em todas as páginas (carregando, vazio, erro, connector offline, sincronização parcial)
+- **Tipos canônicos** alinhados ao CORE-01 (FaceUUID, GroupID2)
+- **i18n PT/EN/ZH** em todas as telas
+- **Logo GuardIA Percebe** integrado no sidebar, header mobile e favicon
+- **Mock data sintético** — nenhum dado de pessoa real
+- **Pendência PND-17:** portar os 32 componentes para o monorepo, removendo resíduos Manus (`ManusDialog.tsx`, `Map.tsx`, `/manus-storage/*`, `umami`, `@types/google.maps`)
+- **Pendência PND-01:** safety code da bancada (10 min, NVR 192.168.254.116) — bloqueia Fase 2 inteira
