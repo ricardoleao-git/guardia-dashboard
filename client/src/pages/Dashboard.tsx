@@ -122,11 +122,9 @@ export default function Dashboard() {
     setActiveViewState(urlView);
   }, [urlView]);
 
-  // Navigate to URL when view changes — always trigger loading + remount
-  const [viewKey, setViewKey] = useState(0);
+  // Navigate to URL when view changes
   const setActiveView = (view: string) => {
     setActiveViewState(view);
-    setViewKey(k => k + 1);
     const path = viewToPath[view] || "/";
     setPageLoading(true);
     if (path !== location) {
@@ -144,7 +142,7 @@ export default function Dashboard() {
   const [pageLoading, setPageLoading] = useState(false);
   const { t } = useI18n();
 
-  const { events, loading, refetch } = useEvents(filters);
+  const { events, loading, error, refetch } = useEvents(filters, activeView);
   const connectorStatus = useConnectorStatus();
 
   const categoryCounts = useMemo(() => {
@@ -339,7 +337,7 @@ export default function Dashboard() {
           pageLoading={pageLoading}
         />
 
-        <main className="p-6" key={viewKey}>
+        <main className="p-6">
           {activeView === "dashboard" && (
             <div className="space-y-5">
               {/* Stats */}

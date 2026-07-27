@@ -6,7 +6,7 @@ import { isGuestSession } from "@/lib/guest-mode";
 
 const POLL_INTERVAL = 5000; // 5 segundos
 
-export function useEvents(filters: FilterState) {
+export function useEvents(filters: FilterState, activeView?: string) {
   const [events, setEvents] = useState<CameraEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +66,9 @@ export function useEvents(filters: FilterState) {
     }
   }, []);
 
+  // Only run mock realtime interval on dashboard/events views to avoid re-render storms
+  const shouldPoll = !activeView || activeView === "dashboard" || activeView === "events" || activeView === "alerts" || activeView === "cameras";
+
   useEffect(() => {
     fetchEvents();
 
@@ -75,7 +78,7 @@ export function useEvents(filters: FilterState) {
       unsubscribe = subscribeToNewEvents((newEvent) => {
         setEvents(prev => [newEvent as CameraEvent, ...prev].slice(0, 100));
       });
-    } else {
+    } else if (shouldPoll) {
       // Mock mode: simulate periodic new events for realtime feel
       const interval = setInterval(() => {
         setEvents(prev => {
@@ -91,7 +94,7 @@ export function useEvents(filters: FilterState) {
     return () => {
       unsubscribe?.();
     };
-  }, [fetchEvents, filters.cameraSerial, filters.operator, filters.search, filters.dateFrom, filters.dateTo]);
+  }, [fetchEvents, filters.cameraSerial, filters.operator, filters.search, filters.dateFrom, filters.dateTo, shouldPoll]);
 
   return { events, loading, error, refetch: fetchEvents };
 }

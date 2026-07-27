@@ -63,8 +63,10 @@ export default function LiveStream({
   const videoRef = useRef<HTMLVideoElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hlsRef = useRef<any>(null);
+  const abortedRef = useRef(false);
 
   // --- WebRTC connection ---
   const connectWebRTC = useCallback(async () => {
@@ -72,6 +74,8 @@ export default function LiveStream({
       setStreamState("error");
       return;
     }
+
+    abortedRef.current = false;
 
     try {
       setStreamState("connecting");
@@ -82,6 +86,7 @@ export default function LiveStream({
       pcRef.current = pc;
 
       pc.ontrack = (event) => {
+        if (abortedRef.current) return;
         if (videoRef.current && event.streams[0]) {
           videoRef.current.srcObject = event.streams[0];
           setStreamState("live");
@@ -89,6 +94,7 @@ export default function LiveStream({
       };
 
       pc.onconnectionstatechange = () => {
+        if (abortedRef.current) return;
         if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
           setStreamState("error");
           onStreamError?.("WebRTC connection lost");
@@ -101,14 +107,19 @@ export default function LiveStream({
       pc.addTransceiver("audio", { direction: "recvonly" });
 
       const ws = new WebSocket(streamUrl);
+      wsRef.current = ws;
 
       ws.onopen = async () => {
+        if (abortedRef.current) { ws.close(); return; }
         const offer = await pc.createOffer();
+        if (abortedRef.current) return;
         await pc.setLocalDescription(offer);
+        if (abortedRef.current) return;
         ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
       };
 
       ws.onmessage = async (event) => {
+        if (abortedRef.current) return;
         const data = JSON.parse(event.data);
         if (data.type === "answer") {
           await pc.setRemoteDescription({ type: "answer", sdp: data.sdp });
@@ -118,11 +129,13 @@ export default function LiveStream({
       };
 
       ws.onerror = () => {
+        if (abortedRef.current) return;
         setStreamState("error");
         onStreamError?.("WebSocket error");
         tryFallback();
       };
     } catch (err) {
+      if (abortedRef.current) return;
       setStreamState("error");
       onStreamError?.(String(err));
       tryFallback();
@@ -262,7 +275,16 @@ export default function LiveStream({
 
     // Cleanup
     return () => {
+      abortedRef.current = true;
+      if (wsRef.current) {
+        wsRef.current.onopen = null;
+        wsRef.current.onmessage = null;
+        wsRef.current.onerror = null;
+        wsRef.current.close(1000, "cleanup");
+        wsRef.current = null;
+      }
       if (pcRef.current) {
+        pcRef.current.getReceivers().forEach(r => r.track?.stop());
         pcRef.current.close();
         pcRef.current = null;
       }
