@@ -12,8 +12,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import LiveStream, { StreamProtocol } from "@/components/LiveStream";
 import { useI18n } from "@/contexts/I18nContext";
-import { isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
+import { isLiveBackend } from "@/lib/data";
 
 interface CameraFeed {
   id: string;
@@ -150,7 +149,7 @@ export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
   // bancada (192.168.254.0/24). Entrar em "live" abre uma RTCPeerConnection
   // + WebSocket por tile contra host inexistente — 6 de cada no layout cheio
   // (CLAUDE.md §14.2, causa 1). Mesma detecção dos 7 hooks (§12.0).
-  const isMock = !isSupabaseConfigured || isGuestSession();
+  const isMock = !isLiveBackend();
   const [streamMode, setStreamMode] = useState<"live" | "snapshot">(
     isMock ? "snapshot" : "live"
   );

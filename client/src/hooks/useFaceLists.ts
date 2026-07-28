@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
-const supabase = supabaseClient!;
+import { data } from "@/lib/data";
 
 export interface FaceListEntry {
   id: string;
@@ -25,17 +23,11 @@ export function useFaceLists() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEntries = useCallback(async () => {
-    if (!isSupabaseConfigured || isGuestSession()) {
-      setLoading(false);
-      return;
-    }
     try {
-      const { data, error } = await supabase
-        .from("face_lists")
-        .select("*")
-        .order("person_name", { ascending: true });
-      if (error) throw error;
-      setEntries(data as FaceListEntry[] || []);
+      const rows = await data.faceLists.list({
+        orderBy: { column: "person_name", ascending: true },
+      });
+      setEntries(rows as FaceListEntry[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -45,42 +37,20 @@ export function useFaceLists() {
 
   useEffect(() => {
     fetchEntries();
-
-    if (!isSupabaseConfigured || isGuestSession()) return;
-
-    // Realtime subscription
-    const channel = supabase
-      .channel("face_lists_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "face_lists" }, () => {
-        fetchEntries();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return data.faceLists.subscribe(fetchEntries);
   }, [fetchEntries]);
 
-  const addEntry = useCallback(async (entry: Partial<FaceListEntry>) => {
-    if (!isSupabaseConfigured || isGuestSession()) return { error: "Modo demonstração: não é possível cadastrar pessoas" };
-    const { data, error } = await supabase.from("face_lists").insert(entry).select().single();
-    if (error) return { error: error.message };
-    return { data };
-  }, []);
+  const addEntry = useCallback(
+    (entry: Partial<FaceListEntry>) => data.faceLists.insert(entry),
+    []
+  );
 
-  const updateEntry = useCallback(async (id: string, updates: Partial<FaceListEntry>) => {
-    if (!isSupabaseConfigured || isGuestSession()) return { error: "Modo demonstração: não é possível editar pessoas" };
-    const { data, error } = await supabase.from("face_lists").update(updates).eq("id", id).select().single();
-    if (error) return { error: error.message };
-    return { data };
-  }, []);
+  const updateEntry = useCallback(
+    (id: string, updates: Partial<FaceListEntry>) => data.faceLists.update(id, updates),
+    []
+  );
 
-  const deleteEntry = useCallback(async (id: string) => {
-    if (!isSupabaseConfigured || isGuestSession()) return { error: "Modo demonstração: não é possível excluir pessoas" };
-    const { error } = await supabase.from("face_lists").delete().eq("id", id);
-    if (error) return { error: error.message };
-    return { success: true };
-  }, []);
+  const deleteEntry = useCallback((id: string) => data.faceLists.remove(id), []);
 
   return { entries, loading, error, refetch: fetchEntries, addEntry, updateEntry, deleteEntry };
 }

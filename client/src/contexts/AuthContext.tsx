@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User } from "@supabase/supabase-js";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { auth, data, type AuthUser } from "@/lib/data";
 
 export type UserRole = "admin" | "operator" | "viewer";
 
@@ -13,7 +12,7 @@ interface UserProfile {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -37,7 +36,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(true);
@@ -53,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!supabase) {
+    if (!auth.available) {
       setLoading(false);
       setIsDemoMode(true);
       return;
@@ -61,50 +60,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsDemoMode(false);
 
-    // Safety timeout — if getSession hangs, unblock the UI after 5s
+    // Safety timeout — if getUser hangs, unblock the UI after 5s
     const sessionTimeout = setTimeout(() => setLoading(false), 5000);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(sessionTimeout);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id, session.user.email || "");
-      } else {
+    auth
+      .getUser()
+      .then((u) => {
+        clearTimeout(sessionTimeout);
+        setUser(u);
+        if (u) {
+          loadProfile(u.id, u.email || "");
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        clearTimeout(sessionTimeout);
         setLoading(false);
-      }
-    }).catch(() => { clearTimeout(sessionTimeout); setLoading(false); });
+      });
 
     // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id, session.user.email || "");
+    return auth.onAuthStateChange((u) => {
+      setUser(u);
+      if (u) {
+        loadProfile(u.id, u.email || "");
       } else {
         setProfile(null);
         setLoading(false);
       }
     });
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
   }, []);
 
   const loadProfile = async (userId: string, email: string) => {
-    if (!supabase) return;
+    let row: any = null;
+    try {
+      const rows = await data.profiles.list({ where: { id: userId }, limit: 1 });
+      row = rows[0] ?? null;
+    } catch {
+      row = null;
+    }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
-    if (data && !error) {
+    if (row) {
       setProfile({
-        id: data.id,
-        email: data.email || email,
-        full_name: data.full_name,
-        role: data.role as UserRole,
-        avatar_url: data.avatar_url,
+        id: row.id,
+        email: row.email || email,
+        full_name: row.full_name,
+        role: row.role as UserRole,
+        avatar_url: row.avatar_url,
       });
     } else {
       // Profile doesn't exist yet — create a default
@@ -120,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) {
+    if (!auth.available) {
       return { error: "Supabase não configurado. Operando em modo demonstração." };
     }
 
@@ -129,8 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("guardia_guest");
     setIsGuest(false);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    return auth.signInWithPassword(email, password);
   };
 
   const signInAsGuest = () => {
@@ -150,9 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     localStorage.removeItem("guardia_guest");
     setIsGuest(false);
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+    await auth.signOut();
     setUser(null);
     setProfile(null);
   };

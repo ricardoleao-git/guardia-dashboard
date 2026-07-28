@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
-const supabase = supabaseClient!;
+import { data } from "@/lib/data";
 
 export interface Device {
   id: string;
@@ -26,17 +24,11 @@ export function useDevices() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchDevices = useCallback(async () => {
-    if (!isSupabaseConfigured || isGuestSession()) {
-      setLoading(false);
-      return;
-    }
     try {
-      const { data, error } = await supabase
-        .from("devices")
-        .select("*")
-        .order("device_type", { ascending: true });
-      if (error) throw error;
-      setDevices(data as Device[] || []);
+      const rows = await data.devices.list({
+        orderBy: { column: "device_type", ascending: true },
+      });
+      setDevices(rows as Device[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -46,19 +38,16 @@ export function useDevices() {
 
   useEffect(() => {
     fetchDevices();
-    if (!isSupabaseConfigured || isGuestSession()) return;
-    const channel = supabase
-      .channel("devices_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "devices" }, () => fetchDevices())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return data.devices.subscribe(fetchDevices);
   }, [fetchDevices]);
 
-  const updateDevice = useCallback(async (id: string, updates: Partial<Device>) => {
-    const { data, error } = await supabase.from("devices").update(updates).eq("id", id).select().single();
-    if (error) return { error: error.message };
-    return { data };
-  }, []);
+  // Antes desta camada esta mutação não tinha guarda de modo demo e chamava
+  // `supabase.from()` com o cliente nulo — estourava TypeError. Agora o
+  // adaptador local recusa com mensagem.
+  const updateDevice = useCallback(
+    (id: string, updates: Partial<Device>) => data.devices.update(id, updates),
+    []
+  );
 
   return { devices, loading, error, refetch: fetchDevices, updateDevice };
 }

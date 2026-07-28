@@ -10,7 +10,7 @@ import {
   Megaphone, Headphones, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isBackendConfigured } from "@/lib/data";
 import { useI18n } from "@/contexts/I18nContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -187,20 +187,20 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onMobileCl
           {/* Supabase config status */}
           <div className={cn(
             "flex items-center gap-2 rounded-md px-2.5 py-2 transition-colors",
-            isSupabaseConfigured ? "bg-green-500/10" : "bg-amber-500/10"
+            isBackendConfigured() ? "bg-green-500/10" : "bg-amber-500/10"
           )}>
             <div className={cn(
               "flex h-6 w-6 items-center justify-center rounded-full",
-              isSupabaseConfigured ? "bg-green-500/20" : "bg-amber-500/20"
+              isBackendConfigured() ? "bg-green-500/20" : "bg-amber-500/20"
             )}>
-              <Database className={cn("h-3 w-3", isSupabaseConfigured ? "text-green-400" : "text-amber-400")} />
+              <Database className={cn("h-3 w-3", isBackendConfigured() ? "text-green-400" : "text-amber-400")} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-medium text-white">
-                {isSupabaseConfigured ? t("supabase.connected") : t("supabase.demo")}
+                {isBackendConfigured() ? t("supabase.connected") : t("supabase.demo")}
               </p>
               <p className="text-[9px] text-sidebar-foreground/50">
-                {isSupabaseConfigured ? t("supabase.realtime") : t("supabase.mock")}
+                {isBackendConfigured() ? t("supabase.realtime") : t("supabase.mock")}
               </p>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { CameraEvent } from "@/lib/types";
 import { operatorLabels, operatorColors } from "@/lib/mock-data";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { isSupabaseConfigured, saveAnnotations, loadAnnotations } from "@/lib/supabase";
+import { isBackendConfigured, loadAnnotations, saveAnnotations } from "@/lib/data";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -48,7 +48,7 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
 
   // Auto-save ao fechar o modal se houver alterações não salvas
   useEffect(() => {
-    if (!open && hasUnsavedChanges && event && isSupabaseConfigured && annotations.length > 0) {
+    if (!open && hasUnsavedChanges && event && isBackendConfigured() && annotations.length > 0) {
       saveAnnotations(event.event_id, annotations).catch((err) => {
         console.error("Erro ao auto-salvar anotações ao fechar:", err);
       });
@@ -76,7 +76,7 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
     }
 
     // Se o Supabase estiver configurado, busca do banco
-    if (isSupabaseConfigured) {
+    if (isBackendConfigured()) {
       loadAnnotations(event.event_id)
         .then((data) => {
           if (data && Array.isArray(data)) {
@@ -102,7 +102,7 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
 
   // Salvar anotações no Supabase
   const handleSaveAnnotations = useCallback(async () => {
-    if (!event || !isSupabaseConfigured) return;
+    if (!event || !isBackendConfigured()) return;
     setIsSaving(true);
     try {
       await saveAnnotations(event.event_id, annotations);
@@ -318,7 +318,7 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
                 >
                   <Pencil className="h-4 w-4" />
                 </ToolbarButton>
-                {isSupabaseConfigured && (
+                {isBackendConfigured() && (
                   <>
                     <div className="w-px h-5 bg-white/20 mx-0.5" />
                     <ToolbarButton
@@ -485,19 +485,19 @@ export default function ImageViewer({ event, open, onClose }: ImageViewerProps) 
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Anotações ({annotations.length})
-                      {isSupabaseConfigured && hasUnsavedChanges && (
+                      {isBackendConfigured() && hasUnsavedChanges && (
                         <span className="ml-1.5 inline-flex items-center gap-1 text-amber-600 normal-case font-normal">
                           • não salvas
                         </span>
                       )}
-                      {isSupabaseConfigured && !hasUnsavedChanges && annotationsLoaded && (
+                      {isBackendConfigured() && !hasUnsavedChanges && annotationsLoaded && (
                         <span className="ml-1.5 inline-flex items-center gap-1 text-green-600 normal-case font-normal">
                           • salvas
                         </span>
                       )}
                     </h4>
                     <div className="flex items-center gap-3">
-                      {isSupabaseConfigured && hasUnsavedChanges && (
+                      {isBackendConfigured() && hasUnsavedChanges && (
                         <button
                           onClick={handleSaveAnnotations}
                           disabled={isSaving}

@@ -60,7 +60,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { auth, data as dataSource, isBackendConfigured } from "@/lib/data";
 import { toast } from "sonner";
 
 type UserRole = "admin" | "operator" | "viewer";
@@ -212,15 +212,15 @@ export default function UserAdmin() {
   const [editName, setEditName] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load operators from Supabase
+  // Load operators from the data layer
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isBackendConfigured()) return;
 
     setLoading(true);
-    supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
+    dataSource.profiles
+      .list({ orderBy: { column: "created_at", ascending: false } })
+      .then((data) => ({ data, error: null as any }))
+      .catch((error) => ({ data: null as any, error }))
       .then(({ data, error }) => {
         if (error) {
           console.error("Erro ao carregar operadores:", error);
@@ -278,19 +278,9 @@ export default function UserAdmin() {
     setInviting(true);
 
     try {
-      if (isSupabaseConfigured && supabase) {
-        // Send invite via Supabase Auth
-        const { error } = await supabase.auth.signInWithOtp({
-          email: inviteEmail.trim(),
-          options: {
-            data: {
-              full_name: inviteName.trim() || undefined,
-              role: inviteRole,
-            },
-          },
-        });
-
-        if (error) throw error;
+      if (isBackendConfigured()) {
+        const { error } = await auth.inviteByEmail(inviteEmail.trim());
+        if (error) throw new Error(error);
 
         toast.success(`Convite enviado para ${inviteEmail}`);
       } else {
@@ -326,13 +316,12 @@ export default function UserAdmin() {
     setSaving(true);
 
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({ role: editRole, full_name: editName.trim() || null })
-          .eq("id", editUser.id);
-
-        if (error) throw error;
+      if (isBackendConfigured()) {
+        const { error } = await dataSource.profiles.update(editUser.id, {
+          role: editRole,
+          full_name: editName.trim() || null,
+        });
+        if (error) throw new Error(error);
       }
 
       // Update local state
@@ -357,9 +346,9 @@ export default function UserAdmin() {
     if (!deleteUser) return;
 
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase.from("profiles").delete().eq("id", deleteUser.id);
-        if (error) throw error;
+      if (isBackendConfigured()) {
+        const { error } = await dataSource.profiles.remove(deleteUser.id);
+        if (error) throw new Error(error);
       }
 
       setOperators((prev) => prev.filter((op) => op.id !== deleteUser.id));
