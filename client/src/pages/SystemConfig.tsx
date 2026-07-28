@@ -75,9 +75,7 @@ export default function SystemConfig() {
   ];
 
   return (
-    <div className="flex h-screen bg-background">
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 overflow-y-auto p-6">
+    <div className="p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Header */}
             <div>
@@ -393,8 +391,6 @@ export default function SystemConfig() {
               </button>
             </div>
           </div>
-        </div>
-      </div>
     </div>
   );
 }
