@@ -14,6 +14,34 @@
  * idiomas (PT/EN/ZH). O estado **vazio** aceita título e descrição próprios,
  * porque o CORE-03 §7 pede CTA específico ali ("Adicione o primeiro
  * dispositivo") — o chamador resolve com `t()` antes de passar.
+ *
+ * ## ⚠️ Armadilha: envolver conteúdo que desreferencia dado possivelmente nulo
+ *
+ * JSX avalia o filho **antes** de passá-lo ao componente. Então isto estoura
+ * com `report` nulo, mesmo que o wrapper fosse renderizar o estado vazio e
+ * descartar os filhos:
+ *
+ *     // 🚫 TypeError quando report é null
+ *     <PageStateWrapper state={report ? state : "empty"}>
+ *       <h1>{report.titulo}</h1>
+ *     </PageStateWrapper>
+ *
+ * Quando a condição de vazio é "o dado não chegou" (e não só um estado de
+ * máquina), preserve o early-return e use o wrapper apenas para a aparência:
+ *
+ *     // ✅ o filho nunca é construído com dado nulo
+ *     if (state === "empty" || !report) {
+ *       return (
+ *         <PageStateWrapper state="empty" emptyTitle={t("x.empty_title")}>
+ *           <span />
+ *         </PageStateWrapper>
+ *       );
+ *     }
+ *     return <PageStateWrapper state={state}>...usa report...</PageStateWrapper>;
+ *
+ * `RelatorioValor.tsx` é o caso real: a condição é
+ * `loadState === "empty" || !report` e o corpo desreferencia `report` em
+ * dezenas de pontos. Envolver tudo teria trocado um estado vazio por um crash.
  */
 import { ReactNode } from "react";
 import { Loader2, AlertTriangle, WifiOff, Inbox, RefreshCw } from "lucide-react";
