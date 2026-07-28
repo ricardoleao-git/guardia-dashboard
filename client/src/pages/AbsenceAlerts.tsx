@@ -12,16 +12,15 @@
  */
 import { useState, useEffect } from "react";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import {
   AlertTriangle, Bell, MessageSquare, Mail, Smartphone,
   Clock, UserX, Plus, Trash2, Edit2, CheckCircle2, XCircle,
   Settings2, ChevronDown, ChevronRight, Send,
-  Loader2, WifiOff, Inbox, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
-type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 interface AbsenceAlert {
   id: string;
@@ -130,7 +129,7 @@ const channelConfig = {
 
 export default function AbsenceAlerts() {
   const { t } = useI18n();
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const [pageState, setPageState] = useState<LoadState>("loading");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [alerts, setAlerts] = useState(mockAlerts);
   const [rules, setRules] = useState(mockRules);
@@ -162,66 +161,10 @@ export default function AbsenceAlerts() {
 
   const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
 
-  // CORE-03 §7: 5 estados obrigatórios
-  if (pageState === "loading") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Carregando alertas de ausência...</p>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "error") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <AlertTriangle className="h-12 w-12 text-red-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Erro ao carregar</h3>
-                <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-              </div>
-              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "offline") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <WifiOff className="h-12 w-12 text-zinc-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Connector offline</h3>
-                <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-              </div>
-              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "empty") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Inbox className="h-12 w-12 text-zinc-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Nenhum alerta configurado</h3>
-                <p className="text-sm text-muted-foreground mt-1">Não há regras de ausência ativas no momento.</p>
-              </div>
-            </div>
-          </main>
-
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // O wrapper fica DENTRO do <main>, então o cabeçalho da página
+  // permanece visível durante o carregamento — é o que o CORE-03 §7 pede
+  // ("skeleton, nunca spinner de tela cheia").
   return (
     <div className="min-h-screen bg-background">
 
@@ -246,6 +189,12 @@ export default function AbsenceAlerts() {
         </div>
 
         <main className="p-6 space-y-6">
+          <PageStateWrapper
+            state={pageState}
+            onRetry={retry}
+            emptyTitle={t("abs.empty_title")}
+            emptyDescription={t("abs.empty_desc")}
+          >
           {/* Tabs */}
           <div className="flex items-center gap-1 border-b border-border">
             {([
@@ -652,6 +601,7 @@ export default function AbsenceAlerts() {
               </div>
             </div>
           )}
+          </PageStateWrapper>
         </main>
       </div>
   );

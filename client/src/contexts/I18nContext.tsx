@@ -214,6 +214,8 @@ const translations: Record<Language, Record<string, string>> = {
     "auto.no_match": "Sem correspondência",
     // Frequencia
     "freq.title": "Frequência",
+    "freq.empty_title": "Nenhum registro de frequência",
+    "freq.empty_desc": "Não há eventos faciais cadastrados para hoje.",
     "freq.present": "Presentes",
     "freq.absent": "Ausentes",
     "freq.late": "Atrasados",
@@ -224,6 +226,8 @@ const translations: Record<Language, Record<string, string>> = {
     "freq.shift": "Turno",
     // AbsenceAlerts
     "abs.title": "Alertas de Ausência",
+    "abs.empty_title": "Nenhum alerta configurado",
+    "abs.empty_desc": "Não há regras de ausência ativas no momento.",
     "abs.active": "Alertas Ativos",
     "abs.rules": "Regras",
     "abs.recipients": "Destinatários",
@@ -329,6 +333,18 @@ const translations: Record<Language, Record<string, string>> = {
     "notif.sound_on": "Som Ativado",
     "notif.sound_off": "Som Desativado",
     "notif.unread": "Não lidas",
+    // Page states — CORE-03 §7, os 5 estados obrigatórios.
+    // Consumidos por PageStateWrapper; nenhuma página os recola à mão.
+    "state.loading": "Carregando...",
+    "state.error_title": "Erro ao carregar",
+    "state.error_desc": "Não foi possível conectar ao servidor.",
+    "state.retry": "Tentar novamente",
+    "state.offline_title": "Connector offline",
+    "state.offline_desc": "O servidor GuardIA não está respondendo.",
+    "state.reconnect": "Reconectar",
+    "state.empty_title": "Nenhum dado encontrado",
+    "state.empty_desc": "Não há registros para exibir no momento.",
+    "state.partial": "Sincronização parcial — alguns dados podem estar incompletos.",
     // Languages
     "lang.pt": "Português",
     "lang.en": "English",
@@ -616,6 +632,8 @@ const translations: Record<Language, Record<string, string>> = {
     "auto.no_match": "No match",
     // Frequencia
     "freq.title": "Attendance",
+    "freq.empty_title": "No attendance records",
+    "freq.empty_desc": "No facial events registered for today.",
     "freq.present": "Present",
     "freq.absent": "Absent",
     "freq.late": "Late",
@@ -626,6 +644,8 @@ const translations: Record<Language, Record<string, string>> = {
     "freq.shift": "Shift",
     // AbsenceAlerts
     "abs.title": "Absence Alerts",
+    "abs.empty_title": "No alerts configured",
+    "abs.empty_desc": "There are no active absence rules right now.",
     "abs.active": "Active Alerts",
     "abs.rules": "Rules",
     "abs.recipients": "Recipients",
@@ -731,6 +751,17 @@ const translations: Record<Language, Record<string, string>> = {
     "notif.sound_on": "Sound On",
     "notif.sound_off": "Sound Off",
     "notif.unread": "Unread",
+    // Page states — CORE-03 §7
+    "state.loading": "Loading...",
+    "state.error_title": "Failed to load",
+    "state.error_desc": "Could not connect to the server.",
+    "state.retry": "Try again",
+    "state.offline_title": "Connector offline",
+    "state.offline_desc": "The GuardIA server is not responding.",
+    "state.reconnect": "Reconnect",
+    "state.empty_title": "No data found",
+    "state.empty_desc": "There are no records to display right now.",
+    "state.partial": "Partial sync — some data may be incomplete.",
     // Languages
     "lang.pt": "Portuguese",
     "lang.en": "English",
@@ -1018,6 +1049,8 @@ const translations: Record<Language, Record<string, string>> = {
     "auto.no_match": "无匹配",
     // Frequencia
     "freq.title": "考勤",
+    "freq.empty_title": "无考勤记录",
+    "freq.empty_desc": "今天没有登记的人脸事件。",
     "freq.present": "在场",
     "freq.absent": "缺席",
     "freq.late": "迟到",
@@ -1028,6 +1061,8 @@ const translations: Record<Language, Record<string, string>> = {
     "freq.shift": "班次",
     // AbsenceAlerts
     "abs.title": "缺勤警报",
+    "abs.empty_title": "未配置警报",
+    "abs.empty_desc": "目前没有启用的缺勤规则。",
     "abs.active": "活动警报",
     "abs.rules": "规则",
     "abs.recipients": "接收人",
@@ -1133,6 +1168,17 @@ const translations: Record<Language, Record<string, string>> = {
     "notif.sound_on": "声音开启",
     "notif.sound_off": "声音关闭",
     "notif.unread": "未读",
+    // Page states — CORE-03 §7
+    "state.loading": "加载中...",
+    "state.error_title": "加载失败",
+    "state.error_desc": "无法连接到服务器。",
+    "state.retry": "重试",
+    "state.offline_title": "连接器离线",
+    "state.offline_desc": "GuardIA 服务器无响应。",
+    "state.reconnect": "重新连接",
+    "state.empty_title": "未找到数据",
+    "state.empty_desc": "目前没有可显示的记录。",
+    "state.partial": "部分同步 — 部分数据可能不完整。",
     // Languages
     "lang.pt": "葡萄牙语",
     "lang.en": "English",
