@@ -6,3 +6,9 @@ python-dotenv>=1.0.0
 pillow>=10.0.0
 schedule>=1.2.1
 loguru>=0.7.2
+flask>=3.0.0
+paho-mqtt>=1.6.1
+
+# Testes — validação do contrato em contracts/events/
+jsonschema>=4.20.0
+pytest>=8.0.0

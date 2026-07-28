@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { CameraEvent, FilterState, ConnectorStatus } from "@/lib/types";
 import { generateMockEvents, mockConnectorStatus } from "@/lib/mock-data";
-import { isSupabaseConfigured, fetchEventsFromSupabase, subscribeToNewEvents } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
+import {
+  fetchEvents as fetchEventsFromBackend,
+  isBackendConfigured,
+  isLiveBackend,
+  subscribeToNewEvents,
+} from "@/lib/data";
 
 const POLL_INTERVAL = 5000; // 5 segundos
 
@@ -15,9 +19,9 @@ export function useEvents(filters: FilterState, activeView?: string) {
 
   const fetchEvents = useCallback(async () => {
     try {
-      if (isSupabaseConfigured && !isGuestSession()) {
+      if (isLiveBackend()) {
         // Buscar do Supabase real (apenas usuários autenticados, não guests)
-        const data = await fetchEventsFromSupabase({
+        const data = await fetchEventsFromBackend({
           cameraSerial: filtersRef.current.cameraSerial,
           operator: filtersRef.current.operator,
           search: filtersRef.current.search,
@@ -74,7 +78,7 @@ export function useEvents(filters: FilterState, activeView?: string) {
 
     // Realtime subscription se Supabase estiver configurado
     let unsubscribe: (() => void) | undefined;
-    if (isSupabaseConfigured && !isGuestSession()) {
+    if (isLiveBackend()) {
       unsubscribe = subscribeToNewEvents((newEvent) => {
         setEvents(prev => [newEvent as CameraEvent, ...prev].slice(0, 100));
       });
@@ -103,7 +107,7 @@ export function useConnectorStatus() {
   const [status, setStatus] = useState<ConnectorStatus>(mockConnectorStatus);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
+    if (!isBackendConfigured()) {
       // Mock: simula atualizações periódicas
       const interval = setInterval(() => {
         setStatus(prev => ({

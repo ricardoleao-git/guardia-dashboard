@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
-const supabase = supabaseClient!;
+import { data } from "@/lib/data";
 
 export interface AutomationRule {
   id: string;
@@ -26,17 +24,11 @@ export function useAutomationRules() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRules = useCallback(async () => {
-    if (!isSupabaseConfigured || isGuestSession()) {
-      setLoading(false);
-      return;
-    }
     try {
-      const { data, error } = await supabase
-        .from("automation_rules")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      setRules(data as AutomationRule[] || []);
+      const rows = await data.automationRules.list({
+        orderBy: { column: "created_at", ascending: true },
+      });
+      setRules(rows as AutomationRule[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -46,31 +38,22 @@ export function useAutomationRules() {
 
   useEffect(() => {
     fetchRules();
-    if (!isSupabaseConfigured || isGuestSession()) return;
-    const channel = supabase
-      .channel("automation_rules_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "automation_rules" }, () => fetchRules())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return data.automationRules.subscribe(fetchRules);
   }, [fetchRules]);
 
-  const addRule = useCallback(async (rule: Partial<AutomationRule>) => {
-    const { data, error } = await supabase.from("automation_rules").insert(rule).select().single();
-    if (error) return { error: error.message };
-    return { data };
-  }, []);
+  // As três mutações abaixo não tinham guarda de modo demo antes desta camada
+  // e chamavam `supabase.from()` com o cliente nulo — estouravam TypeError.
+  const addRule = useCallback(
+    (rule: Partial<AutomationRule>) => data.automationRules.insert(rule),
+    []
+  );
 
-  const updateRule = useCallback(async (id: string, updates: Partial<AutomationRule>) => {
-    const { data, error } = await supabase.from("automation_rules").update(updates).eq("id", id).select().single();
-    if (error) return { error: error.message };
-    return { data };
-  }, []);
+  const updateRule = useCallback(
+    (id: string, updates: Partial<AutomationRule>) => data.automationRules.update(id, updates),
+    []
+  );
 
-  const deleteRule = useCallback(async (id: string) => {
-    const { error } = await supabase.from("automation_rules").delete().eq("id", id);
-    if (error) return { error: error.message };
-    return { success: true };
-  }, []);
+  const deleteRule = useCallback((id: string) => data.automationRules.remove(id), []);
 
   return { rules, loading, error, refetch: fetchRules, addRule, updateRule, deleteRule };
 }

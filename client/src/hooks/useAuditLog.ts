@@ -13,8 +13,7 @@
  * Em modo demo, registra em localStorage. Com Supabase, usa tabela audit_logs.
  */
 import { useState, useEffect, useCallback } from "react";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
+import { data, registerAuditLogSeed } from "@/lib/data";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type AuditAction =
@@ -179,6 +178,10 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
 ];
 
+// O seed sintético do modo demo é registrado na camada de dados, que o
+// combina com o que o operador escreveu no navegador (seededLocalCollection).
+registerAuditLogSeed(() => mockAuditLogs);
+
 export function useAuditLog() {
   const { user, isDemoMode } = useAuth();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -186,26 +189,22 @@ export function useAuditLog() {
 
   // Load audit logs
   useEffect(() => {
-    if (isSupabaseConfigured && supabase && !isGuestSession()) {
-      supabase
-        .from("audit_logs")
-        .select("*")
-        .order("timestamp", { ascending: false })
-        .limit(200)
-        .then(({ data, error }) => {
-          if (!error && data) {
-            setLogs(data as AuditLogEntry[]);
-          } else {
-            // Fallback to mock + local
-            setLogs([...getLocalLogs(), ...mockAuditLogs]);
-          }
-          setLoading(false);
-        });
-    } else {
-      // Demo mode — use mock + localStorage
-      setLogs([...getLocalLogs(), ...mockAuditLogs]);
-      setLoading(false);
-    }
+    let cancelled = false;
+    data.auditLogs
+      .list({ orderBy: { column: "timestamp", ascending: false }, limit: 200 })
+      .then((rows) => {
+        if (!cancelled) setLogs(rows as AuditLogEntry[]);
+      })
+      .catch(() => {
+        // Backend caiu: o adaptador local devolve seed + localStorage.
+        if (!cancelled) setLogs([...getLocalLogs(), ...mockAuditLogs]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Log an action
@@ -230,24 +229,20 @@ export function useAuditLog() {
       // Add to local state immediately
       setLogs((prev) => [entry, ...prev]);
 
-      // Persist
-      if (isSupabaseConfigured && supabase && !isGuestSession()) {
-        try {
-          await supabase.from("audit_logs").insert({
-            user_id: entry.user_id,
-            user_email: entry.user_email,
-            action: entry.action,
-            resource_type: entry.resource_type,
-            resource_id: entry.resource_id,
-            details: entry.details,
-            timestamp: entry.timestamp,
-          });
-        } catch (err) {
-          console.error("Erro ao registrar auditoria:", err);
-          // Fallback to localStorage
-          saveLocalLog(entry);
-        }
-      } else {
+      // Persist. O adaptador local grava no localStorage; o remoto, na tabela.
+      // Falha no remoto cai para o localStorage — auditoria não pode sumir por
+      // causa de rede (CLAUDE.md §7: log de auditoria é append-only).
+      const res = await data.auditLogs.insert({
+        user_id: entry.user_id,
+        user_email: entry.user_email,
+        action: entry.action,
+        resource_type: entry.resource_type,
+        resource_id: entry.resource_id,
+        details: entry.details,
+        timestamp: entry.timestamp,
+      } as any);
+      if (res.error) {
+        console.error("Erro ao registrar auditoria:", res.error);
         saveLocalLog(entry);
       }
 

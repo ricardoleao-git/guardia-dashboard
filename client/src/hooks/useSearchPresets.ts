@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
+import { data, isLiveBackend, SEARCH_PRESETS_STORAGE_KEY } from "@/lib/data";
 
 export interface SearchPreset {
   id: string;
@@ -9,125 +8,61 @@ export interface SearchPreset {
   createdAt: string;
 }
 
-const STORAGE_KEY = "guardia:search-presets";
+const STORAGE_KEY = SEARCH_PRESETS_STORAGE_KEY;
+
+/** A linha do backend usa snake_case; a UI usa camelCase. */
+function toPreset(row: any): SearchPreset {
+  return {
+    id: row.id,
+    name: row.name,
+    filters: row.filters || {},
+    createdAt: row.created_at ?? row.createdAt,
+  };
+}
+
+/**
+ * Backup local mantido mesmo quando há backend — comportamento que este hook
+ * já tinha antes da camada de dados e que vale a pena preservar: preset é
+ * barato de guardar e caro de perder.
+ */
+function persistLocal(presets: SearchPreset[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+  } catch {
+    /* cota estourada — silencioso, como antes */
+  }
+}
 
 export function useSearchPresets() {
   const [presets, setPresets] = useState<SearchPreset[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<"local" | "cloud">("local");
 
-  // Load presets on mount — from Supabase if configured, otherwise from localStorage
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadPresets() {
-      setLoading(true);
-
-      if (isSupabaseConfigured && supabase && !isGuestSession()) {
-        try {
-          const { data, error } = await supabase
-            .from("search_presets")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-          if (error) throw error;
-
-          if (!cancelled && data) {
-            const mapped: SearchPreset[] = data.map((row: any) => ({
-              id: row.id,
-              name: row.name,
-              filters: row.filters || {},
-              createdAt: row.created_at,
-            }));
-            setPresets(mapped);
-            setSource("cloud");
-          }
-        } catch (err) {
-          // Fallback to localStorage if Supabase fails
-          console.warn("Failed to load presets from Supabase, falling back to localStorage:", err);
-          loadFromLocalStorage();
-        }
-      } else {
-        loadFromLocalStorage();
-      }
-
-      if (!cancelled) setLoading(false);
-    }
-
-    function loadFromLocalStorage() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setPresets(JSON.parse(stored));
-        }
-        setSource("local");
-      } catch {
-        setPresets([]);
-        setSource("local");
-      }
-    }
-
-    loadPresets();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Subscribe to realtime changes when Supabase is configured
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase || isGuestSession()) return;
-
-    const channel = supabase
-      .channel("search_presets_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "search_presets" },
-        (payload: any) => {
-          if (payload.eventType === "INSERT") {
-            const row = payload.new;
-            setPresets((prev) => {
-              if (prev.find((p) => p.id === row.id)) return prev;
-              return [
-                {
-                  id: row.id,
-                  name: row.name,
-                  filters: row.filters || {},
-                  createdAt: row.created_at,
-                },
-                ...prev,
-              ];
-            });
-          } else if (payload.eventType === "DELETE") {
-            const row = payload.old;
-            setPresets((prev) => prev.filter((p) => p.id !== row.id));
-          } else if (payload.eventType === "UPDATE") {
-            const row = payload.new;
-            setPresets((prev) =>
-              prev.map((p) =>
-                p.id === row.id
-                  ? { id: row.id, name: row.name, filters: row.filters || {}, createdAt: row.created_at }
-                  : p
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      if (supabase) supabase.removeChannel(channel);
-    };
-  }, []);
-
-  // Persist to localStorage (always, as a backup)
-  const persistLocal = useCallback((updated: SearchPreset[]) => {
+  const load = useCallback(async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch {
-      // ignore
+      const rows = await data.searchPresets.list({
+        orderBy: { column: "created_at", ascending: false },
+      });
+      setPresets(rows.map(toPreset));
+      setSource(isLiveBackend() ? "cloud" : "local");
+    } catch (err) {
+      // Backend caiu: o adaptador local já tem o backup do localStorage.
+      console.warn("Presets: falha no backend, usando cópia local:", err);
+      const local = await data.searchPresets.list();
+      setPresets(local.map(toPreset));
+      setSource("local");
+    } finally {
+      setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    load();
+    // Realtime: antes o payload era aplicado incrementalmente por evento;
+    // agora recarrega. Uma requisição a mais por mudança, em troca de uma
+    // única fonte de verdade — o estado não pode divergir do backend.
+    return data.searchPresets.subscribe(load);
+  }, [load]);
 
   const savePreset = useCallback(
     async (name: string, filters: Record<string, any>): Promise<SearchPreset> => {
@@ -138,78 +73,47 @@ export function useSearchPresets() {
         createdAt: new Date().toISOString(),
       };
 
-      if (isSupabaseConfigured && supabase && !isGuestSession()) {
-        try {
-          const { error } = await supabase.from("search_presets").insert({
-            id: preset.id,
-            name: preset.name,
-            filters: preset.filters,
-            created_by: "operator",
-          });
-          if (error) throw error;
-        } catch (err) {
-          console.error("Failed to save preset to Supabase:", err);
-          // Fallback: save locally
-        }
-      }
+      const res = await data.searchPresets.insert({
+        id: preset.id,
+        name: preset.name,
+        filters: preset.filters,
+        created_by: "operator",
+      } as any);
+      if (res.error) console.error("Falha ao salvar preset:", res.error);
 
       const updated = [preset, ...presets];
       setPresets(updated);
       persistLocal(updated);
       return preset;
     },
-    [presets, persistLocal]
+    [presets]
   );
 
   const deletePreset = useCallback(
     async (id: string) => {
-      if (isSupabaseConfigured && supabase && !isGuestSession()) {
-        try {
-          const { error } = await supabase.from("search_presets").delete().eq("id", id);
-          if (error) throw error;
-        } catch (err) {
-          console.error("Failed to delete preset from Supabase:", err);
-        }
-      }
+      const res = await data.searchPresets.remove(id);
+      if (res.error) console.error("Falha ao excluir preset:", res.error);
 
       const updated = presets.filter((p) => p.id !== id);
       setPresets(updated);
       persistLocal(updated);
     },
-    [presets, persistLocal]
+    [presets]
   );
 
   const updatePreset = useCallback(
     async (id: string, name: string, filters: Record<string, any>) => {
-      const updatedPreset = { name, filters, createdAt: new Date().toISOString() };
-
-      if (isSupabaseConfigured && supabase && !isGuestSession()) {
-        try {
-          const { error } = await supabase
-            .from("search_presets")
-            .update({ name, filters: updatedPreset.filters })
-            .eq("id", id);
-          if (error) throw error;
-        } catch (err) {
-          console.error("Failed to update preset in Supabase:", err);
-        }
-      }
+      const res = await data.searchPresets.update(id, { name, filters } as any);
+      if (res.error) console.error("Falha ao atualizar preset:", res.error);
 
       const updated = presets.map((p) =>
-        p.id === id ? { ...p, ...updatedPreset } : p
+        p.id === id ? { ...p, name, filters, createdAt: new Date().toISOString() } : p
       );
       setPresets(updated);
       persistLocal(updated);
     },
-    [presets, persistLocal]
+    [presets]
   );
 
-  return {
-    presets,
-    savePreset,
-    deletePreset,
-    updatePreset,
-    loading,
-    source,
-  };
+  return { presets, savePreset, deletePreset, updatePreset, loading, source };
 }

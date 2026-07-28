@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase as supabaseClient, isSupabaseConfigured } from "@/lib/supabase";
-import { isGuestSession } from "@/lib/guest-mode";
-const supabase = supabaseClient!;
+import { data } from "@/lib/data";
 
 export interface AttendanceRecord {
   id: string;
@@ -21,18 +19,12 @@ export function useAttendance(selectedDate?: string) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRecords = useCallback(async () => {
-    if (!isSupabaseConfigured || isGuestSession()) {
-      setLoading(false);
-      return;
-    }
     try {
-      let query = supabase.from("attendance").select("*").order("event_time", { ascending: false });
-      if (selectedDate) {
-        query = query.eq("date", selectedDate);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      setRecords(data as AttendanceRecord[] || []);
+      const rows = await data.attendance.list({
+        orderBy: { column: "event_time", ascending: false },
+        where: selectedDate ? { date: selectedDate } : undefined,
+      });
+      setRecords(rows as AttendanceRecord[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -42,12 +34,7 @@ export function useAttendance(selectedDate?: string) {
 
   useEffect(() => {
     fetchRecords();
-    if (!isSupabaseConfigured || isGuestSession()) return;
-    const channel = supabase
-      .channel("attendance_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchRecords())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return data.attendance.subscribe(fetchRecords);
   }, [fetchRecords]);
 
   return { records, loading, error, refetch: fetchRecords };

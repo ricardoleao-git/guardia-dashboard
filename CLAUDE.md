@@ -102,7 +102,11 @@ As chaves são **nossas dos dois lados**: o evento volta da câmera já com o id
 
 O driver traduz o vocabulário do fabricante para o **catálogo canônico**; **vocabulário de fabricante nunca chega ao core nem ao schema**.
 
-Tipos v0: `face.recognized`, `face.unknown` ("estranho"), `fence.intrusion`, `line.crossed`, `flow.count`, `person.fall`, `smoke.detected`, `door.held_open`, `post.abandoned`, e a família `plate.*` (LPR).
+Tipos v0 — **13, enumerados**: `face.recognized`, `face.unknown` ("estranho"), `fence.intrusion`, `line.crossed`, `flow.count`, `person.fall`, `smoke.detected`, `door.held_open`, `post.abandoned`, `plate.recognized`, `plate.unknown` (a família `plate.*` de LPR tem estes dois), `vehicle.bike_in_elevator`, e `unmapped`.
+
+> Fonte de verdade executável: **`contracts/events/canonical-event.v0.schema.json`**. A lista acima é a mesma do schema, e um teste (`connector/tests/test_canonical_contract.py`) falha se as duas divergirem.
+>
+> `plate.recognized` e `vehicle.bike_in_elevator` foram **ratificados pelo Ricardo em 28/07/2026** — não constavam desta lista e vinham, respectivamente, de "a família `plate.*`" sem enumeração e da automação de fábrica do `CORE-02` §9. `unmapped` é exigido pelo `CORE-01` §4 e pelo `CORE-02` §2 (chega ao core e **gera pendência**, em vez de ser descartado).
 
 > 🚫 Nomes como `face_list`, `face_score`, `recognize_image`, `capture_image`, `BlackList`, `WhiteList` são vocabulário P6S. Não podem aparecer em tabela, API interna ou tipo compartilhado. Ficam confinados ao driver.
 >
@@ -154,7 +158,7 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 
 1. **Endpoint inventado é bug.** Se não estiver na documentação do protocolo, não existe. Não deduzir por analogia com outro fabricante.
 2. **Marcar `[LACUNA]`** quando a informação não existir, em vez de inferir. Drivers `isapi`, `intelbras`, `unv`, `positivo`: [LACUNA] — nada coletado.
-3. **Um driver por protocolo** (`p6s`, `isapi`, `intelbras`, `unv`, `positivo`, `onvif-fallback`), separados do core.
+3. **Um driver por protocolo** (`p6s`, `isapi`, `intelbras`, `unv`, `positivo`, `onvif`), separados do core. O identificador é `onvif` — é o valor que vira coluna `devices.driver` no DDL do `CORE-01` §4. "ONVIF como fallback" descreve a **estratégia** de ingestão multifabricante, não o nome do driver.
 4. **Migrations versionadas** (Drizzle/Prisma). SQL aplicado à mão gera drift — nunca mais.
 5. **Nenhum segredo no repositório.** Senha de device, token, chave de API: variável de ambiente ou cofre.
 6. **Nenhum dado pessoal real** em repo, seed, fixture, foto de bancada, demo ou ambiente de terceiro (Manus, Lovable). Só dado sintético claramente fictício. **Esta regra é absoluta enquanto os itens do §14.2 estiverem abertos.**
@@ -229,9 +233,13 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 ---
 
-# §14. Estado real medido — HEAD `c6d2c12`, 27/07/2026 17:20
+# §14. Estado real medido — branch `claude/validacao-planejamento-vs7kho`, 28/07/2026
 
-Medido em clone limpo, não declarado. 64 commits, 32 páginas em `client/src/pages/`.
+Medido, não declarado. 32 páginas em `client/src/pages/`.
+
+> Recarimbado por exigência do §14.7.1 (o checkpoint tocou `client/src/lib/`, `client/src/hooks/` e `client/src/contexts/`). Os 11 comandos do §14.1 foram re-rodados: **todos os valores permanecem os esperados**. Build: `tsc` 0 erros, `vite build` **1786 módulos em 4.19 s**.
+>
+> ⚠️ Nota sobre o contador de módulos, para não induzir a conclusão errada: em `main` (`bf94724`) este ambiente mede **1781**, não os 1786 do carimbo anterior — verificado com stash + build + unstash. A camada de dados deste checkpoint acrescenta exatamente 5 módulos, o que devolve o total a 1786. **É coincidência numérica, não confirmação do valor antigo.** Quem re-medir em `main` vai ver 1781.
 
 **A Fase A′ (§12.1) foi executada e validada.** O que resta na coluna vermelha não é do Manus: é decisão humana, bancada ou painel do Supabase.
 
@@ -277,6 +285,9 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | Build de clone limpo | `tsc` 0 erros, `vite build` 6.41s, 1786 módulos (antes: quebrava por `@shared` ausente) |
 | `allowedHosts` | `[".manus.computer"]` em vez de `true` — resíduo de ambiente Manus, **não** vetor de exposição pública |
 | **`signIn` limpa modo demo** | `localStorage.removeItem("guardia_guest")` + `setIsGuest(false)` chamados **antes** de `signInWithPassword` — usuário que vem do demo faz login real sem ficar preso em mock. Verificado em `AuthContext.tsx` linhas 129–130 |
+| **Camada de acesso a dados (§3)** | `client/src/lib/data/` — contrato (`Collection<T>`, `AuthPort`) + adaptadores. Antes: **36** pontos falavam Supabase direto (25 `from("tabela")`, 5 `supabase.auth.*`, 6 realtime) em 10 arquivos. Agora: **0** fora de `lib/data/adapters/`. Invariante: `grep -rn 'from "@/lib/supabase"' client/src \| grep -v lib/data/` → vazio. Os 7 hooks, `AuthContext` e `UserAdmin` migrados; `lib/supabase.ts` virou só fábrica do cliente. Semântica de demo preservada por coleção (3 estratégias locais distintas) e chaves de `localStorage` mantidas. **Bug corrigido de passagem:** `useDevices.updateDevice` e as 3 mutações de `useAutomationRules` não tinham guarda e chamavam `supabase.from()` com cliente nulo — `TypeError` no modo demo |
+| **Catálogo canônico v0 (§12.4)** | `contracts/events/canonical-event.v0.schema.json` — JSON Schema com os **13 tipos**, todos ratificados (`plate.recognized` e `vehicle.bike_in_elevator` fechados pelo Ricardo em 28/07). O vocabulário de fabricante é barrado pelo próprio schema (`propertyNames.not`, 7 chaves). 15 testes em `connector/tests/test_canonical_contract.py`, um deles falhando se o schema e o enum Python divergirem |
+| **PND-01 parametrizada (§4.4)** | `connector/src/p6s_safety_code.py` — função pura, 4 hipóteses de `unique_code` atrás de enum. `RESOLVED_UNIQUE_CODE_SOURCE = None` é o ponto único de troca; com a pendência aberta `safety_code_for()` levanta em vez de escolher. `scripts/bancada/bancada.py` testa as 4 contra o device e diz qual retorna `statusCode 0`. Não toca `p6s_client.py`/`main.py` |
 | **Sidebar freeze corrigido** | causas 2–5 eliminadas, causa 1 CONTIDA: (1) `LiveStream.tsx` — WebSocket sem cleanup → `wsRef` + `ws.close()` + `abortedRef`; (2) `Dashboard.tsx` — `key={viewKey}` forçava remount em toda navegação → removido; (3) `useEvents.ts` — mock interval rodava em todas as páginas → gate `shouldPoll`; (4) `App.tsx` — 35 rotas separadas faziam o wouter tratar Dashboard como componente novo a cada clique → consolidado em rota única `/*`; (5) 16 sub-páginas tinham `Sidebar`/`MobileHeader` embutidos → todos removidos. Testado: 5+ navegações sem freeze, DOM com 1 sidebar, 0 erros TypeScript. Causa 1: LiveStream/CameraMosaic sem diff desde 5bdfc1a — o loop tryFallback e o default streamMode='live' persistem; o freeze parou porque o remount parou. Clicar no toggle 'Live' em mock ainda abre 6 RTCPeerConnection+WebSocket contra hosts inexistentes. Conserto definitivo (guarda de reentrada + default snapshot em mock) → §14.6, junto da PND-18 |
 
 ## 14.3 🔴 Abertos — nenhum é tarefa do Manus

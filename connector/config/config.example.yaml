@@ -18,6 +18,28 @@ connector:
   image_upload: true              # Fazer upload de imagens para Storage
   log_level: "INFO"               # DEBUG, INFO, WARNING, ERROR
 
+# Receptor de push HTTP (P6SHTTP, canal primário — CLAUDE.md §3.2/§4.2)
+ingestion:
+  http_host: "0.0.0.0"
+  http_port: 8443
+  http_path: "/p6s/events"
+  # [LACUNA] formato exato da assinatura do push ainda não confirmado
+  # na bancada. "log_only" aceita o push e loga os parâmetros OAuth
+  # recebidos, para revelar o formato real. Trocar para "hmac_sha1"
+  # só depois de confirmado (ver connector/src/push_auth.py).
+  push_auth_mode: "log_only"
+
+# Túnel MQTT (P6SEventMQTTConfig — CLAUDE.md §3.3), broker EMQX
+mqtt:
+  enabled: false
+  broker_host: "SEU-BROKER-EMQX"
+  broker_port: 8883
+  use_tls: true
+  username: "connector"
+  password: "SENHA_MQTT"
+  # [LACUNA] tópico exato — confirmar na bancada/config do EMQX
+  event_topic_pattern: "p6s/+/events"
+
 cameras:
   - serial: "D1"
     ip: "192.168.254.115"
@@ -25,6 +47,7 @@ cameras:
     location: "Portaria"
     username: "admin"
     password: "SENHA_DA_CAMERA"
+    vertical: "condominio"        # "condominio" | "escolar" — ver strategy.py
     enabled: false                # D1 offline — desabilitar até consertar
 
   - serial: "D2"
