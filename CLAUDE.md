@@ -144,7 +144,7 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 |---|---|---|
 | 1 | `connector/src/p6s_client.py` chama `/cgi-bin/...` com `HTTPDigestAuth` — **endpoints inexistentes**. O connector nunca funcionou contra hardware (só `--dry-run`) | 🔴 **aberto** — 2 usos de `HTTPDigestAuth`, 3 caminhos `/cgi-bin/*.cgi`. **Não reescrever antes da bancada** (§14.6) |
 | 2 | `connector/src/main.py` faz **polling de 30 s** — proibido (§4.2) | 🔴 **aberto** — `poll_interval_seconds: 30` |
-| 3 | Não há buffer, ACK, dedupe, retry nem fila no connector | 🔴 **aberto** |
+| 3 | Não há buffer, ACK, dedupe, retry nem fila no connector | 🟢 **remediado** — `connector/src/ingest_store.py` (protocolo `IngestStore` + SQLite/WAL) e `ingest_state.py` sobre ele. Dedupe, fila e dead-letter **sobrevivem a restart**; expurgo horário no loop do `receiver_main.py`. Chave de dedupe `(device_serial, event_id)` conforme `CORE-01` §4. **Bug corrigido junto:** o `event_id` era `{serial}-{timestamp}` quando o device não mandava um — mudava a cada reentrega, então o `CacheEventEnable` do §4.2 furava o dedupe. Agora `stable_event_id()`: id do device, ou sha256 do payload com chaves ordenadas |
 | 4 | `camera_events` carrega vocabulário de fabricante (§6) | 🔴 **aberto** — `face_list`, `person_name`, `face_score`, `recognize_image`, `capture_image` |
 | 5 | Correlação por `person_name`; `face_lists.face_id` guarda o ID **da câmera** em vez do `FaceUUID`; turma virou texto livre em vez de `GroupID2` | 🔴 **aberto** |
 | 6 | **Zero coluna de tenancy** nas tabelas existentes | 🔴 **aberto** — 0 ocorrências de `org_id`/`tenant_id` em `db/` |
@@ -237,7 +237,9 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 Medido, não declarado. 32 páginas em `client/src/pages/`.
 
-> Recarimbado por exigência do §14.7.1 (este checkpoint tocou `client/src/contexts/`, `client/src/lib/` e `client/src/hooks/`). Os comandos do §14.1 foram re-rodados: **todos nos valores esperados**, e os de union local (`PageState`/`LoadState`/`LoadingState`) foram todos a **0**, com o wrapper em **20** páginas — ver §14.5. Build: `tsc` 0 erros, `vite build` **1787 módulos em 8.95 s**.
+> Recarimbado em `615fbc5` (§14.7.1 — os checkpoints tocaram `client/src/contexts/`, `client/src/lib/`, `client/src/hooks/` e `vite.config.ts`). Comandos do §14.1 re-rodados: **todos nos valores esperados**; union local dos 5 estados em **0** e o wrapper em **20** páginas (§14.5). Build: `tsc` 0 erros, `vite build` **1787 módulos em 4,46 s**.
+>
+> **Testes: 123** — 74 no connector (`cd connector && python3 -m pytest tests/ -q`) e **49 no front** (`npm run test`), que antes eram 0. Rodar os dois antes de afirmar que algo funciona.
 >
 > ⚠️ Nota sobre o contador de módulos, para não induzir a conclusão errada: em `main` (`bf94724`) este ambiente mede **1781**, não os 1786 do carimbo anterior — verificado com stash + build + unstash. A camada de dados deste checkpoint acrescenta exatamente 5 módulos, o que devolve o total a 1786. **É coincidência numérica, não confirmação do valor antigo.** Quem re-medir em `main` vai ver 1781.
 
@@ -289,6 +291,8 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | Build de clone limpo | `tsc` 0 erros, `vite build` 6.41s, 1786 módulos (antes: quebrava por `@shared` ausente) |
 | `allowedHosts` | `[".manus.computer"]` em vez de `true` — resíduo de ambiente Manus, **não** vetor de exposição pública |
 | **`signIn` limpa modo demo** | `localStorage.removeItem("guardia_guest")` + `setIsGuest(false)` chamados **antes** de `signInWithPassword` — usuário que vem do demo faz login real sem ficar preso em mock. Verificado em `AuthContext.tsx` linhas 129–130 |
+| **Estado de ingestão persistido (§9 item 3)** | `ingest_store.py`: protocolo `IngestStore` + `SqliteIngestStore` (WAL). Dedupe, fila e dead-letter sobrevivem a restart — verificado de ponta a ponta: dois pushes idênticos com restart no meio dão `202` e depois `200 duplicate`, uma entrega ao sink. **Arquivo local do connector, não tabela do produto**: não vive em `db/`, sem coluna de tenancy, não esbarra na PND-16. Payload bruto persistido com prazo de **7 dias** (`CORE-05` §2) — que é *proposta a validar juridicamente*, amarrada a PND-10/PND-11, não parecer. ⚠️ Tensão registrada: o `CORE-05` escopa o bruto para **depurar integração**, não para reprocessar catálogo que mude meses depois; estender a janela é decisão de PND-11 |
+| **Base de teste do front** | Era 0 arquivo de teste com `vitest` já instalado. Agora: bloco `test` no `vite.config.ts` (jsdom), `npm run test`, setup limpando `localStorage` entre testes, e **49 testes** em `lib/data/adapters/local-collection.ts` (25) e `PageStateWrapper` (24) — os dois módulos de maior alcance: a camada é o ponto único das 25 chamadas antes diretas, e o wrapper é importado por 20 páginas. Um dos testes renderiza em **inglês** e falha se alguém recolar string cravada no wrapper, que é a regressão que reabriria o §14.5 |
 | **Camada de acesso a dados (§3)** | `client/src/lib/data/` — contrato (`Collection<T>`, `AuthPort`) + adaptadores. Antes: **36** pontos falavam Supabase direto (25 `from("tabela")`, 5 `supabase.auth.*`, 6 realtime) em 10 arquivos. Agora: **0** fora de `lib/data/adapters/`. Invariante: `grep -rn 'from "@/lib/supabase"' client/src \| grep -v lib/data/` → vazio. Os 7 hooks, `AuthContext` e `UserAdmin` migrados; `lib/supabase.ts` virou só fábrica do cliente. Semântica de demo preservada por coleção (3 estratégias locais distintas) e chaves de `localStorage` mantidas. **Bug corrigido de passagem:** `useDevices.updateDevice` e as 3 mutações de `useAutomationRules` não tinham guarda e chamavam `supabase.from()` com cliente nulo — `TypeError` no modo demo |
 | **Catálogo canônico v0 (§12.4)** | `contracts/events/canonical-event.v0.schema.json` — JSON Schema com os **13 tipos**, todos ratificados (`plate.recognized` e `vehicle.bike_in_elevator` fechados pelo Ricardo em 28/07). O vocabulário de fabricante é barrado pelo próprio schema (`propertyNames.not`, 7 chaves). 15 testes em `connector/tests/test_canonical_contract.py`, um deles falhando se o schema e o enum Python divergirem |
 | **PND-01 parametrizada (§4.4)** | `connector/src/p6s_safety_code.py` — função pura, 4 hipóteses de `unique_code` atrás de enum. `RESOLVED_UNIQUE_CODE_SOURCE = None` é o ponto único de troca; com a pendência aberta `safety_code_for()` levanta em vez de escolher. `scripts/bancada/bancada.py` testa as 4 contra o device e diz qual retorna `statusCode 0`. Não toca `p6s_client.py`/`main.py` |
@@ -308,6 +312,20 @@ Bundle emitido em `dist/public/`: **0** ocorrências de JWT (`eyJhbGci`), **0** 
 | ~~Resíduo de layout em `SystemConfig`~~ | — | 🟢 **fechado em 28/07** — os 3 wrappers (`flex h-screen` + dois `flex-1`) viraram um `p-6`. Eram resquício de quando a página tinha sidebar própria. Verificado antes/depois no preview: render idêntico, e o `h-screen` (100vh dentro de página que já rola) deixou de existir |
 | ⚠️ **`.embedded-page` NÃO está morto** | correção de premissa | Este item afirmava que a classe era morta. **Medido: é load-bearing.** A regra `.embedded-page > div.min-h-screen { display: contents }` casa e está ativa em **5 páginas** cujo elemento raiz é `<div className="min-h-screen bg-background">`: `AIConfig`, `AbsenceAlerts`, `Automations`, `DeviceManagement`, `FaceLibrary`. Remover o CSS quebraria o layout das cinco. O caminho certo é o inverso — tirar `min-h-screen` da raiz dessas 5 (não são mais páginas de topo) e **só então** o CSS fica morto. Refactor visual, com risco: fazer com screenshot antes/depois, uma a uma |
 | `camera_events` insert exige `service_role` | decisão de arquitetura | `WITH CHECK (auth.role() = 'service_role')`. O connector usa anon key — **quebra quando rodar**. Escolher: service_role no connector, ou o connector para de falar Supabase direto e passa pelo endpoint de ingestão (§3) |
+
+## 14.3.1 🔵 Fila de dívida técnica — nenhum item bloqueia nada
+
+Registrado aqui porque, sem isto, cada item volta a ser redescoberto. Nenhum é
+urgente; todos são reais e medidos.
+
+| Item | Onde | Nota |
+|---|---|---|
+| **`t()` não interpola** | `client/src/contexts/I18nContext.tsx:1375` | `t(key)` só faz lookup. Duas páginas já precisaram compor em JSX para preservar contagem ao vivo (`LivroOcorrencias`, `Reservas` — "exibindo 12 de 30"). **Na terceira, vale implementar `t(key, params)`** em vez de espalhar composição |
+| **Idioma default segue o navegador** | `I18nContext.tsx:1478` | Sem escolha salva, o provider lê `navigator.language`. O `CORE-03` §1 diz **"Idioma: PT-BR"**. Um usuário brasileiro com navegador em inglês vê a UI em inglês na primeira visita. **É decisão de produto, não bug** — mas os dois documentos discordam e alguém precisa escolher |
+| **Mensagens de toast em PT cravado** | `UserAdmin.tsx:227,274` | `toast.error("Erro ao carregar operadores")` e afins não passam por `t()`. Mesma categoria do que fechou o §14.5, escopo menor. As 2 ocorrências que um grep amplo pega no `UserAdmin` são estas — não são os blocos dos 5 estados |
+| **Janela do payload bruto vs reprocessamento** | `ingest_store.py` | O `CORE-05` §2 dá 7 dias com finalidade de **depurar integração**. Se o objetivo for reprocessar quando o catálogo canônico mudar, 7 dias não serve — e estender depende de **PND-11** (base legal), não de código |
+| **`min-h-screen` em 5 páginas** | ver §14.3 | O refactor que tornaria o `.embedded-page` genuinamente morto. Método já registrado: uma página por vez, screenshot antes/depois |
+| **Code-splitting** | bundle 1,35 MB | Adiado por decisão do Ricardo em 28/07. O `vite build` avisa a cada execução |
 
 ## 14.4 ⚠️ Consequência da chave legada ainda ativa
 
