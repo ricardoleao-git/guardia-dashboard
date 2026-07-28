@@ -25,7 +25,7 @@ from canonical_events import CanonicalEventError
 from config import AppConfig
 from core_sink import CoreSink
 from ingest_state import IngestStateManager
-from p6s_event_translator import translate_push_body, UnrecognizedRawEventType
+from p6s_event_translator import translate_push_body
 
 
 def _device_serial_from_topic(topic: str) -> Optional[str]:
@@ -71,7 +71,8 @@ class MqttReceiver:
 
         try:
             event = translate_push_body(raw, source_channel="mqtt", device_serial=device_serial)
-        except (UnrecognizedRawEventType, CanonicalEventError) as e:
+        # Operador desconhecido vira 'unmapped' no tradutor, não exceção.
+        except CanonicalEventError as e:
             logger.error(f"[mqtt_receiver] {e}")
             return
 

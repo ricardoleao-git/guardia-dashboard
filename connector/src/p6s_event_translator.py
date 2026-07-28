@@ -14,6 +14,13 @@ de inspeção de payload real em algum momento do protótipo. Precisam ser
 confirmados contra um payload capturado na bancada (P6S-09) antes de
 qualquer cliente real depender disso. `FaceUUID`/`GroupID2` são a exceção:
 essas duas vêm direto do protocolo documentado (§3.5) e não são hipótese.
+
+Evento sem correspondente no catálogo **não se descarta**. O `CORE-01` §4
+define `type text not null -- 'unmapped' quando sem correspondente`, e o
+`CORE-02` §2 exige que ele chegue ao core e **gere pendência**, em vez de
+disparar regra. Levantar exceção aqui perderia o evento — o oposto do que o
+contrato pede. O tradutor emite `unmapped` e preserva o operador bruto em
+`attributes.unmapped_operator`, para que a pendência saiba o que estender.
 """
 import time
 from datetime import datetime, timezone
@@ -39,10 +46,6 @@ _RAW_EVENT_FAMILY_TO_CANONICAL = {
 }
 
 
-class UnrecognizedRawEventType(CanonicalEventError):
-    """Tipo de evento fora do vocabulário conhecido — não inventar mapeamento."""
-
-
 def _to_iso8601(raw_time: Any) -> str:
     if isinstance(raw_time, str) and raw_time:
         return raw_time
@@ -64,9 +67,11 @@ def translate_push_body(
 ) -> CanonicalEvent:
     """
     Traduz um corpo de evento P6S (push HTTP ou MQTT — mesmo shape) para
-    CanonicalEvent. Levanta UnrecognizedRawEventType se o `event_type`
-    bruto não estiver no vocabulário conhecido — silenciar isso seria
-    inventar comportamento (CLAUDE.md §10.1).
+    CanonicalEvent.
+
+    Nunca descarta: operador bruto sem correspondente no catálogo vira
+    `unmapped`, com o valor original preservado em
+    `attributes.unmapped_operator` (CORE-01 §4, CORE-02 §2).
     """
     if raw.get("person_name"):
         logger.warning(
@@ -75,18 +80,23 @@ def translate_push_body(
         )
 
     raw_family = str(raw.get("event_type", "")).lower()
+    attributes: Dict[str, Any] = {}
 
     if raw_family in ("face", "plate"):
         canonical_type = _face_or_plate_subtype(raw, raw_family)
     elif raw_family in _RAW_EVENT_FAMILY_TO_CANONICAL:
         canonical_type = _RAW_EVENT_FAMILY_TO_CANONICAL[raw_family]
     else:
-        raise UnrecognizedRawEventType(
-            f"event_type bruto desconhecido: {raw_family!r}. "
-            "Registrar como [LACUNA] e não deduzir por analogia."
+        # Não deduzir por analogia (CLAUDE.md §10.1) e não perder o evento
+        # (CORE-02 §2). O core recebe, não dispara regra, e abre pendência.
+        canonical_type = "unmapped"
+        attributes["unmapped_operator"] = raw.get("event_type")
+        logger.warning(
+            f"[translator] operador sem correspondente no catálogo v0: "
+            f"{raw.get('event_type')!r} → emitido como 'unmapped'. "
+            "Gera pendência no core; não dispara regra."
         )
 
-    attributes: Dict[str, Any] = {}
     if raw.get("face_score") is not None:
         attributes["match_score"] = raw["face_score"]
     if isinstance(raw.get("attributes"), dict):

@@ -22,7 +22,7 @@ from canonical_events import CanonicalEventError
 from config import AppConfig, CameraConfig
 from core_sink import CoreSink
 from ingest_state import IngestStateManager
-from p6s_event_translator import translate_push_body, UnrecognizedRawEventType
+from p6s_event_translator import translate_push_body
 from push_auth import PushAuthVerifier
 from strategy import build_ack_strategy, UnknownVerticalError
 
@@ -83,10 +83,10 @@ def create_app(config: AppConfig, state_manager: IngestStateManager, sink: CoreS
             return jsonify({"strategy": strategy}), 200
 
         try:
+            # Operador desconhecido não cai aqui: o tradutor emite 'unmapped'
+            # em vez de levantar (CORE-02 §2). Este except só pega evento
+            # estruturalmente inválido — erro de programação, não de payload.
             event = translate_push_body(raw, source_channel="http", device_serial=device_serial)
-        except UnrecognizedRawEventType as e:
-            logger.error(f"[push_receiver] {e}")
-            return jsonify({"error": str(e)}), 422
         except CanonicalEventError as e:
             logger.error(f"[push_receiver] evento inválido: {e}")
             return jsonify({"error": str(e)}), 422

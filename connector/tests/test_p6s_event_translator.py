@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pytest
 
-from p6s_event_translator import translate_push_body, UnrecognizedRawEventType
+from p6s_event_translator import translate_push_body
 
 
 def test_face_unknown_sem_faceuuid():
@@ -55,10 +55,24 @@ def test_person_name_e_ignorado_nunca_vira_chave():
     assert "person_name" not in payload
 
 
-def test_tipo_desconhecido_levanta_erro_em_vez_de_adivinhar():
+def test_tipo_desconhecido_vira_unmapped_em_vez_de_ser_descartado():
+    """
+    CORE-01 §4 e CORE-02 §2: o evento chega ao core com type='unmapped' e gera
+    pendência. Levantar exceção aqui perderia o evento — o oposto do contrato.
+    """
     raw = {"event_id": "D4-004", "event_type": "camera_offline_evento_inventado"}
-    with pytest.raises(UnrecognizedRawEventType):
-        translate_push_body(raw, source_channel="http", device_serial="D4")
+    event = translate_push_body(raw, source_channel="http", device_serial="D4")
+
+    assert event.event_type == "unmapped"
+    # O operador bruto é preservado para a pendência saber o que estender.
+    assert event.attributes["unmapped_operator"] == "camera_offline_evento_inventado"
+    # E continua sendo um evento válido — passa a validação do catálogo.
+    event.validate()
+
+
+def test_payload_sem_event_type_tambem_vira_unmapped():
+    event = translate_push_body({"event_id": "D4-005"}, source_channel="http", device_serial="D4")
+    assert event.event_type == "unmapped"
 
 
 def test_fence_intrusion():

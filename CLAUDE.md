@@ -158,7 +158,7 @@ Este repositório foi gerado em grande parte por IA (Manus) sem acesso à docume
 
 1. **Endpoint inventado é bug.** Se não estiver na documentação do protocolo, não existe. Não deduzir por analogia com outro fabricante.
 2. **Marcar `[LACUNA]`** quando a informação não existir, em vez de inferir. Drivers `isapi`, `intelbras`, `unv`, `positivo`: [LACUNA] — nada coletado.
-3. **Um driver por protocolo** (`p6s`, `isapi`, `intelbras`, `unv`, `positivo`, `onvif-fallback`), separados do core.
+3. **Um driver por protocolo** (`p6s`, `isapi`, `intelbras`, `unv`, `positivo`, `onvif`), separados do core. O identificador é `onvif` — é o valor que vira coluna `devices.driver` no DDL do `CORE-01` §4. "ONVIF como fallback" descreve a **estratégia** de ingestão multifabricante, não o nome do driver.
 4. **Migrations versionadas** (Drizzle/Prisma). SQL aplicado à mão gera drift — nunca mais.
 5. **Nenhum segredo no repositório.** Senha de device, token, chave de API: variável de ambiente ou cofre.
 6. **Nenhum dado pessoal real** em repo, seed, fixture, foto de bancada, demo ou ambiente de terceiro (Manus, Lovable). Só dado sintético claramente fictício. **Esta regra é absoluta enquanto os itens do §14.2 estiverem abertos.**

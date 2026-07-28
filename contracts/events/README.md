@@ -22,11 +22,15 @@ As duas ratificações de 28/07 fecham as lacunas que estavam marcadas aqui: nen
 
 > Consequência para o `CLAUDE.md` §6: a lista de tipos v0 daquele parágrafo está **incompleta** em relação a este contrato — não menciona `vehicle.bike_in_elevator` nem enumera `plate.*`. Este arquivo é a fonte mais atual; o §6 deve ser alinhado no próximo checkpoint que tocar o CLAUDE.md.
 
-## ⚠️ Divergência conhecida: `unmapped` não é emitido pelo driver
+## `unmapped` — resolvido em 28/07/2026
 
-O contrato aceita `unmapped`, mas `connector/src/p6s_event_translator.py` **levanta `UnrecognizedRawEventType`** quando não encontra correspondência, em vez de emitir um evento `unmapped`.
+O tradutor emitia exceção (`UnrecognizedRawEventType`) para operador sem correspondente, o que **descartava o evento** — o oposto do que o `CORE-01` §4 e o `CORE-02` §2 pedem.
 
-Isso contraria o `CORE-02` §2, que exige que o evento chegue e *gere pendência* — hoje ele é descartado com exceção. Reconciliar exige decidir onde a pendência é registrada, o que depende do schema (**PND-16**). Registrado aqui para não passar despercebido.
+Corrigido: `connector/src/p6s_event_translator.py` emite `type: "unmapped"` e preserva o operador bruto em `attributes.unmapped_operator`, para que a pendência saiba o que estender no catálogo. O símbolo `UnrecognizedRawEventType` foi eliminado — deixá-lo com `except` inalcançável nos receptores seria a armadilha do `CLAUDE.md` §12.0.
+
+Verificado de ponta a ponta: um push com operador inventado responde **202** e chega ao sink como `unmapped`, em vez de 422.
+
+Segue pendente, e **só isto**: *onde* a pendência é registrada — tabela, fila ou log. Depende da **PND-16**. A distinção importa: emitir o evento nunca dependeu do schema; registrar a pendência depende.
 
 ## Divergência menor registrada
 
