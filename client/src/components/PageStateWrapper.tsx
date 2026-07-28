@@ -34,6 +34,14 @@ interface PageStateWrapperProps {
    * cabível simplesmente não passam.
    */
   emptyAction?: ReactNode;
+  /**
+   * Mensagem do banner de sincronização parcial, quando a página tem algo
+   * específico a dizer — várias dizem *o que* está parcial, e duas
+   * interpolam contagens ao vivo ("exibindo 12 de 30"). O wrapper é dono da
+   * aparência do banner; a página é dona do conteúdo quando ele existe.
+   * Sem isto, migrar essas páginas perderia informação.
+   */
+  partialMessage?: ReactNode;
   onRetry?: () => void;
   children: ReactNode;
 }
@@ -43,6 +51,7 @@ export function PageStateWrapper({
   emptyTitle,
   emptyDescription,
   emptyAction,
+  partialMessage,
   onRetry,
   children,
 }: PageStateWrapperProps) {
@@ -111,8 +120,8 @@ export function PageStateWrapper({
     <>
       {state === "partial" && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400 mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          {t("state.partial")}
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {partialMessage ?? t("state.partial")}
         </div>
       )}
       {children}

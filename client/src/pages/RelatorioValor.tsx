@@ -8,7 +8,7 @@
  */
 import { useState, useEffect } from "react";
 import {
-  AlertTriangle, Loader2, WifiOff, RefreshCw, Download, Mail,
+  Download, Mail,
   TrendingUp, TrendingDown, Shield, Clock, CheckCircle2, FileText,
   Calendar, Building2, Award, Target, Lightbulb, ChevronRight,
   BarChart3, Activity, Eye,
@@ -22,10 +22,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import { ValueReport, ReportPeriod, ComplianceItem } from "@/lib/types";
 import { mockValueReport } from "@/lib/mock-data";
 
-type LoadState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 const COMPLIANCE_CONFIG: Record<ComplianceItem["status"], { label: string; color: string; bg: string; border: string }> = {
   conforme:        { label: "Conforme",        color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30" },
@@ -68,70 +69,27 @@ export default function RelatorioValor() {
     return () => clearTimeout(timer);
   }, [period]);
 
-  // ===== Loading state =====
-  if (loadState === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Gerando relatório...</p>
-      </div>
-    );
-  }
-
-  // ===== Error state =====
-  if (loadState === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <AlertTriangle className="h-12 w-12 text-red-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Erro ao gerar relatório</h3>
-          <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-        </div>
-        <Button variant="outline" onClick={() => { setLoadState("loading"); setTimeout(() => setLoadState("loaded"), 800); }}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Connector offline state =====
-  if (loadState === "offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <WifiOff className="h-12 w-12 text-zinc-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Connector offline</h3>
-          <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-        </div>
-        <Button variant="outline" onClick={() => { setLoadState("loading"); setTimeout(() => setLoadState("loaded"), 800); }}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Reconectar
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Empty state =====
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // O vazio segue early-return porque os filhos do corpo desreferenciam
+  // `report`: JSX avalia o filho antes de passá-lo, então envolver tudo
+  // estouraria com report nulo. O wrapper cuida da aparência mesmo assim.
   if (loadState === "empty" || !report) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <FileText className="h-12 w-12 text-zinc-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Nenhum dado para o período</h3>
-          <p className="text-sm text-muted-foreground mt-1">Selecione outro período ou aguarde a coleta de dados.</p>
-        </div>
-      </div>
+      <PageStateWrapper
+        state="empty"
+        emptyTitle={t("rv.empty_title")}
+        emptyDescription={t("rv.empty_desc")}
+      >
+        <span />
+      </PageStateWrapper>
     );
   }
 
-  // ===== Partial sync state =====
-  const partialBanner = loadState === "partial" && (
-    <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400">
-      <AlertTriangle className="h-4 w-4" />
-      Sincronização parcial — alguns dados podem estar incompletos.
-    </div>
-  );
-
   return (
+    <PageStateWrapper
+      state={loadState}
+      onRetry={() => setLoadState("loaded")}
+    >
     <div className="space-y-6">
       {/* Header bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -159,7 +117,6 @@ export default function RelatorioValor() {
         </div>
       </div>
 
-      {partialBanner}
 
       {/* Site info */}
       <Card>
@@ -350,5 +307,6 @@ export default function RelatorioValor() {
         </Button>
       </div>
     </div>
+    </PageStateWrapper>
   );
 }

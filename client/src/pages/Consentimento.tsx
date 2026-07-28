@@ -14,12 +14,14 @@
  */
 import { useState, useMemo } from "react";
 import {
-  ShieldCheck, FileText, AlertTriangle, Loader2, WifiOff, RefreshCw,
+  ShieldCheck, FileText, AlertTriangle,
   Check, X, Trash2, Download, Eye, Clock, User,
 } from "lucide-react";
 import {
   mockConsentRecords, mockConsentMetrics,
 } from "@/lib/mock-data";
+import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import type { ConsentStatus, ExpurgoStatus, ConsentRecord } from "@/lib/types";
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
@@ -57,10 +59,12 @@ const tipoLabels: Record<string, string> = {
   funcionario: "Funcionário",
 };
 
-type LoadingState = "loading" | "empty" | "error" | "offline" | "partial" | "ready";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
+// Esta página usava "ready" onde o canônico é "loaded"; normalizado.
 
 export default function Consentimento() {
-  const [loadingState, setLoadingState] = useState<LoadingState>("ready");
+  const { t } = useI18n();
+  const [loadingState, setLoadingState] = useState<LoadState>("loaded");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [tipoFilter, setTipoFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,75 +129,16 @@ export default function Consentimento() {
     toast.success("Comprovante de exclusão baixado.");
   };
 
-  // ===== Loading state =====
-  if (loadingState === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-sm text-muted-foreground">Carregando registros de consentimento...</p>
-      </div>
-    );
-  }
-
-  // ===== Error state =====
-  if (loadingState === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15 mb-4">
-          <AlertTriangle className="h-8 w-8 text-red-400" />
-        </div>
-        <h3 className="font-display text-base font-semibold mb-1">Erro ao carregar consentimentos</h3>
-        <p className="text-sm text-muted-foreground mb-4">Não foi possível acessar o registro de conformidade.</p>
-        <Button variant="outline" onClick={() => setLoadingState("ready")}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Connector offline state =====
-  if (loadingState === "offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15 mb-4">
-          <WifiOff className="h-8 w-8 text-amber-400" />
-        </div>
-        <h3 className="font-display text-base font-semibold mb-1">Connector offline</h3>
-        <p className="text-sm text-muted-foreground mb-4">Não é possível verificar status de expurgo nos dispositivos.</p>
-        <Button variant="outline" onClick={() => setLoadingState("ready")}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Verificar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Empty state =====
-  if (loadingState === "empty" || filteredRecords.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-          <FileText className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="font-display text-base font-semibold mb-1">Nenhum registro encontrado</h3>
-        <p className="text-sm text-muted-foreground mb-4">Ajuste os filtros ou verifique se há consentimentos cadastrados.</p>
-        <Button variant="outline" onClick={() => { setStatusFilter("all"); setTipoFilter("all"); setSearchQuery(""); }}>
-          Limpar filtros
-        </Button>
-      </div>
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
   return (
+    <PageStateWrapper
+      state={loadingState}
+      onRetry={() => setLoadingState("loaded")}
+      emptyTitle={t("cons.empty_title")}
+      emptyDescription={t("cons.empty_desc")}
+      partialMessage={t("cons.partial")}
+    >
     <div className="space-y-5">
-      {/* Partial sync warning */}
-      {loadingState === "partial" && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className="text-xs text-amber-400">
-            Sincronização parcial: status de expurgo pode estar desatualizado para dispositivos offline.
-          </p>
-        </div>
-      )}
 
       {/* Metrics cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -491,6 +436,7 @@ export default function Consentimento() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageStateWrapper>
   );
 }
 

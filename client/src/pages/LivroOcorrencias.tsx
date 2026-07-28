@@ -8,7 +8,7 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import {
-  AlertTriangle, Loader2, WifiOff, RefreshCw, Plus, Search,
+  AlertTriangle, Plus, Search,
   FileText, Camera, Shield, Clock, MapPin, User, Paperclip,
   CheckCircle2, ChevronRight, Filter, Download, AlertOctagon,
 } from "lucide-react";
@@ -25,12 +25,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import {
   Occurrence, OccurrenceStatus, OccurrenceSeverity, OccurrenceType,
 } from "@/lib/types";
 import { mockOccurrences, mockOccurrenceMetrics } from "@/lib/mock-data";
 
-type LoadState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 const SEVERITY_CONFIG: Record<OccurrenceSeverity, { label: string; color: string; bg: string; border: string }> = {
   baixa:   { label: "Baixa",   color: "text-blue-400",   bg: "bg-blue-500/10",   border: "border-blue-500/30" },
@@ -103,85 +104,22 @@ export default function LivroOcorrencias() {
     });
   }, [occurrences, statusFilter, severityFilter, typeFilter, search]);
 
-  // ===== Loading state =====
-  if (loadState === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Carregando ocorrências...</p>
-      </div>
-    );
-  }
-
-  // ===== Error state =====
-  if (loadState === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <AlertTriangle className="h-12 w-12 text-red-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Erro ao carregar ocorrências</h3>
-          <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-        </div>
-        <Button variant="outline" onClick={() => { setLoadState("loading"); setTimeout(() => setLoadState("loaded"), 700); }}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Connector offline state =====
-  if (loadState === "offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <WifiOff className="h-12 w-12 text-zinc-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Connector offline</h3>
-          <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-        </div>
-        <Button variant="outline" onClick={() => { setLoadState("loading"); setTimeout(() => setLoadState("loaded"), 700); }}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Reconectar
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Empty state =====
-  if (loadState === "empty" || filtered.length === 0) {
-    return (
-      <div className="space-y-6">
-        <MetricsCards metrics={metrics} />
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <FileText className="h-12 w-12 text-zinc-400" />
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Nenhuma ocorrência encontrada</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {search || statusFilter !== "all" || severityFilter !== "all" || typeFilter !== "all"
-                ? "Tente ajustar os filtros de busca."
-                : "As ocorrências aparecerão aqui quando forem registradas."}
-            </p>
-          </div>
-          <Button onClick={() => setShowNewDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Registrar Ocorrência
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // ===== Partial sync state =====
-  const partialBanner = loadState === "partial" && (
-    <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400">
-      <AlertTriangle className="h-4 w-4" />
-      Sincronização parcial — exibindo {occurrences.length} de {metrics.total} ocorrências.
-    </div>
-  );
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // A descrição do vazio muda se há filtro ativo — preservado do original.
+  const hasFilters = Boolean(search || statusFilter !== "all" || severityFilter !== "all" || typeFilter !== "all");
 
   return (
+    <PageStateWrapper
+      state={loadState}
+      onRetry={() => setLoadState("loaded")}
+      emptyTitle={t("occ.empty_title")}
+      emptyDescription={t(hasFilters ? "occ.empty_filtered" : "occ.empty_desc")}
+      partialMessage={`${t("occ.partial_showing")} ${occurrences.length}/${metrics.total} ${t("occ.partial_items")}`}
+    >
     <div className="space-y-6">
       {/* Metrics */}
       <MetricsCards metrics={metrics} />
 
-      {partialBanner}
 
       {/* Actions bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -469,6 +407,7 @@ export default function LivroOcorrencias() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageStateWrapper>
   );
 }
 

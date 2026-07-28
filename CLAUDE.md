@@ -237,7 +237,7 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 Medido, não declarado. 32 páginas em `client/src/pages/`.
 
-> Recarimbado por exigência do §14.7.1 (este checkpoint tocou `client/src/contexts/`, `client/src/lib/` e `client/src/hooks/`). Os comandos do §14.1 foram re-rodados: **todos nos valores esperados**, e o de `type PageState` mudou de **13 para 0** — ver §14.5. Build: `tsc` 0 erros, `vite build` **1787 módulos em 6.97 s**.
+> Recarimbado por exigência do §14.7.1 (este checkpoint tocou `client/src/contexts/`, `client/src/lib/` e `client/src/hooks/`). Os comandos do §14.1 foram re-rodados: **todos nos valores esperados**, e os de union local (`PageState`/`LoadState`/`LoadingState`) foram todos a **0**, com o wrapper em **20** páginas — ver §14.5. Build: `tsc` 0 erros, `vite build` **1787 módulos em 8.95 s**.
 >
 > ⚠️ Nota sobre o contador de módulos, para não induzir a conclusão errada: em `main` (`bf94724`) este ambiente mede **1781**, não os 1786 do carimbo anterior — verificado com stash + build + unstash. A camada de dados deste checkpoint acrescenta exatamente 5 módulos, o que devolve o total a 1786. **É coincidência numérica, não confirmação do valor antigo.** Quem re-medir em `main` vai ver 1781.
 
@@ -257,8 +257,11 @@ grep -rio 'forge\|butterfly' client/src vite.config.ts | wc -l                 #
 grep -c umami client/index.html                        # (0)
 grep -r '@shared' client/src | wc -l                   # (0) imports órfãos
 grep -ri 'org_id\|tenant_id' db/ | wc -l               # (0) 🔴 tenancy ausente
-grep -rln 'type PageState' client/src/pages | wc -l    # (0) 🟢 era 13 — ver §14.5
-grep -rln PageStateWrapper client/src/pages | wc -l    # (13) as 13 usam o componente
+# 🟢 §14.5 — union local dos 5 estados. Três nomes existiam: PageState (13
+# páginas), LoadState (5) e LoadingState (2). Checar os três, senão o grep
+# passa: foi assim que o §14.5 mediu 13 quando o escopo real era 20.
+grep -rln 'type PageState\|type LoadState =\|type LoadingState' client/src/pages | wc -l  # (0)
+grep -rln PageStateWrapper client/src/pages | wc -l    # (20) todas usam o componente
 git log --oneline -S'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' | wc -l  # (5) 🔴 chave no histórico
 ```
 
@@ -331,9 +334,9 @@ Fechamento: Supabase → Settings → API Keys → chaves legadas → desabilita
 
 ## 14.5 🟢 UI — 5 estados obrigatórios (`CORE-03` §7) — FECHADO em 28/07
 
-Era: `PageStateWrapper.tsx` existia, correto e reutilizável, com **zero importações**. As **13** páginas declaravam um `type PageState` local e recolavam os blocos de JSX à mão, com as strings em português cravado — num app que declara i18n PT/EN/ZH.
+Era: `PageStateWrapper.tsx` existia, correto e reutilizável, com **zero importações**. **20** páginas declaravam um union local — sob três nomes diferentes — e recolavam os blocos de JSX à mão, com as strings em português cravado, num app que declara i18n PT/EN/ZH.
 
-Agora, medido: **0** `type PageState` locais, **13** páginas importando o componente, **0** strings dos 5 estados cravadas nas 13.
+Agora, medido: **0** unions locais, **20** páginas importando o componente, **0** strings dos 5 estados cravadas.
 
 | O que foi feito | Evidência |
 |---|---|
@@ -346,16 +349,30 @@ Agora, medido: **0** `type PageState` locais, **13** páginas importando o compo
 
 Verificado no preview (Chromium 1440×900, modo demo): as 13 renderizam, 0 chave crua, 0 erro de console além dos 403 dos snapshots apontando para a LAN da bancada.
 
-**Escopo maior que os 13, ainda aberto:** as strings dos 5 estados aparecem em mais páginas do que as que declaravam o union — foi por isso que o §14.5 media 13 mas as strings apareciam em 18–20 arquivos. Restam **7 páginas** com os blocos cravados e sem `type PageState`, medidas em 28/07:
+**Escopo completo, fechado em 28/07:** as strings dos 5 estados apareciam em mais páginas do que as 13 que declaravam o union — daí a divergência entre "13 páginas" e "18–20 arquivos". As 7 restantes foram migradas no mesmo dia. Medido agora:
 
 ```bash
-for f in client/src/pages/*.tsx; do
-  n=$(grep -c "Sincronização parcial\|Connector offline\|Tentar novamente" "$f")
-  [ "$n" != "0" ] && echo "$(basename $f .tsx) $n"
-done          # (7 páginas) — era 20 antes deste checkpoint
+grep -rln 'type PageState\|type LoadState =\|type LoadingState' client/src/pages | wc -l   # (0)
+grep -rln PageStateWrapper client/src/pages | wc -l                                        # (20)
 ```
 
-`Consentimento` (4), `Custodia` (4), `LivroOcorrencias` (4), `RelatorioValor` (4), `Reservas` (4), `Encomendas` (3), `PainelAdministradora` (3). Mesmo tratamento, próximo checkpoint — a infraestrutura (wrapper + chaves `state.*`) já está pronta, então é só migrar.
+**20 páginas** usam o componente, **0** declaram union local. As duas ocorrências que um grep amplo ainda pega em `UserAdmin` são `console.error`/`toast.error` de tratamento de erro, não os blocos dos 5 estados.
+
+Três convenções divergentes foram encontradas e normalizadas — nenhuma sobreviveria a um refactor em lote:
+
+| Página | Divergência | Tratamento |
+|---|---|---|
+| `WhiteLabel` | `type PageState` com `"ready"` | normalizado para `"loaded"` |
+| `Consentimento`, `Custodia` | `type LoadingState` com `"ready"`, variável `loadingState` | idem |
+| as outras 5 | `type LoadState` — **mesmo nome que o wrapper exporta**, colidindo no import | union local removido, passa a importar |
+
+E três constraints estruturais que exigiram tratamento individual:
+
+- `RelatorioValor` — a condição de vazio é `loadState === "empty" || !report`, e os filhos desreferenciam `report`. JSX avalia o filho antes de passá-lo, então envolver tudo estouraria com `report` nulo. O vazio segue `early-return`, com o wrapper cuidando da aparência.
+- `Encomendas`, `PainelAdministradora` — o bloco de vazio incluía os cards de métrica. O wrapper foi posto **depois** deles, que agora ficam sempre visíveis.
+- `LivroOcorrencias`, `Reservas` — descrição de vazio **condicional** (muda se há filtro ativo). Preservada via `hasFilters`.
+
+O wrapper ganhou **`partialMessage`** por necessidade medida: 6 das 7 tinham mensagem de parcial própria e 2 interpolavam contagens ao vivo (`exibindo {n} de {total}`). Trocar pela genérica teria perdido informação.
 
 Registro que **continua valendo**: os estados são **decorativos** — `retry` faz `setTimeout(..., 600)` e volta para `loaded`. "5 estados ✅" significa casca visual, não comportamento ligado a fetch.
 

@@ -9,11 +9,13 @@
 import { useState, useMemo } from "react";
 import {
   UserCheck, UserX, AlertTriangle, MessageCircle, Eye, MapPin,
-  Clock, Check, X, ShieldAlert, Loader2, WifiOff, RefreshCw,
+  Clock, Check, X, ShieldAlert,
 } from "lucide-react";
 import {
   mockStudents, mockCustodyAlerts, mockCustodyMetrics, TURMAS,
 } from "@/lib/mock-data";
+import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import type { CustodyStatus, CustodyAlert } from "@/lib/types";
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
@@ -41,10 +43,12 @@ const severityConfig = {
   warning: { label: "Atenção", className: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
 };
 
-type LoadingState = "loading" | "empty" | "error" | "offline" | "partial" | "ready";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
+// Esta página usava "ready" onde o canônico é "loaded"; normalizado.
 
 export default function Custodia() {
-  const [loadingState, setLoadingState] = useState<LoadingState>("ready");
+  const { t } = useI18n();
+  const [loadingState, setLoadingState] = useState<LoadState>("loaded");
   const [turmaFilter, setTurmaFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedAlert, setSelectedAlert] = useState<CustodyAlert | null>(null);
@@ -82,75 +86,16 @@ export default function Custodia() {
     toast.success(isFalsePositive ? "Alerta marcado como falso positivo" : "Alerta tratado e resolvido");
   };
 
-  // ===== Loading state =====
-  if (loadingState === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-sm text-muted-foreground">Carregando dados de custódia...</p>
-      </div>
-    );
-  }
-
-  // ===== Error state =====
-  if (loadingState === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15 mb-4">
-          <AlertTriangle className="h-8 w-8 text-red-400" />
-        </div>
-        <h3 className="font-display text-base font-semibold mb-1">Erro ao carregar custódia</h3>
-        <p className="text-sm text-muted-foreground mb-4">Não foi possível conectar ao Connector.</p>
-        <Button variant="outline" onClick={() => setLoadingState("ready")}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Connector offline state =====
-  if (loadingState === "offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15 mb-4">
-          <WifiOff className="h-8 w-8 text-amber-400" />
-        </div>
-        <h3 className="font-display text-base font-semibold mb-1">Connector offline</h3>
-        <p className="text-sm text-muted-foreground mb-4">O serviço local não está respondendo. Dados podem estar desatualizados.</p>
-        <Button variant="outline" onClick={() => setLoadingState("ready")}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Verificar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Empty state =====
-  if (loadingState === "empty" || filteredStudents.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-          <UserX className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="font-display text-base font-semibold mb-1">Nenhum aluno encontrado</h3>
-        <p className="text-sm text-muted-foreground mb-4">Ajuste os filtros ou aguarde a sincronização com o Connector.</p>
-        <Button variant="outline" onClick={() => { setTurmaFilter("all"); setStatusFilter("all"); }}>
-          Limpar filtros
-        </Button>
-      </div>
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
   return (
+    <PageStateWrapper
+      state={loadingState}
+      onRetry={() => setLoadingState("loaded")}
+      emptyTitle={t("cust.empty_title")}
+      emptyDescription={t("cust.empty_desc")}
+      partialMessage={t("cust.partial")}
+    >
     <div className="space-y-5">
-      {/* Partial sync warning */}
-      {loadingState === "partial" && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className="text-xs text-amber-400">
-            Sincronização parcial: 3 de 6 câmeras respondendo. Dados de canais D1, D4 e D6 podem estar desatualizados.
-          </p>
-        </div>
-      )}
 
       {/* Metrics cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -357,6 +302,7 @@ export default function Custodia() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageStateWrapper>
   );
 }
 

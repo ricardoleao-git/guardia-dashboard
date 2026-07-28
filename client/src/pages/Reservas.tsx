@@ -7,8 +7,7 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import {
-  Calendar, Clock, Users, DollarSign, CheckCircle2, XCircle,
-  AlertTriangle, Loader2, WifiOff, RefreshCw, Plus, MapPin,
+  Calendar, Clock, Users, DollarSign, CheckCircle2, XCircle, Plus, MapPin,
   CalendarDays, TrendingUp, Ban, FileText, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import {
   CommonArea, Reservation, ReservationStatus, AreaType,
 } from "@/lib/types";
@@ -31,7 +31,7 @@ import {
   mockCommonAreas, mockReservations, mockReservationMetrics,
 } from "@/lib/mock-data";
 
-type LoadState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 const STATUS_CONFIG: Record<ReservationStatus, { label: string; color: string; dot: string; icon: typeof CheckCircle2 }> = {
   pendente:   { label: "Pendente",   color: "text-amber-400",  dot: "bg-amber-400",  icon: Clock },
@@ -95,85 +95,22 @@ export default function Reservas() {
     });
   }, [reservations, statusFilter, areaFilter, search]);
 
-  // ===== Loading state =====
-  if (loadState === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Carregando reservas...</p>
-      </div>
-    );
-  }
-
-  // ===== Error state =====
-  if (loadState === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <AlertTriangle className="h-12 w-12 text-red-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Erro ao carregar reservas</h3>
-          <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-        </div>
-        <Button variant="outline" onClick={() => { setLoadState("loading"); setTimeout(() => setLoadState("loaded"), 600); }}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Connector offline state =====
-  if (loadState === "offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <WifiOff className="h-12 w-12 text-zinc-400" />
-        <div className="text-center">
-          <h3 className="text-lg font-semibold">Connector offline</h3>
-          <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-        </div>
-        <Button variant="outline" onClick={() => { setLoadState("loading"); setTimeout(() => setLoadState("loaded"), 600); }}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Reconectar
-        </Button>
-      </div>
-    );
-  }
-
-  // ===== Empty state =====
-  if (loadState === "empty" || filtered.length === 0) {
-    return (
-      <div className="space-y-6">
-        <MetricsCards metrics={metrics} />
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <CalendarDays className="h-12 w-12 text-zinc-400" />
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Nenhuma reserva encontrada</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {search || statusFilter !== "all" || areaFilter !== "all"
-                ? "Tente ajustar os filtros de busca."
-                : "As reservas aparecerão aqui quando forem criadas."}
-            </p>
-          </div>
-          <Button onClick={() => setShowNewDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Nova Reserva
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // ===== Partial sync state =====
-  const partialBanner = loadState === "partial" && (
-    <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400">
-      <AlertTriangle className="h-4 w-4" />
-      Sincronização parcial — exibindo {reservations.length} de {metrics.total} reservas.
-    </div>
-  );
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // A descrição do vazio muda se há filtro ativo — preservado do original.
+  const hasFilters = Boolean(search || statusFilter !== "all" || areaFilter !== "all");
 
   return (
+    <PageStateWrapper
+      state={loadState}
+      onRetry={() => setLoadState("loaded")}
+      emptyTitle={t("res.empty_title")}
+      emptyDescription={t(hasFilters ? "res.empty_filtered" : "res.empty_desc")}
+      partialMessage={`${t("res.partial_showing")} ${reservations.length}/${metrics.total} ${t("res.partial_items")}`}
+    >
     <div className="space-y-6">
       {/* Metrics */}
       <MetricsCards metrics={metrics} />
 
-      {partialBanner}
 
       {/* Actions bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -369,6 +306,7 @@ export default function Reservas() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageStateWrapper>
   );
 }
 

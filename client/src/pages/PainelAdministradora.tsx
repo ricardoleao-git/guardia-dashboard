@@ -10,9 +10,8 @@
  */
 import { useState, useMemo } from "react";
 import {
-  Building2, School, Warehouse, Home, Search, Cpu, Camera, Users,
-  AlertTriangle, Activity, WifiOff, RefreshCw, Server, HardDrive,
-  CheckCircle2, XCircle, AlertCircle, Loader2, ChevronRight, MapPin,
+  Building2, School, Warehouse, Home, Search, Cpu, Camera, Users, Activity, Server, HardDrive,
+  CheckCircle2, XCircle, AlertCircle, ChevronRight, MapPin,
 } from "lucide-react";
 import {
   mockSites, mockOrgMetrics,
@@ -35,8 +34,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 
-type LoadState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 const STATUS_CONFIG: Record<SiteStatus, { label: string; color: string; dot: string; icon: typeof CheckCircle2 }> = {
   online:   { label: "Online",   color: "text-emerald-400", dot: "bg-emerald-500", icon: CheckCircle2 },
@@ -87,87 +87,25 @@ export default function PainelAdministradora() {
   }, [search, statusFilter, verticalFilter]);
 
   // --- STATE: loading (skeleton) ---
-  if (loadState === "loading") {
-    return (
-      <div className="space-y-6 p-6">
-        <div className="h-8 w-72 bg-muted/30 rounded animate-pulse" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 bg-muted/20 rounded-lg animate-pulse" />
-          ))}
-        </div>
-        <div className="h-96 bg-muted/20 rounded-lg animate-pulse" />
-      </div>
-    );
-  }
-
-  // --- STATE: connector offline ---
-  if (loadState === "offline") {
-    return (
-      <div className="p-6 space-y-4">
-        <div className="flex items-center gap-3 bg-red-950/40 border border-red-800/50 rounded-lg p-4">
-          <WifiOff className="h-5 w-5 text-red-400" />
-          <div>
-            <p className="text-red-400 font-medium">Sem conexão com os dispositivos</p>
-            <p className="text-sm text-red-400/70">O connector está offline. Não é possível obter o estado das unidades.</p>
-          </div>
-          <Button variant="outline" size="sm" className="ml-auto" onClick={() => setLoadState("loaded")}>
-            <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // --- STATE: error ---
-  if (loadState === "error") {
-    return (
-      <div className="p-6 flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <AlertTriangle className="h-12 w-12 text-amber-400" />
-        <div className="text-center">
-          <p className="text-lg font-medium">Erro ao carregar unidades</p>
-          <p className="text-sm text-muted-foreground">Não foi possível buscar os dados das unidades. Verifique a conexão.</p>
-        </div>
-        <Button variant="outline" onClick={() => setLoadState("loaded")}>
-          <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // --- STATE: empty ---
-  if (loadState === "empty" || filtered.length === 0) {
-    return (
-      <div className="p-6 space-y-6">
-        <HeaderSection />
-        <OrgMetricsCards metrics={mockOrgMetrics} />
-        <div className="flex flex-col items-center justify-center min-h-[300px] space-y-4 border border-dashed rounded-lg">
-          <Building2 className="h-12 w-12 text-muted-foreground/50" />
-          <div className="text-center">
-            <p className="text-lg font-medium">Nenhuma unidade encontrada</p>
-            <p className="text-sm text-muted-foreground">Ajuste os filtros ou cadastre a primeira unidade.</p>
-          </div>
-          <Button>
-            <Building2 className="h-4 w-4 mr-1" /> Cadastrar unidade
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // --- STATE: partial sync ---
-  const partialBadge = loadState === "partial" ? (
-    <div className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded px-3 py-1.5">
-      <AlertTriangle className="h-4 w-4 text-amber-400" />
-      <span className="text-sm text-amber-400">Sincronização parcial — 2 unidades sem confirmar estado do connector</span>
-    </div>
-  ) : null;
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // O wrapper vai DEPOIS das métricas, que ficam sempre visíveis — antes,
+  // loading/error/offline substituíam até o cabeçalho da página.
   return (
     <div className="p-6 space-y-6">
       <HeaderSection />
-      {partialBadge}
       <OrgMetricsCards metrics={mockOrgMetrics} />
+      <PageStateWrapper
+        state={loadState}
+        onRetry={() => setLoadState("loaded")}
+        emptyTitle={t("adm.empty_title")}
+        emptyDescription={t("adm.empty_desc")}
+        partialMessage={t("adm.partial")}
+        emptyAction={
+          <Button>
+            <Building2 className="h-4 w-4 mr-1" /> {t("adm.register")}
+          </Button>
+        }
+      >
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -338,6 +276,7 @@ export default function PainelAdministradora() {
           )}
         </DialogContent>
       </Dialog>
+      </PageStateWrapper>
     </div>
   );
 }
