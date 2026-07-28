@@ -209,6 +209,10 @@ E `supabase.ts` já guardava o caso: `supabase = isSupabaseConfigured ? createCl
 
 Fora deste arquivo, os documentos abaixo são contrato para quem escreve código:
 
+> As especificações vivem em **`docs/spec/`** neste repositório. O diretório
+> **`docs/_legacy/`** está obsoleto e contradiz os §2 e §3 — não usar como referência.
+> A definição de **PND-01 a PND-20** está em `docs/spec/05_Roadmap-e-Fases.md` §6.
+
 | Precisa de | Ler |
 |---|---|
 | Schema, RLS, storage, expurgo, migrations | `CORE-01_MODELO-DE-DADOS-CORE.md` |
