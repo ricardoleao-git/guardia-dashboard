@@ -10,16 +10,15 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Building2, Video, PhoneCall, DoorOpen, Users, Activity,
-  AlertCircle, CheckCircle2, XCircle, Clock, Radio,
-  Loader2, WifiOff, Inbox, RefreshCw, Headphones, ChevronRight,
+  AlertCircle, CheckCircle2, XCircle, Clock, Radio, Headphones, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
-import { Button } from "@/components/ui/button";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import { mockPortarias } from "@/lib/mock-data";
 import type { PortariaRemota as Portaria } from "@/lib/types";
 
-type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
   online: { label: "Online", color: "text-green-400", dot: "bg-green-500" },
@@ -35,7 +34,7 @@ const portaoStatusConfig: Record<string, { label: string; color: string }> = {
 
 export default function PortariaRemotaPage() {
   const { t } = useI18n();
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const [pageState, setPageState] = useState<LoadState>("loading");
   const [portarias, setPortarias] = useState<Portaria[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -63,68 +62,16 @@ export default function PortariaRemotaPage() {
     return { online, degradado, offline, cameras, camerasTotal, eventos, aguardando };
   }, [portarias]);
 
-  // CORE-03 §7: 5 estados obrigatórios
-  if (pageState === "loading") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Carregando portarias...</p>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "error") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <AlertCircle className="h-12 w-12 text-red-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Erro ao carregar</h3>
-                <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-              </div>
-              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "offline") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <WifiOff className="h-12 w-12 text-zinc-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Connector offline</h3>
-                <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-              </div>
-              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "empty") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Inbox className="h-12 w-12 text-zinc-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Nenhuma portaria cadastrada</h3>
-                <p className="text-sm text-muted-foreground mt-1">Cadastre uma unidade para iniciar o monitoramento remoto.</p>
-              </div>
-            </div>
-          </main>
-
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // Dentro do <main>: o cabeçalho permanece visível durante o carregamento.
   return (
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <PageStateWrapper
+            state={pageState}
+            onRetry={retry}
+            emptyTitle={t("portaria.empty_title")}
+            emptyDescription={t("portaria.empty_desc")}
+          >
           {/* Header */}
           <div className="mb-6">
             <h1 className="font-display text-2xl font-bold tracking-tight">Portaria Remota</h1>
@@ -317,6 +264,7 @@ export default function PortariaRemotaPage() {
               )}
             </div>
           </div>
+          </PageStateWrapper>
         </main>
 
   );

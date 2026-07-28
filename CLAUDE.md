@@ -237,7 +237,7 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 
 Medido, não declarado. 32 páginas em `client/src/pages/`.
 
-> Recarimbado por exigência do §14.7.1 (o checkpoint tocou `client/src/lib/`, `client/src/hooks/` e `client/src/contexts/`). Os 11 comandos do §14.1 foram re-rodados: **todos os valores permanecem os esperados**. Build: `tsc` 0 erros, `vite build` **1786 módulos em 4.19 s**.
+> Recarimbado por exigência do §14.7.1 (este checkpoint tocou `client/src/contexts/`, `client/src/lib/` e `client/src/hooks/`). Os comandos do §14.1 foram re-rodados: **todos nos valores esperados**, e o de `type PageState` mudou de **13 para 0** — ver §14.5. Build: `tsc` 0 erros, `vite build` **1787 módulos em 6.97 s**.
 >
 > ⚠️ Nota sobre o contador de módulos, para não induzir a conclusão errada: em `main` (`bf94724`) este ambiente mede **1781**, não os 1786 do carimbo anterior — verificado com stash + build + unstash. A camada de dados deste checkpoint acrescenta exatamente 5 módulos, o que devolve o total a 1786. **É coincidência numérica, não confirmação do valor antigo.** Quem re-medir em `main` vai ver 1781.
 
@@ -257,7 +257,8 @@ grep -rio 'forge\|butterfly' client/src vite.config.ts | wc -l                 #
 grep -c umami client/index.html                        # (0)
 grep -r '@shared' client/src | wc -l                   # (0) imports órfãos
 grep -ri 'org_id\|tenant_id' db/ | wc -l               # (0) 🔴 tenancy ausente
-grep -rln 'type PageState' client/src/pages | wc -l    # (13) duplicação dos 5 estados
+grep -rln 'type PageState' client/src/pages | wc -l    # (0) 🟢 era 13 — ver §14.5
+grep -rln PageStateWrapper client/src/pages | wc -l    # (13) as 13 usam o componente
 git log --oneline -S'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' | wc -l  # (5) 🔴 chave no histórico
 ```
 
@@ -328,17 +329,35 @@ fi
 
 Fechamento: Supabase → Settings → API Keys → chaves legadas → desabilitar a `anon` JWT.
 
-## 14.5 🟡 UI — 5 estados obrigatórios (`CORE-03` §7)
+## 14.5 🟢 UI — 5 estados obrigatórios (`CORE-03` §7) — FECHADO em 28/07
 
-Existe `client/src/components/PageStateWrapper.tsx` (94 linhas), correto e reutilizável, exportando `LoadState` e os 5 estados com callback de retry.
+Era: `PageStateWrapper.tsx` existia, correto e reutilizável, com **zero importações**. As **13** páginas declaravam um `type PageState` local e recolavam os blocos de JSX à mão, com as strings em português cravado — num app que declara i18n PT/EN/ZH.
 
-**Ele tem zero importações de página.** Em vez de usá-lo, **13 das 32 páginas** declararam um `type PageState` local e recolaram os blocos de JSX à mão: `"Connector offline"` 22×, `"Tentar novamente"` 21×, `"Carregando..."` 17×, `"Sincronização parcial"` 12×.
+Agora, medido: **0** `type PageState` locais, **13** páginas importando o componente, **0** strings dos 5 estados cravadas nas 13.
 
-**Nenhuma dessas strings passa por `t()`** — o app declara i18n PT/EN/ZH e os 5 estados obrigatórios estão em português cravado nos 13 arquivos. As chaves de i18n adicionadas nos últimos checkpoints são todas `nav.*`.
+| O que foi feito | Evidência |
+|---|---|
+| i18n dos 5 estados | 10 chaves `state.*` × 3 idiomas, resolvidas **dentro** do wrapper. Nenhuma página recola string |
+| Vazio específico por página | 11 pares `*.empty_title`/`*.empty_desc` × 3 idiomas — o `CORE-03` §7 pede CTA próprio no vazio, então o wrapper aceita título, descrição e **`emptyAction`** |
+| Ganho de comportamento | O wrapper fica **dentro** do `<main>` nas páginas que têm um, então o cabeçalho continua visível durante o carregamento. Antes cada bloco era `early-return` e substituía a página inteira — o "spinner de tela cheia" que o §7 proíbe |
+| Resíduo eliminado de graça | os `early-return` carregavam `<main>` duplicado (4 por página em 6 páginas) — resquício de quando cada página tinha o próprio layout |
+| Divergência normalizada | `WhiteLabel` usava `"ready"` onde o canônico é `"loaded"`; o `tsc` pegou, foi normalizado |
+| **Bug pré-existente corrigido** | **14 chaves de i18n usadas e nunca definidas** em 8 páginas (`aibox.title`, `freq.subtitle`, `vehicle.flow`…). O `t()` cai para a própria chave, então a tela mostrava `aibox.title` cru. Agora 0 ausentes nas 32 páginas |
 
-Correção pendente, mecânica: importar `PageStateWrapper`/`LoadState` nas 13, apagar o union local e os blocos, passar as ~8 strings do componente por `t()` com as chaves nos três idiomas. **Fazer antes da próxima tela** — o padrão colado já é o default.
+Verificado no preview (Chromium 1440×900, modo demo): as 13 renderizam, 0 chave crua, 0 erro de console além dos 403 dos snapshots apontando para a LAN da bancada.
 
-Registro: os estados são hoje **decorativos** (`retry` faz `setTimeout(..., 600)` e volta para `loaded`). Correto para efeito de especificação; "5 estados ✅" significa casca visual, não comportamento ligado a fetch.
+**Escopo maior que os 13, ainda aberto:** as strings dos 5 estados aparecem em mais páginas do que as que declaravam o union — foi por isso que o §14.5 media 13 mas as strings apareciam em 18–20 arquivos. Restam **7 páginas** com os blocos cravados e sem `type PageState`, medidas em 28/07:
+
+```bash
+for f in client/src/pages/*.tsx; do
+  n=$(grep -c "Sincronização parcial\|Connector offline\|Tentar novamente" "$f")
+  [ "$n" != "0" ] && echo "$(basename $f .tsx) $n"
+done          # (7 páginas) — era 20 antes deste checkpoint
+```
+
+`Consentimento` (4), `Custodia` (4), `LivroOcorrencias` (4), `RelatorioValor` (4), `Reservas` (4), `Encomendas` (3), `PainelAdministradora` (3). Mesmo tratamento, próximo checkpoint — a infraestrutura (wrapper + chaves `state.*`) já está pronta, então é só migrar.
+
+Registro que **continua valendo**: os estados são **decorativos** — `retry` faz `setTimeout(..., 600)` e volta para `loaded`. "5 estados ✅" significa casca visual, não comportamento ligado a fetch.
 
 ## 14.6 🔵 Connector — não tocar antes da bancada
 

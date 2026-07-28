@@ -24,12 +24,16 @@ import {
   Loader2, Building2, Eye, Plus, Search,
 } from "lucide-react";
 import { mockWhiteLabelConfigs } from "@/lib/mock-data";
+import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import type { WhiteLabelConfig } from "@/lib/types";
 
-type PageState = "loading" | "ready" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
+// Esta página usava "ready" onde o canônico é "loaded"; normalizado.
 
 export default function WhiteLabel() {
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const { t } = useI18n();
+  const [pageState, setPageState] = useState<LoadState>("loading");
   const [configs, setConfigs] = useState<WhiteLabelConfig[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -40,10 +44,15 @@ export default function WhiteLabel() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setConfigs(mockWhiteLabelConfigs);
-      setPageState("ready");
+      setPageState("loaded");
     }, 600);
     return () => clearTimeout(timer);
   }, []);
+
+  const retry = () => {
+    setPageState("loading");
+    setTimeout(() => setPageState("loaded"), 600);
+  };
 
   const filtered = configs.filter((c) => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
@@ -86,69 +95,22 @@ export default function WhiteLabel() {
     return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />Pendente</Badge>;
   };
 
-  // === ESTADO: LOADING ===
-  if (pageState === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Carregando configurações de white label...</p>
-      </div>
-    );
-  }
-
-  // === ESTADO: ERROR ===
-  if (pageState === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <AlertCircle className="h-10 w-10 text-destructive" />
-        <p className="text-base font-medium">Erro ao carregar white label</p>
-        <p className="text-sm text-muted-foreground">Não foi possível conectar ao serviço de configuração.</p>
-        <Button variant="outline" onClick={() => setPageState("loading")}>
-          <Loader2 className="h-4 w-4 mr-2" /> Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  // === ESTADO: OFFLINE (connector offline) ===
-  if (pageState === "offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <XCircle className="h-10 w-10 text-muted-foreground" />
-        <p className="text-base font-medium">Connector offline</p>
-        <p className="text-sm text-muted-foreground">O serviço de white label requer o connector ativo.</p>
-        <Button variant="outline" onClick={() => setPageState("loading")}>Verificar conexão</Button>
-      </div>
-    );
-  }
-
-  // === ESTADO: EMPTY ===
-  if (pageState === "empty" || configs.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Palette className="h-10 w-10 text-muted-foreground" />
-        <p className="text-base font-medium">Nenhuma configuração de white label</p>
-        <p className="text-sm text-muted-foreground">Crie a primeira personalização de marca para um cliente.</p>
-        <Button onClick={() => setShowNewDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Nova configuração
-        </Button>
-      </div>
-    );
-  }
-
-  // === ESTADO: PARTIAL (sincronização parcial) ===
-  const isPartial = pageState === "partial";
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // Esta é a única das 13 que já tinha CTA no estado vazio — preservado
+  // via emptyAction, que é o que o CORE-03 §7 pede ("empty state com CTA").
   return (
+    <PageStateWrapper
+      state={pageState}
+      onRetry={retry}
+      emptyTitle={t("wl.empty_title")}
+      emptyDescription={t("wl.empty_desc")}
+      emptyAction={
+        <Button onClick={() => setShowNewDialog(true)}>
+          <Plus className="h-4 w-4 mr-2" /> {t("wl.new_config")}
+        </Button>
+      }
+    >
     <div className="space-y-6">
-      {isPartial && (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 text-yellow-500" />
-          <span className="text-sm text-yellow-600 dark:text-yellow-400">
-            Sincronização parcial: 4 de {configs.length} configurações sincronizadas. Tentando reconectar...
-          </span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -486,5 +448,6 @@ export default function WhiteLabel() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageStateWrapper>
   );
 }

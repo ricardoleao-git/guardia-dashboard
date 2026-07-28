@@ -10,8 +10,7 @@
  * CORE-03 §7: 5 estados obrigatórios (loading, empty, error, offline, partial)
  */
 import { useState, useEffect } from "react";
-import { Loader2, AlertTriangle, WifiOff, Inbox, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import {
   FileText, Sparkles, Calendar, Download, Send,
   TrendingUp, TrendingDown, CheckCircle2, Users,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 
 interface SummarySection {
   title: string;
@@ -85,12 +85,12 @@ const mockMetrics = [
   { label: "Câmeras Online", value: "5/6", trend: "stable", change: "0%", icon: Camera, color: "text-blue-400" },
 ];
 
-type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 
 export default function AISummary() {
   const { t } = useI18n();
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const [pageState, setPageState] = useState<LoadState>("loading");
   const [period, setPeriod] = useState("today");
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(true);
@@ -111,70 +111,14 @@ export default function AISummary() {
     }, 1500);
   };
 
-  // CORE-03 §7: 5 estados obrigatórios
-  if (pageState === "loading") {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando resumo de IA...</p>
-        </div>
-      </>
-    );
-  }
-
-  if (pageState === "error") {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <AlertTriangle className="h-12 w-12 text-red-400" />
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Erro ao carregar</h3>
-            <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-          </div>
-          <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
-        </div>
-      </>
-    );
-  }
-
-  if (pageState === "offline") {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <WifiOff className="h-12 w-12 text-zinc-400" />
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Connector offline</h3>
-            <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-          </div>
-          <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
-        </div>
-      </>
-    );
-  }
-
-  if (pageState === "empty") {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <Inbox className="h-12 w-12 text-zinc-400" />
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Nenhum resumo disponível</h3>
-            <p className="text-sm text-muted-foreground mt-1">Gere um resumo para o período selecionado.</p>
-          </div>
-        </div>
-      </>
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
   return (
-    <>
-      {pageState === "partial" && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-400 mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          Sincronização parcial — alguns dados podem estar incompletos.
-        </div>
-      )}
+    <PageStateWrapper
+      state={pageState}
+      onRetry={retry}
+      emptyTitle={t("summary.empty_title")}
+      emptyDescription={t("summary.empty_desc")}
+    >
 
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
@@ -316,6 +260,6 @@ export default function AISummary() {
           </div>
         </>
       )}
-    </>
+    </PageStateWrapper>
   );
 }

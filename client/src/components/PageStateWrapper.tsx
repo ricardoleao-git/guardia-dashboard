@@ -28,6 +28,12 @@ interface PageStateWrapperProps {
   emptyTitle?: string;
   /** Descrição do estado vazio. Já resolvida via `t()` pelo chamador. */
   emptyDescription?: string;
+  /**
+   * CTA do estado vazio — o CORE-03 §7 pede "empty state com CTA"
+   * ("Adicione o primeiro dispositivo"). Opcional: páginas sem ação
+   * cabível simplesmente não passam.
+   */
+  emptyAction?: ReactNode;
   onRetry?: () => void;
   children: ReactNode;
 }
@@ -36,6 +42,7 @@ export function PageStateWrapper({
   state,
   emptyTitle,
   emptyDescription,
+  emptyAction,
   onRetry,
   children,
 }: PageStateWrapperProps) {
@@ -94,6 +101,7 @@ export function PageStateWrapper({
             {emptyDescription ?? t("state.empty_desc")}
           </p>
         </div>
+        {emptyAction}
       </div>
     );
   }

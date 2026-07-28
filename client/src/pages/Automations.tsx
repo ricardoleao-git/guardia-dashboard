@@ -22,12 +22,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import { useAutomationRules } from "@/hooks/useAutomationRules";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Loader2, WifiOff, Inbox, RefreshCw } from "lucide-react";
 
-type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 // ===== Types =====
 interface Automation {
@@ -811,7 +812,7 @@ export default function Automations() {
     flowItems.some(i => i.type === type && i.optionId === optionId);
 
   // CORE-03 §7: 5 estados obrigatórios
-  const [pageState, setPageState] = useState<PageState>(rulesLoading ? "loading" : "loaded");
+  const [pageState, setPageState] = useState<LoadState>(rulesLoading ? "loading" : "loaded");
   useEffect(() => {
     if (!rulesLoading && automations.length === 0 && rules.length === 0) {
       const timer = setTimeout(() => setPageState("empty"), 300);
@@ -822,61 +823,8 @@ export default function Automations() {
 
   const retry = () => { setPageState("loading"); setTimeout(() => setPageState("loaded"), 600); };
 
-  if (pageState === "loading") {
-    return (
-      <div className="min-h-screen bg-background">
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Carregando automações...</p>
-          </div>
-        </div>
-    );
-  }
-
-  if (pageState === "error") {
-    return (
-      <div className="min-h-screen bg-background">
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <AlertCircle className="h-12 w-12 text-red-400" />
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">Erro ao carregar</h3>
-              <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-            </div>
-            <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
-          </div>
-        </div>
-    );
-  }
-
-  if (pageState === "offline") {
-    return (
-      <div className="min-h-screen bg-background">
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <WifiOff className="h-12 w-12 text-zinc-400" />
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">Connector offline</h3>
-              <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-            </div>
-            <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
-          </div>
-        </div>
-    );
-  }
-
-  if (pageState === "empty") {
-    return (
-      <div className="min-h-screen bg-background">
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <Inbox className="h-12 w-12 text-zinc-400" />
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">Nenhuma automação configurada</h3>
-              <p className="text-sm text-muted-foreground mt-1">Crie sua primeira regra de automação para começar.</p>
-            </div>
-          </div>
-        </div>
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // Dentro do <main>: o cabeçalho permanece visível durante o carregamento.
   return (
     <div className="min-h-screen bg-background">
 
@@ -930,6 +878,12 @@ export default function Automations() {
         </div>
 
         <main className="p-6 space-y-6">
+          <PageStateWrapper
+            state={pageState}
+            onRetry={retry}
+            emptyTitle={t("auto.empty_title")}
+            emptyDescription={t("auto.empty_desc")}
+          >
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-xl border border-border bg-card p-4">
@@ -1696,6 +1650,7 @@ export default function Automations() {
               </div>
             </div>
           )}
+          </PageStateWrapper>
         </main>
 
       {/* Hidden file input for import */}

@@ -11,16 +11,16 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Megaphone, Plus, Search, Filter, Clock, CheckCircle2, AlertCircle,
-  FileText, Calendar, Users, Trash2, Edit2, Eye, Download,
-  Loader2, WifiOff, Inbox, RefreshCw, Paperclip, XCircle,
+  FileText, Calendar, Users, Trash2, Edit2, Eye, Download, Paperclip, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { PageStateWrapper, type LoadState } from "@/components/PageStateWrapper";
 import { Button } from "@/components/ui/button";
 import { mockComunicados, mockComunicadoMetrics } from "@/lib/mock-data";
 import type { Comunicado } from "@/lib/types";
 
-type PageState = "loading" | "loaded" | "empty" | "error" | "offline" | "partial";
+// O union dos 5 estados vem do PageStateWrapper — não redeclarar (§14.5).
 
 const categoriaConfig: Record<string, { label: string; color: string; icon: typeof Megaphone }> = {
   urgente: { label: "Urgente", color: "bg-red-500/10 text-red-400 border-red-500/20", icon: AlertCircle },
@@ -49,7 +49,7 @@ import { Wrench } from "lucide-react";
 
 export default function Comunicados() {
   const { t } = useI18n();
-  const [pageState, setPageState] = useState<PageState>("loading");
+  const [pageState, setPageState] = useState<LoadState>("loading");
   const [comunicados, setComunicados] = useState<Comunicado[]>([]);
   const [search, setSearch] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("all");
@@ -78,68 +78,16 @@ export default function Comunicados() {
     return result.sort((a, b) => b.dataPublicacao.localeCompare(a.dataPublicacao));
   }, [comunicados, categoriaFilter, statusFilter, search]);
 
-  // CORE-03 §7: 5 estados obrigatórios
-  if (pageState === "loading") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Carregando comunicados...</p>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "error") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <AlertCircle className="h-12 w-12 text-red-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Erro ao carregar</h3>
-                <p className="text-sm text-muted-foreground mt-1">Não foi possível conectar ao servidor.</p>
-              </div>
-              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente</Button>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "offline") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <WifiOff className="h-12 w-12 text-zinc-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Connector offline</h3>
-                <p className="text-sm text-muted-foreground mt-1">O servidor GuardIA não está respondendo.</p>
-              </div>
-              <Button variant="outline" onClick={retry}><RefreshCw className="h-4 w-4 mr-2" /> Reconectar</Button>
-            </div>
-          </main>
-
-    );
-  }
-
-  if (pageState === "empty") {
-    return (
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Inbox className="h-12 w-12 text-zinc-400" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Nenhum comunicado publicado</h3>
-                <p className="text-sm text-muted-foreground mt-1">Crie seu primeiro comunicado para os moradores.</p>
-              </div>
-            </div>
-          </main>
-
-    );
-  }
-
+  // CORE-03 §7: os 5 estados obrigatórios, via PageStateWrapper.
+  // Dentro do <main>: o cabeçalho permanece visível durante o carregamento.
   return (
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <PageStateWrapper
+            state={pageState}
+            onRetry={retry}
+            emptyTitle={t("com.empty_title")}
+            emptyDescription={t("com.empty_desc")}
+          >
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
@@ -372,6 +320,7 @@ export default function Comunicados() {
               </div>
             </div>
           )}
+          </PageStateWrapper>
         </main>
 
   );
