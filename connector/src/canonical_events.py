@@ -104,3 +104,29 @@ class CanonicalEvent:
             "attributes": self.attributes,
             "snapshot_ref": self.snapshot_ref,
         }
+
+    @classmethod
+    def from_core_payload(cls, d: Dict[str, Any]) -> "CanonicalEvent":
+        """
+        Reconstrói a partir do payload do core. Usado pela fila de entrega
+        persistida: o mesmo formato que vai para o sink volta do disco, então
+        não há um segundo esquema de serialização para divergir.
+
+        `raw_debug` não volta de propósito — ele nunca sai em
+        `to_core_payload()`, e o bruto tem persistência e prazo próprios
+        (`ingest_store.RAW_RETENTION_DAYS`, CORE-05 §2).
+        """
+        return cls(
+            event_id=d["event_id"],
+            event_type=d["event_type"],
+            device_serial=d["device_serial"],
+            occurred_at=d["occurred_at"],
+            received_at=d["received_at"],
+            source_channel=d["source_channel"],
+            correlation=Correlation(
+                face_uuid=d.get("face_uuid"),
+                group_id2=d.get("group_id2"),
+            ),
+            attributes=d.get("attributes") or {},
+            snapshot_ref=d.get("snapshot_ref"),
+        )

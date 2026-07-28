@@ -126,3 +126,7 @@ shared/
 # Ancorado na raiz de propósito: sem a barra inicial, o padrão também engoliria
 # scripts/bancada/, que é código e precisa ser versionado.
 /bancada/
+
+# Estado de ingestão do connector (dedupe, fila, payload bruto).
+# Dado operacional local, com payload de device — nunca versionar.
+connector/state/

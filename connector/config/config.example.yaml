@@ -28,6 +28,14 @@ ingestion:
   # recebidos, para revelar o formato real. Trocar para "hmac_sha1"
   # só depois de confirmado (ver connector/src/push_auth.py).
   push_auth_mode: "log_only"
+  # Estado de ingestão persistido: dedupe, fila de entrega e payload bruto.
+  # Arquivo LOCAL do connector — não é tabela do produto, não esbarra na
+  # PND-16. Ver connector/src/ingest_store.py.
+  state_db_path: "connector/state/ingest.db"
+  # Prazo do payload bruto. CORE-05 §2 propõe 7 dias ("vence antes do
+  # metadado; serve para depurar integração, não para operar"). É proposta
+  # técnica a validar juridicamente (PND-11), não parecer.
+  raw_retention_days: 7
 
 # Túnel MQTT (P6SEventMQTTConfig — CLAUDE.md §3.3), broker EMQX
 mqtt:

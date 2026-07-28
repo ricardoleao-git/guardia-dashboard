@@ -16,6 +16,7 @@ documentado no material disponível. `event_topic_pattern` em
 `MqttConfig` é o ponto único para ajustar assim que confirmado (EMQX +
 `PUT /System/P6SEventMQTTConfig` na bancada).
 """
+import time
 from typing import Optional
 
 import paho.mqtt.client as mqtt
@@ -81,6 +82,7 @@ class MqttReceiver:
             logger.debug(f"[mqtt_receiver] duplicado ignorado: {event.event_id}")
             return
 
+        state.store.store_raw(device_serial, event.event_id, raw, time.time())
         state.retry_queue.enqueue(event)
         state.retry_queue.process_due(self.sink.deliver)
 

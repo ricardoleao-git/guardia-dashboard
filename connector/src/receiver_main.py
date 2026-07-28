@@ -29,6 +29,7 @@ from loguru import logger
 from config import load_config, AppConfig
 from core_sink import CoreSink, LoggingSink
 from ingest_state import IngestStateManager
+from ingest_store import SqliteIngestStore, purge_all
 from mqtt_receiver import MqttReceiver
 from push_receiver import run_push_receiver
 
@@ -52,7 +53,8 @@ def setup_logging(log_level: str = "INFO") -> None:
 
 def run(config: AppConfig, sink: CoreSink = None) -> None:
     sink = sink or LoggingSink()
-    state_manager = IngestStateManager()
+    store = SqliteIngestStore(config.ingestion.state_db_path)
+    state_manager = IngestStateManager(store)
 
     logger.info("=" * 60)
     logger.info("GuardIA Connector — Receptor de ingestão (push/MQTT)")
@@ -60,6 +62,9 @@ def run(config: AppConfig, sink: CoreSink = None) -> None:
     logger.info(f"  MQTT: {'ativo' if config.mqtt.enabled else 'desativado'} ({config.mqtt.broker_host or '—'})")
     logger.info(f"  Devices configurados: {len(config.cameras)}")
     logger.info(f"  Sink: {type(sink).__name__} (escrita real aguarda PND-16 — CLAUDE.md §14.3)")
+    logger.info(f"  Estado persistido: {config.ingestion.state_db_path} "
+                f"({store.pending_count()} na fila, retomando)")
+    logger.info(f"  Retenção do payload bruto: {config.ingestion.raw_retention_days}d (CORE-05 §2)")
     logger.info("  main.py (polling CGI) permanece congelado — regra dos dois connectors (CLAUDE.md §14.6)")
     logger.info("=" * 60)
 
@@ -69,12 +74,23 @@ def run(config: AppConfig, sink: CoreSink = None) -> None:
     mqtt_receiver.start()
 
     logger.info("Receptor rodando. Pressione Ctrl+C para parar.")
+    raw_ttl = config.ingestion.raw_retention_days * 24 * 3600
+    ultimo_purge = 0.0
     try:
         while True:
             for device in state_manager.all_devices():
                 delivered = device.retry_queue.process_due(sink.deliver)
                 if delivered:
                     logger.debug(f"[{device.device_serial}] {delivered} evento(s) da fila de retry entregues")
+
+            # Expurgo de hora em hora — a parte do job `purge` do CORE-01 §7
+            # que é responsabilidade do connector (bruto e dedupe). Mídia e
+            # metadado do evento são do core.
+            agora = time.monotonic()
+            if agora - ultimo_purge > 3600:
+                purge_all(store, raw_retention_seconds=raw_ttl)
+                ultimo_purge = agora
+
             time.sleep(2)
     except KeyboardInterrupt:
         logger.info("Receptor encerrado pelo usuário.")

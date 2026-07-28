@@ -86,10 +86,51 @@ def test_fence_intrusion():
     assert event.source_channel == "mqtt"
 
 
+# ----------------------------------------- identidade estável (CacheEventEnable)
+def test_event_id_do_device_vence_quando_existe():
+    from p6s_event_translator import stable_event_id
+    assert stable_event_id({"event_id": "D4-42", "event_type": "face"}, "D4") == "D4-42"
+
+
+def test_sem_event_id_a_chave_e_hash_do_payload_nao_do_relogio():
+    """
+    O device reentrega por CacheEventEnable (CLAUDE.md §4.2). A mesma ocorrência
+    tem que produzir a MESMA chave nas duas entregas, senão o dedupe não casa.
+    Antes o id era `{serial}-{timestamp}`, que mudava a cada reentrega.
+    """
+    from p6s_event_translator import stable_event_id
+    raw = {"event_type": "face", "face_list": "Stranger", "event_time": "2026-07-28T10:00:00Z"}
+    assert stable_event_id(raw, "D4") == stable_event_id(dict(raw), "D4")
+
+
+def test_hash_independe_da_ordem_das_chaves():
+    """O device não garante ordem de serialização do JSON."""
+    from p6s_event_translator import stable_event_id
+    a = {"event_type": "face", "face_list": "Stranger", "z": 1}
+    b = {"z": 1, "face_list": "Stranger", "event_type": "face"}
+    assert stable_event_id(a, "D4") == stable_event_id(b, "D4")
+
+
+def test_payloads_diferentes_dao_chaves_diferentes():
+    from p6s_event_translator import stable_event_id
+    base = {"event_type": "face", "event_time": "2026-07-28T10:00:00Z"}
+    outro = {"event_type": "face", "event_time": "2026-07-28T10:00:01Z"}
+    assert stable_event_id(base, "D4") != stable_event_id(outro, "D4")
+
+
+def test_mesmo_payload_em_devices_diferentes_da_chaves_diferentes():
+    from p6s_event_translator import stable_event_id
+    raw = {"event_type": "face", "event_time": "2026-07-28T10:00:00Z"}
+    assert stable_event_id(raw, "D4") != stable_event_id(raw, "D6")
+
+
+def test_traduzir_duas_vezes_o_mesmo_payload_da_o_mesmo_event_id():
+    """Integração: o tradutor inteiro, não só a função de hash."""
+    raw = {"event_type": "face", "face_list": "Stranger", "event_time": "2026-07-28T10:00:00Z"}
+    a = translate_push_body(dict(raw), source_channel="http", device_serial="D4")
+    b = translate_push_body(dict(raw), source_channel="http", device_serial="D4")
+    assert a.event_id == b.event_id
+
+
 if __name__ == "__main__":
-    test_face_unknown_sem_faceuuid()
-    test_face_recognized_com_faceuuid_e_groupid2()
-    test_person_name_e_ignorado_nunca_vira_chave()
-    test_tipo_desconhecido_levanta_erro_em_vez_de_adivinhar()
-    test_fence_intrusion()
-    print("Todos os testes passaram!")
+    sys.exit(pytest.main([__file__, "-q"]))

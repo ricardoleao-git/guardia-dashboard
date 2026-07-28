@@ -22,7 +22,8 @@ disparar regra. Levantar exceção aqui perderia o evento — o oposto do que o
 contrato pede. O tradutor emite `unmapped` e preserva o operador bruto em
 `attributes.unmapped_operator`, para que a pendência saiba o que estender.
 """
-import time
+import hashlib
+import json
 from datetime import datetime, timezone
 from typing import Any, Dict
 
@@ -50,6 +51,30 @@ def _to_iso8601(raw_time: Any) -> str:
     if isinstance(raw_time, str) and raw_time:
         return raw_time
     return datetime.now(timezone.utc).isoformat()
+
+
+def stable_event_id(raw: Dict[str, Any], device_serial: str) -> str:
+    """
+    Identidade do evento, estável entre retransmissões.
+
+    O device usa `CacheEventEnable` para reentregar o que se perdeu numa queda
+    de rede ou energia (`CLAUDE.md` §4.2). Para o dedupe funcionar, a mesma
+    ocorrência tem que produzir a mesma chave nas duas entregas.
+
+    Quando o device manda um id, ele vence. Quando **não** manda, a chave é o
+    hash do payload — e não o relógio. Gerar `{serial}-{timestamp}` como antes
+    fazia cada reentrega parecer um evento novo, o que anulava o dedupe
+    justamente no cenário que o §4.2 descreve.
+    """
+    device_id = raw.get("event_id") or raw.get("EventID") or raw.get("device_event_id")
+    if device_id:
+        return str(device_id)
+
+    # Hash do payload inteiro, com chaves ordenadas para ser determinístico
+    # independentemente da ordem em que o device serializou o JSON.
+    canonical = json.dumps(raw, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    digest = hashlib.sha256(f"{device_serial}|{canonical}".encode()).hexdigest()[:20]
+    return f"{device_serial}-sha{digest}"
 
 
 def _face_or_plate_subtype(raw: Dict[str, Any], family: str) -> str:
@@ -105,7 +130,7 @@ def translate_push_body(
     snapshot_ref = raw.get("capture_image") or raw.get("recognize_image")
 
     event = CanonicalEvent(
-        event_id=str(raw.get("event_id") or f"{device_serial}-{int(time.time() * 1000)}"),
+        event_id=stable_event_id(raw, device_serial),
         event_type=canonical_type,
         device_serial=device_serial,
         occurred_at=_to_iso8601(raw.get("event_time")),

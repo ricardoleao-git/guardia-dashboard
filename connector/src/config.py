@@ -48,6 +48,12 @@ class IngestionConfig:
     http_path: str = "/p6s/events"
     # [LACUNA] formato exato da assinatura do push — ver push_auth.py.
     push_auth_mode: str = "log_only"  # "log_only" | "hmac_sha1" | "disabled"
+    # Estado de ingestão persistido (dedupe, fila, payload bruto). Arquivo
+    # local do connector, NÃO tabela do produto — ver ingest_store.py.
+    state_db_path: str = "connector/state/ingest.db"
+    # CORE-05 §2 propõe 7 dias para o payload bruto. Proposta a validar
+    # juridicamente (PND-11), não parecer.
+    raw_retention_days: int = 7
 
 
 @dataclass
@@ -144,6 +150,8 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         http_port=int(ingest_raw.get("http_port", 8443)),
         http_path=ingest_raw.get("http_path", "/p6s/events"),
         push_auth_mode=ingest_raw.get("push_auth_mode", "log_only"),
+        state_db_path=ingest_raw.get("state_db_path", "connector/state/ingest.db"),
+        raw_retention_days=int(ingest_raw.get("raw_retention_days", 7)),
     )
 
     # MQTT (túnel alternativo, broker EMQX)

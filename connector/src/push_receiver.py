@@ -95,6 +95,9 @@ def create_app(config: AppConfig, state_manager: IngestStateManager, sink: CoreS
             logger.debug(f"[push_receiver] duplicado ignorado: {event.event_id}")
             return jsonify({"status": "duplicate"}), 200
 
+        # Payload bruto com prazo próprio (CORE-05 §2: 7 dias, vence antes do
+        # metadado). É o único lugar onde vocabulário de fabricante pode ficar.
+        state.store.store_raw(device_serial, event.event_id, raw, time.time())
         state.retry_queue.enqueue(event)
         delivered = state.retry_queue.process_due(sink.deliver)
         logger.info(f"[push_receiver] evento {event.event_id} enfileirado ({delivered} entregue(s) agora)")
