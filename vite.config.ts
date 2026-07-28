@@ -28,4 +28,14 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  test: {
+    // jsdom porque o alvo inclui componente (PageStateWrapper); os testes de
+    // lógica pura rodariam sem, mas manter um ambiente evita duas configs.
+    environment: "jsdom",
+    globals: true,
+    setupFiles: [path.resolve(import.meta.dirname, "client/src/test/setup.ts")],
+    // `root` acima aponta para client/ para o build; os testes moram lá também.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    restoreMocks: true,
+  },
 });
