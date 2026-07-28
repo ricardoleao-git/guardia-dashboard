@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import LiveStream, { StreamProtocol } from "@/components/LiveStream";
 import { useI18n } from "@/contexts/I18nContext";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { isGuestSession } from "@/lib/guest-mode";
 
 interface CameraFeed {
   id: string;
@@ -144,7 +146,14 @@ interface CameraMosaicProps {
 export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
   const { t } = useI18n();
   const [layout, setLayout] = useState<LayoutOption>("4");
-  const [streamMode, setStreamMode] = useState<"live" | "snapshot">("live");
+  // Em mock não há câmera alcançável: os streamUrl apontam para a LAN da
+  // bancada (192.168.254.0/24). Entrar em "live" abre uma RTCPeerConnection
+  // + WebSocket por tile contra host inexistente — 6 de cada no layout cheio
+  // (CLAUDE.md §14.2, causa 1). Mesma detecção dos 7 hooks (§12.0).
+  const isMock = !isSupabaseConfigured || isGuestSession();
+  const [streamMode, setStreamMode] = useState<"live" | "snapshot">(
+    isMock ? "snapshot" : "live"
+  );
   const [autoRelevance, setAutoRelevance] = useState(true);
 
   const config = layoutConfig[layout];
@@ -191,11 +200,18 @@ export default function CameraMosaic({ onCameraClick }: CameraMosaicProps) {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setStreamMode("live")}
+              disabled={isMock}
+              title={
+                isMock
+                  ? "Indisponível no modo demo — sem câmera alcançável"
+                  : undefined
+              }
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                 streamMode === "live"
                   ? "bg-green-500/20 text-green-400 ring-1 ring-green-500/30"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
+                  : "bg-muted text-muted-foreground hover:bg-accent",
+                isMock && "cursor-not-allowed opacity-40 hover:bg-muted"
               )}
             >
               <Radio className="h-3 w-3" />

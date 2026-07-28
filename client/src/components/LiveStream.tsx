@@ -67,6 +67,12 @@ export default function LiveStream({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hlsRef = useRef<any>(null);
   const abortedRef = useRef(false);
+  // Guarda de reentrância do fallback (CLAUDE.md §14.2, causa 1).
+  // tryFallback é chamado de 7 pontos distintos — onconnectionstatechange,
+  // ws.onerror, ws.onclose, os handlers de HLS e MJPEG. Uma falha de rede
+  // dispara vários deles quase ao mesmo tempo, e sem esta guarda cada um
+  // reinicia a cadeia de fallback.
+  const fallbackFiredRef = useRef(false);
 
   // --- WebRTC connection ---
   const connectWebRTC = useCallback(async () => {
@@ -232,6 +238,9 @@ export default function LiveStream({
 
   // --- Try fallback protocol ---
   const tryFallback = useCallback(() => {
+    if (fallbackFiredRef.current || abortedRef.current) return;
+    fallbackFiredRef.current = true;
+
     if (fallbackSnapshotUrl) {
       setActiveProtocol("snapshot");
       fetchSnapshot();
@@ -245,6 +254,12 @@ export default function LiveStream({
 
   // --- Connect based on protocol ---
   useEffect(() => {
+    // Stream novo (outra câmera, outro protocolo) merece uma chance nova de
+    // fallback; a guarda só existe para conter a rajada de callbacks de UMA
+    // mesma falha.
+    fallbackFiredRef.current = false;
+    abortedRef.current = false;
+
     if (status === "offline") {
       setStreamState("error");
       return;

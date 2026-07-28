@@ -121,3 +121,8 @@ shared/
 # Manus / WebDev artifacts
 .project-config.json
 .manus-logs/
+
+# Saída do roteiro de bancada (P6S-09) — artefatos de device, nunca versionar.
+# Ancorado na raiz de propósito: sem a barra inicial, o padrão também engoliria
+# scripts/bancada/, que é código e precisa ser versionado.
+/bancada/

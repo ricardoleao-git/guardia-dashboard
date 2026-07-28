@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guardia.zenite.tech/contracts/events/canonical-event.v0.schema.json",
+  "title": "GuardIA Percebe — evento canônico v0",
+  "description": "Contrato entre um driver e o GuardIA core (CLAUDE.md §6, §12.4). Vocabulário de fabricante não atravessa esta fronteira: o driver traduz antes de emitir. O core atribui id, org_id, site_id, received_at, person_id e purge_after — nenhum deles aparece aqui.",
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "type",
+    "driver",
+    "source",
+    "device_serial",
+    "dedupe_key",
+    "occurred_at"
+  ],
+
+  "properties": {
+    "schema_version": {
+      "const": "0",
+      "description": "Versão do contrato. Muda quando a forma muda — o driver declara contra qual versão emite."
+    },
+
+    "type": {
+      "$ref": "#/$defs/canonicalEventType",
+      "description": "Tipo do catálogo canônico. 'unmapped' quando o driver não tem correspondente — CORE-01 §4 e CORE-02 §2 (evento unmapped NÃO dispara regra: gera pendência)."
+    },
+
+    "driver": {
+      "enum": ["p6s", "isapi", "intelbras", "unv", "positivo", "onvif"],
+      "description": "CORE-01 §4 (coluna events.driver). Divergência menor a ratificar: CLAUDE.md §10.3 escreve 'onvif-fallback' onde o DDL escreve 'onvif'."
+    },
+
+    "source": {
+      "enum": ["camera_http", "camera_mqtt", "nvr_email", "reconcile"],
+      "description": "Por onde o evento entrou. CORE-01 §4 (coluna events.source)."
+    },
+
+    "device_serial": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Serial do device que originou. O core resolve para device_id."
+    },
+
+    "channel_label": {
+      "type": ["string", "null"],
+      "description": "Rótulo do canal no NVR (D1..D36). Nulo em câmera standalone."
+    },
+
+    "device_event_id": {
+      "type": ["string", "null"],
+      "description": "Id do evento no device, quando existir. CORE-01 §4."
+    },
+
+    "dedupe_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Chave de idempotência. CORE-01 §4 documenta a composição: serial|deviceEventId|operator. O core impõe unique (org_id, dedupe_key)."
+    },
+
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando aconteceu, ISO 8601 com fuso. Distinto de received_at, que é do core."
+    },
+
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Chaves de correlação — CLAUDE.md §5. Nunca por nome de pessoa. Pendente de ratificação: PND-02.",
+      "properties": {
+        "face_uuid": {
+          "type": ["string", "null"],
+          "description": "Id da pessoa no GuardIA. CORE-01 §4 adota persons.id como este valor (PND-02)."
+        },
+        "group_id2": {
+          "type": ["string", "null"],
+          "description": "Id da turma (escola) ou bloco/unidade (condomínio). CORE-01 §4: face_groups.group_id2 (PND-02)."
+        }
+      }
+    },
+
+    "plate": {
+      "type": ["string", "null"],
+      "description": "Placa, para a família plate.*. CORE-01 §4."
+    },
+
+    "match_list": {
+      "enum": ["white", "black", "unknown", null],
+      "description": "CORE-01 §4. Note: os nomes de lista do fabricante (BlackList/WhiteList) NÃO passam — o driver traduz para estes."
+    },
+
+    "match_score": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "CORE-01 §4. Substitui o face_score do vocabulário P6S."
+    },
+
+    "severity": {
+      "enum": ["critical", "warning", "info"],
+      "default": "info",
+      "description": "Três valores, sem quarta cor — CORE-03 §2 e CORE-01 §4."
+    },
+
+    "attributes": {
+      "$ref": "#/$defs/attributes"
+    },
+
+    "media": {
+      "type": "array",
+      "description": "Snapshots do evento. É a única mídia que o módulo persiste (CLAUDE.md §2).",
+      "items": { "$ref": "#/$defs/mediaItem" }
+    },
+
+    "raw_ref": {
+      "type": ["string", "null"],
+      "description": "Ponteiro para o payload bruto arquivado. CORE-01 §4 — o bruto tem prazo de expurgo próprio, mais curto que o metadado."
+    }
+  },
+
+  "$defs": {
+    "canonicalEventType": {
+      "description": "Catálogo v0. Dividido em ratificados e pendentes: a divisão é estrutural de propósito, para que ninguém confunda o que está atestado nos documentos com o que ainda precisa de decisão.",
+      "oneOf": [
+        {
+          "title": "Ratificados — atestados em CLAUDE.md §6",
+          "enum": [
+            "face.recognized",
+            "face.unknown",
+            "fence.intrusion",
+            "line.crossed",
+            "flow.count",
+            "person.fall",
+            "smoke.detected",
+            "door.held_open",
+            "post.abandoned",
+            "plate.unknown",
+            "unmapped"
+          ]
+        },
+        {
+          "title": "Pendentes de ratificação — ver contracts/events/README.md",
+          "description": "Aceitos para não quebrar código existente, mas NÃO confirmados nos documentos. Cada um tem uma pergunta aberta registrada no README desta pasta.",
+          "enum": [
+            "plate.recognized",
+            "vehicle.bike_in_elevator"
+          ]
+        }
+      ]
+    },
+
+    "attributes": {
+      "type": "object",
+      "description": "Atributos derivados do faceFeature e afins: idade, gênero, óculos, máscara, quality (CORE-01 §4, CORE-03 §4). Chave livre, EXCETO o vocabulário de fabricante barrado abaixo.",
+      "propertyNames": {
+        "not": {
+          "enum": [
+            "face_list",
+            "face_score",
+            "recognize_image",
+            "capture_image",
+            "person_name",
+            "BlackList",
+            "WhiteList"
+          ]
+        },
+        "$comment": "CLAUDE.md §6 confina este vocabulário ao driver; §5 proíbe person_name como chave. Barrar no schema é o que impede a regressão do §9 item 4, em que cinco colunas de camera_events vazaram vocabulário P6S para o core."
+      },
+      "properties": {
+        "age":     { "type": ["integer", "null"], "minimum": 0 },
+        "gender":  { "enum": ["male", "female", null] },
+        "glasses": { "type": ["boolean", "null"] },
+        "mask":    { "type": ["boolean", "null"] },
+        "quality": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Confiança da captura. CORE-03 §4 exige que apareça como badge — captura ruim tem que ser visível, não escondida."
+        }
+      }
+    },
+
+    "mediaItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role"],
+      "properties": {
+        "role": {
+          "enum": ["capture", "enrolled", "background"],
+          "description": "Os três papéis do payload. CORE-01 §4 e CORE-03 §4: o card mostra dois, o modal mostra os três."
+        },
+        "url": {
+          "type": ["string", "null"],
+          "description": "URL assinada e curta — minutos, não dias (CORE-01 §6). O consumidor tem que pedir nova quando expirar, não quebrar a imagem."
+        },
+        "md5":        { "type": ["string", "null"], "description": "Conferência de integridade (CORE-01 §6)." },
+        "expires_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}
