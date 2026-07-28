@@ -46,13 +46,36 @@ def test_evento_minimo_passa(validator):
     validator.validate(_evento())
 
 
-def test_os_11_tipos_ratificados_passam(validator):
-    for t in [
-        "face.recognized", "face.unknown", "fence.intrusion", "line.crossed",
-        "flow.count", "person.fall", "smoke.detected", "door.held_open",
-        "post.abandoned", "plate.unknown", "unmapped",
-    ]:
+RATIFICADOS = [
+    "face.recognized", "face.unknown", "fence.intrusion", "line.crossed",
+    "flow.count", "person.fall", "smoke.detected", "door.held_open",
+    "post.abandoned", "plate.recognized", "plate.unknown",
+    "vehicle.bike_in_elevator", "unmapped",
+]
+
+
+def test_os_13_tipos_ratificados_passam(validator):
+    for t in RATIFICADOS:
         validator.validate(_evento(type=t))
+
+
+def test_schema_e_enum_python_nao_divergem():
+    """
+    O JSON Schema é a fonte de verdade; canonical_events.py tem que espelhá-lo.
+    Sem este teste, os dois envelhecem em silêncio e o driver passa a emitir
+    tipo que o contrato rejeita — ou vice-versa.
+    """
+    sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+    from canonical_events import CANONICAL_EVENT_TYPES
+
+    schema = json.loads(SCHEMA_PATH.read_text())
+    do_schema = set(schema["$defs"]["canonicalEventType"]["enum"])
+
+    assert do_schema == CANONICAL_EVENT_TYPES, (
+        f"só no schema: {do_schema - CANONICAL_EVENT_TYPES} · "
+        f"só no Python: {CANONICAL_EVENT_TYPES - do_schema}"
+    )
+    assert do_schema == set(RATIFICADOS)
 
 
 def test_tipo_fora_do_catalogo_e_rejeitado(validator):
@@ -116,8 +139,12 @@ def test_campo_desconhecido_no_topo_e_rejeitado(validator):
         validator.validate(_evento(org_id="deveria-vir-do-core"))
 
 
-def test_tipos_pendentes_de_ratificacao_ainda_passam(validator):
-    """Aceitos de propósito; a decisão está registrada no README da pasta."""
+def test_tipos_ratificados_em_28_07(validator):
+    """
+    `plate.recognized` e `vehicle.bike_in_elevator` estavam marcados como
+    pendentes por não aparecerem literalmente no CLAUDE.md §6. Ratificados
+    pelo Ricardo em 28/07/2026 — ver contracts/events/README.md.
+    """
     validator.validate(_evento(type="plate.recognized"))
     validator.validate(_evento(type="vehicle.bike_in_elevator"))
 

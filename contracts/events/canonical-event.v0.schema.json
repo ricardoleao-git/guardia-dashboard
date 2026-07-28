@@ -122,32 +122,21 @@
 
   "$defs": {
     "canonicalEventType": {
-      "description": "Catálogo v0. Dividido em ratificados e pendentes: a divisão é estrutural de propósito, para que ninguém confunda o que está atestado nos documentos com o que ainda precisa de decisão.",
-      "oneOf": [
-        {
-          "title": "Ratificados — atestados em CLAUDE.md §6",
-          "enum": [
-            "face.recognized",
-            "face.unknown",
-            "fence.intrusion",
-            "line.crossed",
-            "flow.count",
-            "person.fall",
-            "smoke.detected",
-            "door.held_open",
-            "post.abandoned",
-            "plate.unknown",
-            "unmapped"
-          ]
-        },
-        {
-          "title": "Pendentes de ratificação — ver contracts/events/README.md",
-          "description": "Aceitos para não quebrar código existente, mas NÃO confirmados nos documentos. Cada um tem uma pergunta aberta registrada no README desta pasta.",
-          "enum": [
-            "plate.recognized",
-            "vehicle.bike_in_elevator"
-          ]
-        }
+      "description": "Catálogo canônico v0 — 13 tipos, todos ratificados. Os 9 do CLAUDE.md §6, a família plate.* com dois membros, vehicle.bike_in_elevator (automação de fábrica do CORE-02 §9) e unmapped (exigido por CORE-01 §4 e CORE-02 §2). Ver contracts/events/README.md para a procedência de cada um.",
+      "enum": [
+        "face.recognized",
+        "face.unknown",
+        "fence.intrusion",
+        "line.crossed",
+        "flow.count",
+        "person.fall",
+        "smoke.detected",
+        "door.held_open",
+        "post.abandoned",
+        "plate.recognized",
+        "plate.unknown",
+        "vehicle.bike_in_elevator",
+        "unmapped"
       ]
     },
 

@@ -9,8 +9,15 @@ nem `person_name`.
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-# Tipos v0 (CLAUDE.md §6). Família plate.* tem só 2 membros confirmados
-# aqui — [LACUNA] restante da enumeração completa de LPR.
+# Catálogo canônico v0 — 13 tipos.
+#
+# Fonte de verdade: contracts/events/canonical-event.v0.schema.json. Este
+# conjunto tem que espelhá-lo; o teste test_canonical_contract.py compara os
+# dois e falha se divergirem.
+#
+# `plate.recognized` e `vehicle.bike_in_elevator` foram ratificados pelo
+# Ricardo em 28/07/2026 — estavam marcados como pendentes por não aparecerem
+# literalmente no CLAUDE.md §6.
 CANONICAL_EVENT_TYPES = {
     "face.recognized",
     "face.unknown",
@@ -23,6 +30,10 @@ CANONICAL_EVENT_TYPES = {
     "post.abandoned",
     "plate.recognized",
     "plate.unknown",
+    "vehicle.bike_in_elevator",
+    # CORE-01 §4 e CORE-02 §2: chega ao core sem correspondente e gera
+    # pendência, em vez de ser descartado.
+    "unmapped",
 }
 
 # Chaves de vocabulário P6S que não podem aparecer em `attributes` nem em

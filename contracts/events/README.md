@@ -8,24 +8,25 @@
 
 Por isso o `$defs.attributes` tem `propertyNames.not.enum`: um evento que tente atravessar com qualquer uma dessas chaves **falha na validação**, em vez de passar e virar coluna.
 
-## Ratificados × pendentes
+## Os 13 tipos e de onde cada um vem
 
-O `type` é um `oneOf` de duas listas, e a divisão é proposital.
+| Tipo | Procedência |
+|---|---|
+| `face.recognized` · `face.unknown` · `fence.intrusion` · `line.crossed` · `flow.count` · `person.fall` · `smoke.detected` · `door.held_open` · `post.abandoned` | `CLAUDE.md` §6, lista v0 literal |
+| `plate.unknown` | `CORE-02` §9, regra de fábrica "Veículo não autorizado" |
+| `plate.recognized` | **Ratificado pelo Ricardo em 28/07/2026.** O `CLAUDE.md` §6 escreve *"a família `plate.*` (LPR)"* sem enumerar, e nenhum documento trazia este membro literalmente — a família v0 tem os dois |
+| `vehicle.bike_in_elevator` | **Ratificado pelo Ricardo em 28/07/2026.** Vinha da automação de fábrica "Bike/patinete em elevador" (`CORE-02` §9, perfil Condomínio) sem estar na lista do §6. Entra no v0, que passa a ter 13 tipos |
+| `unmapped` | `CORE-01` §4 (`type text not null -- 'unmapped' quando sem correspondente`) e `CORE-02` §2 (*"Evento `unmapped` não dispara regra: gera pendência"*) |
 
-**Ratificados (11)** — atestados no `CLAUDE.md` §6, mais `unmapped`:
+As duas ratificações de 28/07 fecham as lacunas que estavam marcadas aqui: nenhuma foi preenchida por inferência (`CLAUDE.md` §10.2), as duas esperaram decisão.
 
-`face.recognized` · `face.unknown` · `fence.intrusion` · `line.crossed` · `flow.count` · `person.fall` · `smoke.detected` · `door.held_open` · `post.abandoned` · `plate.unknown` · `unmapped`
+> Consequência para o `CLAUDE.md` §6: a lista de tipos v0 daquele parágrafo está **incompleta** em relação a este contrato — não menciona `vehicle.bike_in_elevator` nem enumera `plate.*`. Este arquivo é a fonte mais atual; o §6 deve ser alinhado no próximo checkpoint que tocar o CLAUDE.md.
 
-`unmapped` não está na lista do §6, mas é exigido por dois documentos: `CORE-01` §4 (`type text not null -- 'unmapped' quando sem correspondente`) e `CORE-02` §2 (*"Evento `unmapped` não dispara regra: gera pendência"*). Não é inferência — é requisito escrito.
+## ⚠️ Divergência conhecida: `unmapped` não é emitido pelo driver
 
-**Pendentes de ratificação (2)** — aceitos para não quebrar código existente, mas **não confirmados**:
+O contrato aceita `unmapped`, mas `connector/src/p6s_event_translator.py` **levanta `UnrecognizedRawEventType`** quando não encontra correspondência, em vez de emitir um evento `unmapped`.
 
-| Tipo | Onde aparece | Pergunta aberta |
-|---|---|---|
-| `plate.recognized` | Em nenhum documento. O `CLAUDE.md` §6 escreve *"a família `plate.*` (LPR)"* sem enumerar; só `plate.unknown` aparece literalmente (`CORE-02` §9, regra "Veículo não autorizado"). `P6S-10` §2.6 fala em evento *"Car License Snapshot"* | A família `plate.*` tem quantos membros, e quais? |
-| `vehicle.bike_in_elevator` | `CORE-02` §9, perfil Condomínio — automação de fábrica "Bike/patinete em elevador" | Está fora da lista v0 do §6. Ou o catálogo v0 tem 12 tipos, ou a automação de fábrica cita um tipo que não existe |
-
-Nenhuma das duas foi preenchida por inferência (`CLAUDE.md` §10.2). Estão no schema, marcadas, para que o código atual valide — e visíveis o bastante para que a decisão aconteça.
+Isso contraria o `CORE-02` §2, que exige que o evento chegue e *gere pendência* — hoje ele é descartado com exceção. Reconciliar exige decidir onde a pendência é registrada, o que depende do schema (**PND-16**). Registrado aqui para não passar despercebido.
 
 ## Divergência menor registrada
 
