@@ -22,6 +22,7 @@ Em conflito, a ordem é:
 | Prazos de retenção e tela de consentimento | `CORE-05_RETENCAO-E-CONSENTIMENTO.md` |
 | Como sair do protótipo (e o que já foi feito) | `CORE-06_FAXINA-DO-PROTOTIPO.md` |
 | O que já existe em código nos dois repositórios | `CORE-07_INVENTARIO-DE-CODIGO.md` |
+| **Quem decidiu o quê, quando e por quê** | `CORE-08_REGISTRO-DE-DECISOES.md` |
 | **Definição das pendências PND-01 a PND-20** | `05_Roadmap-e-Fases.md` §6 |
 | Validar contra hardware | `P6S-09_ROTEIRO-DE-BANCADA.md` |
 | As 56 telas do NVR → endpoint (fonte primária) | `P6S-10_SPEC-PARIDADE-NVR-56-TELAS.md` |
@@ -37,10 +38,18 @@ Os arquivos `docs/00-indice.md` a `docs/14-setup-supabase.md` e `docs/GUARDIA_MA
 
 **Não usar como referência.** Mantidos apenas por valor histórico. Em caso de conflito com esta pasta ou com o `CLAUDE.md`, os dois últimos vencem.
 
-## ⚠️ Antes de tornar este repositório público
+## ⚠️ Este repositório **é** público hoje — e a decisão de manter assim está registrada
 
-O `P6S-09_ROTEIRO-DE-BANCADA.md` documenta que os dispositivos da bancada usam HTTP Basic com **`admin` e senha vazia** na rede `192.168.254.0/24`, e o `P6S-10` repete a convenção. Isso é adequado para uma LAN de laboratório e **inadequado para repositório público** — não porque revele uma senha, mas porque documenta publicamente que os dispositivos não têm nenhuma.
+Correção de tempo verbal: a versão anterior desta seção dizia "antes de tornar público" e "se o repositório voltar a ser público", como se a visibilidade fosse privada. **Não é.** Clone anônimo sem credencial retorna exit 0, verificado em 28/07/2026.
 
-O `CORE-06` §A.6 também descreve, com caminho de arquivo, onde estavam segredos versionados.
+O que está publicamente legível nesta pasta:
 
-Se o repositório voltar a ser público em algum momento, redigir estes dois trechos antes.
+- `P6S-09_ROTEIRO-DE-BANCADA.md` documenta que os dispositivos da bancada usam HTTP Basic com **`admin` e senha vazia** na rede `192.168.254.0/24`, e o `P6S-10` repete a convenção. Adequado para LAN de laboratório; o problema não é revelar uma senha, é documentar publicamente que aqueles dispositivos não têm nenhuma.
+- `CORE-06` §A.6 descreve, com caminho de arquivo, onde estavam segredos versionados.
+
+**Ricardo decidiu em 28/07/2026 manter o repositório público por ora e trocar a visibilidade depois** — risco aceito, registrado em `CORE-08_REGISTRO-DE-DECISOES.md` **DR-14** com o inventário do que isso expõe.
+
+Duas consequências que **não** mudam por causa dessa decisão:
+
+1. **Redigir estes trechos agora não resolveria nada** — o texto já está no histórico do git (`bf94724`, `40b0a0e`), e commit de correção não remove do histórico. O que resolve é `git filter-repo`, listado no `CLAUDE.md` §14.3 junto da rotação da chave `anon` legada.
+2. **As regras que proíbem segredo novo, credencial em mensagem de commit e dado pessoal real seguem valendo integralmente** (`CLAUDE.md` §10.5, §10.6, §10.13). Elas nunca dependeram de o repositório ser privado.

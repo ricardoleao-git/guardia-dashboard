@@ -24,8 +24,12 @@ Rastreabilidade completa em `CHANGELOG-Incorporacao-CORE-2026-07-26.md`.
 | `CORE-04_MAPA-DE-TELAS.md` | Inventário de telas existentes e faltantes, priorizado; regras fixas para gerar tela nova | `11_PRODUTO-Mapa-de-Telas` |
 | `CORE-05_RETENCAO-E-CONSENTIMENTO.md` | Prazos de retenção por artefato e spec da tela de consentimento — instrumenta o gate da Fase 0 | `12_PRODUTO-LGPD` §4 e §6 |
 | `CORE-06_FAXINA-DO-PROTOTIPO.md` | Runbook dos 11 problemas conhecidos do código atual, incluindo a remoção da telemetria | `62_PLANO-Saida-do-Manus` + `CLAUDE.md` §9 |
+| `CORE-07_INVENTARIO-DE-CODIGO.md` | O que já existe em código nos dois repositórios | — (posterior ao lote de 26/07) |
+| `CORE-08_REGISTRO-DE-DECISOES.md` | `DR-nn`: quem decidiu o quê, quando, alternativa recusada e custo de reverter | — (aberto em 28/07) |
 
 ⭐ = leitura obrigatória antes de mexer em backend.
+
+`CORE-07` e `CORE-08` não vêm da V4 — foram abertos depois da incorporação. O `CORE-08` existe porque este índice registra **procedência** e o `CLAUDE.md` §14 registra **estado medido**, mas nenhum dos dois registrava **escolha**: decisão tomada em conversa não sobrevive à conversa.
 
 Fora desta camada, o mesmo lote entregou `P6S-09_ROTEIRO-DE-BANCADA.md`, que pertence ao acervo do driver p6s (camada 3).
 

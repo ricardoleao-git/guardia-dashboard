@@ -226,6 +226,7 @@ Fora deste arquivo, os documentos abaixo são contrato para quem escreve código
 | Prazos de retenção e tela de consentimento | `CORE-05_RETENCAO-E-CONSENTIMENTO.md` |
 | Como sair do protótipo (e o que já foi feito) | `CORE-06_FAXINA-DO-PROTOTIPO.md` |
 | O que já existe em código nos dois repositórios | `CORE-07_INVENTARIO-DE-CODIGO.md` |
+| **Quem decidiu o quê, quando e por quê** (`DR-01`…) | `CORE-08_REGISTRO-DE-DECISOES.md` |
 | Validar contra hardware | `P6S-09_ROTEIRO-DE-BANCADA.md` |
 | As 56 telas do NVR → endpoint (fonte primária) | `P6S-10_SPEC-PARIDADE-NVR-56-TELAS.md` |
 
@@ -324,12 +325,14 @@ urgente; todos são reais e medidos.
 | **Idioma default segue o navegador** | `I18nContext.tsx:1478` | Sem escolha salva, o provider lê `navigator.language`. O `CORE-03` §1 diz **"Idioma: PT-BR"**. Um usuário brasileiro com navegador em inglês vê a UI em inglês na primeira visita. **É decisão de produto, não bug** — mas os dois documentos discordam e alguém precisa escolher |
 | **Mensagens de toast em PT cravado** | `UserAdmin.tsx:227,274` | `toast.error("Erro ao carregar operadores")` e afins não passam por `t()`. Mesma categoria do que fechou o §14.5, escopo menor. As 2 ocorrências que um grep amplo pega no `UserAdmin` são estas — não são os blocos dos 5 estados |
 | **Janela do payload bruto vs reprocessamento** | `ingest_store.py` | O `CORE-05` §2 dá 7 dias com finalidade de **depurar integração**. Se o objetivo for reprocessar quando o catálogo canônico mudar, 7 dias não serve — e estender depende de **PND-11** (base legal), não de código |
-| **`min-h-screen` em 5 páginas** | ver §14.3 | O refactor que tornaria o `.embedded-page` genuinamente morto. Método já registrado: uma página por vez, screenshot antes/depois |
+| **`min-h-screen` em 5 páginas** | ver §14.3 | O refactor que tornaria o `.embedded-page` genuinamente morto. Método já registrado: uma página por vez, screenshot antes/depois. ⚠️ O grep devolve **6** — a sexta é `Dashboard.tsx`, que **é** página de topo e fica como está |
 | **Code-splitting** | bundle 1,35 MB | Adiado por decisão do Ricardo em 28/07. O `vite build` avisa a cada execução |
 
 ## 14.4 ⚠️ Consequência da chave legada ainda ativa
 
 Enquanto a JWT `anon` legada não for revogada, uma chave válida do projeto está permanentemente em repositório público e **a RLS é a única barreira entre ela e os dados**.
+
+O repositório **segue público** — decisão do Ricardo em 28/07, com risco aceito e inventariado em `CORE-08` **DR-14**. O que a decisão não afrouxa: §10.5 (nenhum segredo no repo), §10.6 (nenhum dado pessoal real) e §10.13 (nenhuma credencial em mensagem de commit) valem igual, porque nunca dependeram da visibilidade.
 
 Isso é o modelo de segurança normal do Supabase — a chave é publishable por classe, não é vazamento de segredo. Mas elimina a margem de erro:
 
