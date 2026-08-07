@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import Header from "@/components/Header";
@@ -208,18 +208,18 @@ export default function Dashboard() {
 
   const recentEvents = useMemo(() => categoryFilteredEvents.slice(0, 24), [categoryFilteredEvents]);
 
-  const handleEventClick = (event: CameraEvent) => {
+  const handleEventClick = useCallback((event: CameraEvent) => {
     setSelectedEvent(event);
     setViewerOpen(true);
-  };
+  }, []);
 
   useEventAlerts(events, handleEventClick);
 
-  const handleCameraClick = (serial: string) => {
+  const handleCameraClick = useCallback((serial: string) => {
     setFilters({ ...emptyFilters, cameraSerial: serial });
     setActiveCategory("all");
     setActiveView("events");
-  };
+  }, []);
 
   const handleCategoryChange = (category: CategoryKey) => {
     setActiveCategory(category);

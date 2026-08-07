@@ -73,6 +73,11 @@ export function useEvents(filters: FilterState, activeView?: string) {
   // Only run mock realtime interval on dashboard/events views to avoid re-render storms
   const shouldPoll = !activeView || activeView === "dashboard" || activeView === "events" || activeView === "alerts" || activeView === "cameras";
 
+  // Batch realtime events to prevent re-render storms when Supabase fires
+  // many INSERT events on initial subscription (known Supabase behavior)
+  const pendingEventsRef = useRef<CameraEvent[]>([]);
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     fetchEvents();
 
@@ -80,7 +85,21 @@ export function useEvents(filters: FilterState, activeView?: string) {
     let unsubscribe: (() => void) | undefined;
     if (isLiveBackend()) {
       unsubscribe = subscribeToNewEvents((newEvent) => {
-        setEvents(prev => [newEvent as CameraEvent, ...prev].slice(0, 100));
+        // Batch events and flush every 500ms to avoid re-render storm
+        pendingEventsRef.current.push(newEvent as CameraEvent);
+        if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = setTimeout(() => {
+          const batch = pendingEventsRef.current;
+          pendingEventsRef.current = [];
+          if (batch.length > 0) {
+            setEvents(prev => {
+              // Deduplicate by event_id
+              const existingIds = new Set(prev.map(e => e.event_id));
+              const newOnes = batch.filter(e => !existingIds.has(e.event_id));
+              return [...newOnes, ...prev].slice(0, 100);
+            });
+          }
+        }, 500);
       });
     } else if (shouldPoll) {
       // Mock mode: simulate periodic new events for realtime feel
@@ -97,6 +116,7 @@ export function useEvents(filters: FilterState, activeView?: string) {
 
     return () => {
       unsubscribe?.();
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
     };
   }, [fetchEvents, filters.cameraSerial, filters.operator, filters.search, filters.dateFrom, filters.dateTo, shouldPoll]);
 

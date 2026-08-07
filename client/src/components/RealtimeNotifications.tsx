@@ -283,7 +283,10 @@ export default function RealtimeNotifications({ newEventCount, onAction, events 
       (e) => !processedEventIds.current.has(e.event_id)
     );
 
-    for (const event of newCriticalEvents) {
+    // Limit notifications per batch to prevent re-render storm
+    const MAX_NOTIF_PER_BATCH = 3;
+    const toNotify = newCriticalEvents.slice(0, MAX_NOTIF_PER_BATCH);
+    for (const event of toNotify) {
       processedEventIds.current.add(event.event_id);
       const alert = evaluateCriticalEvent(event);
       if (alert) {
@@ -302,6 +305,10 @@ export default function RealtimeNotifications({ newEventCount, onAction, events 
         };
         addNotification(notif);
       }
+    }
+    // Mark remaining events as processed without notifying (avoid flood)
+    for (const event of newCriticalEvents.slice(MAX_NOTIF_PER_BATCH)) {
+      processedEventIds.current.add(event.event_id);
     }
 
     // Keep processed set from growing unbounded
